@@ -79,7 +79,7 @@ const POSITION_COLUMNS = [
 
 function windowItems(metadata) {
   const items = [
-    ['بازه (UTC)', `${formatUtc(metadata.fromUtc)} تا ${formatUtc(metadata.toUtc)}`],
+    ['بازه (UTC)', `${formatUtc(metadata.fromUtc)} — ${formatUtc(metadata.toUtc)}`],
     ['ثانیه قبل', metadata.secondsBefore],
     ['ثانیه بعد', metadata.secondsAfter],
   ];

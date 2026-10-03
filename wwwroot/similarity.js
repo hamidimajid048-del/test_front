@@ -151,7 +151,7 @@ function writeState() {
 
 function renderMetadata(metadata) {
   const range = metadata.fromUtc
-    ? `${toDayValue(new Date(metadata.fromUtc))} تا ${toDayValue(new Date(metadata.toUtc))}`
+    ? `${toDayValue(new Date(metadata.fromUtc))} — ${toDayValue(new Date(metadata.toUtc))}`
     : 'همهٔ زمان‌ها';
   renderSummary(document.getElementById('summary-metadata'), [['لاگین', metadata.login], ['بازه (UTC)', range]]);
 }

@@ -5,16 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ورود — پنل تخلفات</title>
   <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
 </head>
-<body>
+<body class="login-page">
   <form class="login-box" method="post" action="/auth/login">
-    <h2>پنل تخلفات</h2>
+    <div class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      </span>
+      پنل تخلفات
+    </div>
+    <p class="login-subtitle">برای ادامه وارد شوید</p>
+    <p id="error" class="message error" hidden></p>
     <label>نام کاربری <input name="username" autocomplete="username" required autofocus></label>
     <label>رمز عبور <input name="password" type="password" autocomplete="current-password" required></label>
-    <p id="error" class="message error" hidden></p>
     <button type="submit">ورود</button>
   </form>
   <script>
+    document.body.append(createThemeToggle());
     const messages = {
       invalid: 'نام کاربری یا رمز عبور اشتباه است',
       rate: 'تعداد تلاش‌ها زیاد است؛ یک دقیقه بعد دوباره تلاش کنید',

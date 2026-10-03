@@ -64,24 +64,43 @@ function apiUrl(path, params) {
   return API_PREFIX + path + toQueryString(params);
 }
 
+const BRAND_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>';
+
 function renderMenu() {
   const nav = document.getElementById('menu');
-  nav.replaceChildren();
-  for (const item of MENU_ITEMS) {
+
+  const brand = document.createElement('a');
+  brand.className = 'brand';
+  brand.href = '/';
+  const mark = document.createElement('span');
+  mark.className = 'brand-mark';
+  mark.innerHTML = BRAND_ICON;
+  brand.append(mark, 'پنل تخلفات');
+
+  const links = MENU_ITEMS.map(item => {
     const link = document.createElement('a');
+    link.className = 'nav-link';
     link.href = item.href;
     link.textContent = item.title;
     if (location.pathname === item.href) link.classList.add('active');
-    nav.append(link);
-  }
+    return link;
+  });
+
   const logout = document.createElement('form');
   logout.method = 'post';
   logout.action = '/auth/logout';
   const button = document.createElement('button');
   button.type = 'submit';
+  button.className = 'logout';
   button.textContent = 'خروج';
   logout.append(button);
-  nav.append(logout);
+
+  const actions = document.createElement('div');
+  actions.className = 'nav-actions';
+  actions.append(createThemeToggle(), logout);
+
+  nav.replaceChildren(brand, ...links, actions);
 }
 
 // Formats an ISO timestamp as "yyyy-MM-dd HH:mm:ss" in UTC.
@@ -140,6 +159,8 @@ function renderTable(container, columns, rows, onRowClick) {
   for (const column of columns) {
     const th = document.createElement('th');
     th.textContent = column.title;
+    // Left-to-right values (numbers, IPs, times) are left aligned, so their header is too.
+    if (column.ltr) th.classList.add('align-ltr');
     headRow.append(th);
   }
 

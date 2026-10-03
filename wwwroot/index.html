@@ -5,23 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>پنل تخلفات</title>
   <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
   <main>
-    <p>یکی از گزارش‌ها را از منوی بالا انتخاب کنید.</p>
-    <p>وضعیت سرویس Violation: <strong id="health">در حال بررسی...</strong></p>
+    <h1 class="page-title">گزارش‌های تخلفات</h1>
+    <p class="page-subtitle">یکی از گزارش‌ها را انتخاب کنید.</p>
+    <div class="cards">
+      <a class="card" href="/logins.html">
+        <h3>تاریخچهٔ لاگین</h3>
+        <p>جلسات ورود یک لاگین با IP، CID، موقعیت و هشدارهای VPN و Proxy.</p>
+      </a>
+      <a class="card" href="/similarity.html">
+        <h3>شباهت IP/CID</h3>
+        <p>لاگین‌هایی که IP یا CID مشترک دارند، همراه با جزئیات و خروجی Excel و CSV.</p>
+      </a>
+      <a class="card" href="/copy-trade.html">
+        <h3>کپی‌ترید و هج</h3>
+        <p>حساب‌هایی که هم‌زمان با این لاگین، هم‌جهت یا خلاف‌جهت معامله باز کرده‌اند.</p>
+      </a>
+    </div>
+    <span class="status" id="health">در حال بررسی وضعیت سرویس...</span>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
   <script>
     renderMenu();
+    const health = document.getElementById('health');
     // The health endpoint returns { status: "Healthy" } rather than the usual ResponseBase envelope.
     fetch('/api/v1/health')
       .then(response => response.ok ? response.json() : Promise.reject())
-      .then(body => body.status === 'Healthy' ? 'در دسترس' : Promise.reject())
-      .catch(() => 'در دسترس نیست')
-      .then(text => { document.getElementById('health').textContent = text; });
+      .then(body => body.status === 'Healthy' ? Promise.resolve() : Promise.reject())
+      .then(() => { health.textContent = 'سرویس Violation در دسترس است'; health.classList.add('ok'); })
+      .catch(() => { health.textContent = 'سرویس Violation در دسترس نیست'; health.classList.add('down'); });
   </script>
 </body>
 </html>

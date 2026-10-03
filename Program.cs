@@ -11,7 +11,7 @@ using Yarp.ReverseProxy.Transforms;
 
 const string LoginRateLimitPolicy = "login";
 const string LoginPage = "/login.html";
-string[] publicPaths = [LoginPage, "/app.css"];
+string[] publicPaths = [LoginPage, "/app.css", "/theme.js"];
 
 var builder = WebApplication.CreateBuilder(args);
 
