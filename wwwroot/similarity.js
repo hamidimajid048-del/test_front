@@ -25,59 +25,7 @@ let detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
 
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]));
 
-// The range is whole UTC days ("yyyy-MM-dd"): from the start of the first day to the end of the last day.
-const fromDayParam = day => (day ? `${day}T00:00:00Z` : undefined);
-const toDayParam = day => (day ? `${day}T23:59:59.9999999Z` : undefined);
-
-function validateRange(values) {
-  const missing = 'The date range is incomplete: fill in both From and To, or leave both empty';
-  if (values.fromUtc && !values.toUtc) throw new ApiError(missing, { toUtc: ['Fill in To'] });
-  if (!values.fromUtc && values.toUtc) throw new ApiError(missing, { fromUtc: ['Fill in From'] });
-  if (values.fromUtc && values.fromUtc > values.toUtc) {
-    throw new ApiError('From must not be after To', { fromUtc: ['From is after To'] });
-  }
-}
-
-// Quick ranges ending now (UTC); each moves the start date back.
-const RANGE_PRESETS = {
-  week: date => date.setUTCDate(date.getUTCDate() - 7),
-  month: date => date.setUTCMonth(date.getUTCMonth() - 1),
-  '3months': date => date.setUTCMonth(date.getUTCMonth() - 3),
-  '6months': date => date.setUTCMonth(date.getUTCMonth() - 6),
-  year: date => date.setUTCFullYear(date.getUTCFullYear() - 1),
-};
-
-// Date input value ("yyyy-MM-dd") of a Date, in UTC.
-const toDayValue = date => date.toISOString().slice(0, 10);
-
-function setRange(fromValue, toValue) {
-  form.elements.fromUtc.value = fromValue;
-  form.elements.toUtc.value = toValue;
-}
-
-// The day inputs are editable only for a custom range. They are read-only (not disabled) otherwise, so a preset's
-// days are still shown and submitted with the form.
-function syncRangeInputs() {
-  const custom = form.elements.range.value === 'custom';
-  for (const name of ['fromUtc', 'toUtc']) {
-    form.elements[name].readOnly = !custom;
-    form.elements[name].title = custom ? '' : 'Select the "Custom" range to pick days';
-  }
-}
-
-function applyRangePreset() {
-  syncRangeInputs();
-  const preset = form.elements.range.value;
-  if (preset === 'custom') return;
-  if (!preset) {
-    setRange('', '');
-    return;
-  }
-  const to = new Date();
-  const from = new Date(to);
-  RANGE_PRESETS[preset](from);
-  setRange(toDayValue(from), toDayValue(to));
-}
+const rangeControls = initRangeControls(form);
 
 // The account's data range comes from the login sessions report metadata, the only place the service exposes it.
 let accountRangeLogin = null;
@@ -100,8 +48,8 @@ async function showAccountRange() {
     useRange.textContent = 'Use this range';
     useRange.addEventListener('click', () => {
       form.elements.range.value = 'custom';
-      syncRangeInputs();
-      setRange(toDayValue(new Date(metadata.firstDataTime)), toDayValue(new Date(metadata.lastDataTime)));
+      rangeControls.sync();
+      rangeControls.setRange(toDayValue(new Date(metadata.firstDataTime)), toDayValue(new Date(metadata.lastDataTime)));
     });
     const range = document.createElement('span');
     range.textContent = `${toDayValue(new Date(metadata.firstDataTime))} — ${toDayValue(new Date(metadata.lastDataTime))}`;
@@ -112,7 +60,6 @@ async function showAccountRange() {
   }
 }
 
-form.elements.range.addEventListener('change', applyRangePreset);
 form.elements.login.addEventListener('change', showAccountRange);
 
 function commonParams() {
@@ -155,6 +102,16 @@ function renderMetadata(metadata) {
   renderSummary(document.getElementById('summary-metadata'), [['Login', metadata.login], ['Range (UTC)', range]]);
 }
 
+// The compare page for the searched login and a row's related login, over the same date range and on the tab of
+// the row's evidence type.
+function compareHref(row) {
+  const query = new URLSearchParams({ login: filters.login, other: row.relatedLogin, tab: row.type === 'Cid' ? 'shared-cids' : 'shared-ips' });
+  for (const key of ['range', 'fromUtc', 'toUtc']) {
+    if (filters[key]) query.set(key, filters[key]);
+  }
+  return `/compare.html?${query}`;
+}
+
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type },
@@ -165,10 +122,12 @@ const SUMMARY_COLUMNS = [
   {
     key: 'relatedLogin',
     title: 'Actions',
-    format: login => {
+    format: (login, row) => {
       const actions = document.createElement('div');
       actions.className = 'actions';
-      actions.append(actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`));
+      actions.append(
+        actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`),
+        actionLink('Compare', compareHref(row)));
       return actions;
     },
   },
@@ -238,52 +197,6 @@ function hideDetails() {
   document.getElementById('details-section').hidden = true;
 }
 
-function fileNameFrom(contentDisposition) {
-  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(contentDisposition ?? '');
-  return match ? decodeURIComponent(match[1]) : 'export';
-}
-
-// Fetches an export so a failure (returned as JSON instead of a file) can be shown as a message.
-async function downloadExport(path, params, button, messageElement) {
-  button.disabled = true;
-  messageElement.className = 'message';
-  messageElement.textContent = 'Preparing file...';
-  try {
-    let response;
-    try {
-      response = await fetch(apiUrl(path, params));
-    } catch {
-      throw new ApiError(UNAVAILABLE_MESSAGE);
-    }
-    if (response.status === 401) {
-      location.href = '/login.html';
-      return;
-    }
-    const contentType = response.headers.get('Content-Type') ?? '';
-    if (response.ok && !contentType.includes('json')) {
-      const url = URL.createObjectURL(await response.blob());
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileNameFrom(response.headers.get('Content-Disposition'));
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-      messageElement.textContent = '';
-      return;
-    }
-    const body = await response.json().catch(() => null);
-    if (body?.status && typeof body.status === 'object') throw new ApiError(translateStatus(body.status));
-    if (body?.errors) throw new ApiError([INVALID_INPUT_MESSAGE, ...Object.values(body.errors).flat()].join(' — '));
-    throw new ApiError(UNAVAILABLE_MESSAGE);
-  } catch (error) {
-    messageElement.className = 'message error';
-    messageElement.textContent = error instanceof ApiError ? error.message : UNAVAILABLE_MESSAGE;
-  } finally {
-    button.disabled = false;
-  }
-}
-
 document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
   const kind = button.dataset.export;
   const { currentPage, pageSize, ...params } = kind === 'summary' ? summaryParams() : detailsParams();
@@ -317,8 +230,7 @@ detailsForm.addEventListener('submit', event => {
 // Restores a shared or refreshed report link.
 async function restoreFromQuery() {
   if (!fillFormFromQuery(form) || !form.elements.login.value) return;
-  if (!form.elements.range.value && form.elements.fromUtc.value) form.elements.range.value = 'custom';
-  syncRangeInputs();
+  rangeControls.restore();
   showAccountRange();
   const query = new URLSearchParams(location.search);
   filters = formValues(form);
@@ -349,5 +261,5 @@ async function restoreFromQuery() {
 }
 
 renderMenu();
-syncRangeInputs();
+rangeControls.sync();
 restoreFromQuery();

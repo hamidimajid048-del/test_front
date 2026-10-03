@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compare accounts — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Main login <input name="login" type="number" min="1" step="1" required></label>
+      <label>Compared login <input name="other" type="number" min="1" step="1" required></label>
+      <label>Date range
+        <select name="range">
+          <option value="">All time</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <label>Proximity window
+        <select name="windowPreset">
+          <option value="60">1 minute</option>
+          <option value="300" selected>5 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="3600">1 hour</option>
+          <option value="21600">6 hours</option>
+          <option value="86400">24 hours</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label id="window-custom" hidden>Window (seconds) <input name="windowSeconds" type="number" min="1" max="604800" step="1"></label>
+      <label>Proximity match
+        <select name="match">
+          <option value="Ip">Same IP</option>
+          <option value="Subnet">Same network (/24, /64)</option>
+          <option value="Asn">Same ASN</option>
+        </select>
+      </label>
+      <button type="submit">Compare</button>
+    </form>
+    <p class="message" id="message"></p>
+
+    <section id="overview-section" hidden>
+      <div class="section-head">
+        <h2>Overview</h2>
+        <div class="actions" id="overview-actions"></div>
+      </div>
+      <div class="signals" id="signals"></div>
+      <div id="overview"></div>
+    </section>
+
+    <section id="tabs-section" hidden>
+      <div class="tabs" id="tabs"></div>
+      <div id="tab-panel"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/range.js"></script>
+  <script src="/sessions-table.js"></script>
+  <script src="/compare.js"></script>
+</body>
+</html>

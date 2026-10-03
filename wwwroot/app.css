@@ -324,7 +324,42 @@ tbody tr:nth-child(even) { background: var(--row-stripe); }
 tbody tr:last-child td { border-bottom: 0; }
 tr.clickable { cursor: pointer; transition: background-color .1s ease; }
 tr.clickable:hover { background: var(--row-hover); }
-.actions { display: flex; gap: 6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.inline { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.badge {
+  display: inline-block;
+  padding: 1px 9px;
+  color: var(--text-muted);
+  background: var(--surface-3);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.badge.ok { color: var(--success); background: var(--success-soft); }
+.badge.warn { color: var(--warning); background: var(--warning-soft); }
+.badge.danger { color: var(--danger); background: var(--danger-soft); }
+.badge.main { color: var(--primary); background: var(--primary-soft); }
+.badge.compared { color: #a855f7; background: rgba(168, 85, 247, 0.14); }
+
+.signals { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.signals:empty { display: none; }
+.signal {
+  height: auto;
+  padding: 6px 14px;
+  color: var(--text-muted);
+  border-radius: 999px;
+  font-weight: 500;
+}
+.signal strong { color: var(--text); font-size: 15px; }
+.signal.hot { color: var(--danger); background: var(--danger-soft); border-color: transparent; }
+.signal.hot strong { color: var(--danger); }
+
+form.filters label.check { flex-direction: row; align-items: center; gap: 8px; align-self: center; }
+form.filters label.check input { width: auto; height: auto; }
 .action-link {
   padding: 3px 12px;
   color: var(--text);
@@ -422,3 +457,6 @@ td.empty { padding: 32px; text-align: center; color: var(--text-faint); }
   nav.menu { flex-wrap: wrap; padding: 10px 16px; }
   .brand { margin-inline-end: auto; }
 }
+
+/* The overview mixes short numbers with sentences, so its cells wrap instead of scrolling. */
+#overview th, #overview td { white-space: normal; }

@@ -10,13 +10,16 @@ const MENU_ITEMS = [
   { href: '/logins.html', title: 'Login history' },
   { href: '/similarity.html', title: 'IP/CID similarity' },
   { href: '/copy-trade.html', title: 'Copy trade & hedge' },
+  { href: '/compare.html', title: 'Compare accounts' },
 ];
 
 class ApiError extends Error {
   // fieldErrors: { fieldName: [messages] } from an ASP.NET ValidationProblemDetails response.
-  constructor(message, fieldErrors = {}) {
+  // reason: the service's failure reason (status.description), such as "AccountNotFound", when there is one.
+  constructor(message, fieldErrors = {}, reason = '') {
     super(message);
     this.fieldErrors = fieldErrors;
+    this.reason = reason;
   }
 }
 
@@ -53,7 +56,7 @@ async function apiGet(path, params) {
 
   if (body?.status && typeof body.status === 'object') {
     if (response.ok && body.status.code === SUCCESS_STATUS_CODE) return body.result;
-    throw new ApiError(translateStatus(body.status));
+    throw new ApiError(translateStatus(body.status), {}, body.status.description ?? '');
   }
   if (body?.errors) throw new ApiError(INVALID_INPUT_MESSAGE, body.errors);
   throw new ApiError(UNAVAILABLE_MESSAGE);
@@ -62,6 +65,68 @@ async function apiGet(path, params) {
 // Builds the URL of an API file export, for use as a download link.
 function apiUrl(path, params) {
   return API_PREFIX + path + toQueryString(params);
+}
+
+function fileNameFrom(contentDisposition) {
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(contentDisposition ?? '');
+  return match ? decodeURIComponent(match[1]) : 'export';
+}
+
+// Fetches an export so a failure (returned as JSON instead of a file) can be shown as a message.
+async function downloadExport(path, params, button, messageElement) {
+  button.disabled = true;
+  messageElement.className = 'message';
+  messageElement.textContent = 'Preparing file...';
+  try {
+    let response;
+    try {
+      response = await fetch(apiUrl(path, params));
+    } catch {
+      throw new ApiError(UNAVAILABLE_MESSAGE);
+    }
+    if (response.status === 401) {
+      location.href = '/login.html';
+      return;
+    }
+    const contentType = response.headers.get('Content-Type') ?? '';
+    if (response.ok && !contentType.includes('json')) {
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileNameFrom(response.headers.get('Content-Disposition'));
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      messageElement.textContent = '';
+      return;
+    }
+    const body = await response.json().catch(() => null);
+    if (body?.status && typeof body.status === 'object') throw new ApiError(translateStatus(body.status));
+    if (body?.errors) throw new ApiError([INVALID_INPUT_MESSAGE, ...Object.values(body.errors).flat()].join(' — '));
+    throw new ApiError(UNAVAILABLE_MESSAGE);
+  } catch (error) {
+    messageElement.className = 'message error';
+    messageElement.textContent = error instanceof ApiError ? error.message : UNAVAILABLE_MESSAGE;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// A small coloured label. kind: 'ok' | 'warn' | 'danger' | 'main' | 'compared' | 'muted'.
+function badge(text, kind = 'muted') {
+  const element = document.createElement('span');
+  element.className = `badge ${kind}`;
+  element.textContent = text;
+  return element;
+}
+
+// Wraps nodes or text in a flex row, e.g. several badges in one table cell.
+function inline(...parts) {
+  const row = document.createElement('span');
+  row.className = 'inline';
+  row.append(...parts);
+  return row;
 }
 
 const BRAND_ICON =

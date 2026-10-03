@@ -4,55 +4,14 @@ const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const DEFAULT_PAGE_SIZE = 100;
 
+// The account report cannot answer when the evaluator has no usable data range for the login; the sessions
+// themselves are still known to the login tracker, so the page falls back to them.
+const ACCOUNT_REASONS = new Set([
+  'AccountNotFound', 'AccountSelectionAmbiguous', 'AccountTimeRangeNotReady', 'AccountTimeRangeInvalid',
+]);
+
 let currentLogin = null;
 let currentTab = 'sessions';
-
-const yesNo = value => value === true ? 'Yes' : value === false ? 'No' : '—';
-
-// "isHttpProxy" -> "Http proxy"
-const flagLabel = key => {
-  const words = key.replace(/^is/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
-};
-
-// Short warning labels shown in the sessions table for risky geo flags.
-const WARNING_FLAGS = [
-  { label: 'VPN', isSet: geo => geo.isVpn },
-  { label: 'Proxy', isSet: geo => geo.isHttpProxy },
-  { label: 'Tor', isSet: geo => geo.isTorExit },
-  { label: 'Datacenter', isSet: geo => geo.isDatacenter },
-  { label: 'Blacklisted', isSet: geo => geo.isBlacklisted },
-  { label: 'Bot', isSet: geo => geo.isBotAny || geo.isBotBotnet || geo.isBotFake },
-];
-
-const GEO_FIELDS = [
-  ['continent', 'Continent'], ['country', 'Country'], ['city', 'City'], ['region', 'Region'], ['province', 'Province'],
-  ['latitude', 'Latitude'], ['longitude', 'Longitude'], ['asn', 'ASN'],
-  ['asnOrganization', 'ASN organization'], ['isp', 'ISP'], ['ispOrganization', 'ISP organization'], ['detailsFlags', 'Details flags'],
-];
-
-const GEO_FLAGS = [
-  'isTorExit', 'isHttpProxy', 'isVpn', 'isDatacenter', 'isAttackMail', 'isAttackSsh', 'isAttackWeb', 'isAttackApp',
-  'isBotBotnet', 'isSearchEngine', 'isBlacklisted', 'isWebdriver', 'isBotAny', 'isBotFake',
-];
-
-const SESSION_COLUMNS = [
-  utcColumn('loginAt', 'Login'),
-  utcColumn('logoutAt', 'Logout'),
-  { key: 'ip', title: 'IP' },
-  { key: 'cid', title: 'CID' },
-  { key: 'platform', title: 'Platform' },
-  { key: 'accessPointName', title: 'Access Point' },
-  { key: 'pingMs', title: 'Ping (ms)' },
-  { key: 'isSessionValid', title: 'Session valid', format: yesNo },
-  { key: 'isCidValid', title: 'CID valid', format: yesNo },
-  { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
-  {
-    key: 'geo',
-    title: 'Warnings',
-    format: geo => geo ? WARNING_FLAGS.filter(flag => flag.isSet(geo)).map(flag => flag.label).join(', ') : '',
-  },
-];
 
 const mappingColumns = (key, title) => [
   { key, title },
@@ -80,41 +39,31 @@ function updateQuery(paging) {
   });
 }
 
-function renderMetadata(metadata) {
+function renderMetadata(result) {
+  const { metadata } = result.report;
+  if (result.accountNote === null) {
+    renderSummary(document.getElementById('metadata'), [
+      ['Login', metadata.login],
+      ['Account ID', metadata.accountId],
+      ['Account Server ID', metadata.accountServerId],
+      ['Data start (UTC)', formatUtc(metadata.firstDataTime)],
+      ['Data end (UTC)', formatUtc(metadata.lastDataTime)],
+    ]);
+    return;
+  }
   renderSummary(document.getElementById('metadata'), [
     ['Login', metadata.login],
-    ['Account ID', metadata.accountId],
-    ['Account Server ID', metadata.accountServerId],
-    ['Data start (UTC)', formatUtc(metadata.firstDataTime)],
-    ['Data end (UTC)', formatUtc(metadata.lastDataTime)],
+    ['Range', 'All recorded sessions'],
+    ['Evaluator account', result.accountNote],
   ]);
 }
 
-function renderGeoDetails(session) {
-  const container = document.getElementById('geo-details');
-  const title = document.createElement('h3');
-  title.textContent = `Location details — login at ${formatUtc(session.loginAt)} from ${session.ip}`;
-
-  if (!session.geo) {
-    const empty = document.createElement('p');
-    empty.textContent = 'No location information available';
-    container.replaceChildren(title, empty);
-  } else {
-    const rows = [
-      ...GEO_FIELDS.map(([key, label]) => ({ label, value: session.geo[key] })),
-      ...GEO_FLAGS.map(key => ({ label: flagLabel(key), value: yesNo(session.geo[key]) })),
-    ];
-    const table = document.createElement('div');
-    renderTable(table, [{ key: 'label', title: 'Field' }, { key: 'value', title: 'Value' }], rows);
-    container.replaceChildren(title, table);
-  }
-  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function renderSessions(report) {
-  const paging = report.paging?.normalPagingResponse;
-  renderMetadata(report.metadata);
-  renderTable(document.getElementById('sessions'), SESSION_COLUMNS, report.items, renderGeoDetails);
+function renderSessions(result) {
+  const paging = result.report.paging?.normalPagingResponse;
+  renderMetadata(result);
+  renderTable(
+    document.getElementById('sessions'), SESSION_COLUMNS, result.report.items,
+    session => renderGeoDetails(document.getElementById('geo-details'), session));
   renderPager(document.getElementById('sessions-pager'), paging, loadSessionsPage);
   document.getElementById('geo-details').replaceChildren();
   updateQuery(paging);
@@ -141,8 +90,17 @@ function renderMapping(containerId, tab, label, key, outcome) {
   }
 }
 
-const sessionsRequest = (page, pageSize) =>
-  apiGet(`reports/logins/${currentLogin}/complete`, { currentPage: page, pageSize });
+// Reads a page of sessions in the account's data range; without a usable range, of all recorded sessions.
+// accountNote is null when the account range was used, otherwise why it could not be.
+async function sessionsRequest(page, pageSize) {
+  const params = { currentPage: page, pageSize };
+  try {
+    return { report: await apiGet(`reports/logins/${currentLogin}/complete`, params), accountNote: null };
+  } catch (error) {
+    if (!(error instanceof ApiError) || !ACCOUNT_REASONS.has(error.reason)) throw error;
+    return { report: await apiGet(`reports/logins/${currentLogin}/sessions`, params), accountNote: error.message };
+  }
+}
 
 async function loadReport(login, page, pageSize) {
   currentLogin = login;
