@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>کپی‌ترید و هج — پنل تخلفات</title>
+  <title>Copy trade &amp; hedge — Violation Panel</title>
   <link rel="stylesheet" href="/app.css">
   <script src="/theme.js"></script>
 </head>
@@ -11,33 +11,33 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <form class="filters" id="filters">
-      <label>نوع گزارش
+      <label>Report type
         <select name="kind">
-          <option value="copy-trade">کپی‌ترید</option>
-          <option value="hedge">هج</option>
+          <option value="copy-trade">Copy trade</option>
+          <option value="hedge">Hedge</option>
         </select>
       </label>
-      <label>لاگین <input name="login" type="number" min="1" step="1" required class="ltr"></label>
-      <label>ثانیه قبل <input name="secondsBefore" type="number" min="0" max="120" step="1" required class="ltr"></label>
-      <label>ثانیه بعد <input name="secondsAfter" type="number" min="0" max="120" step="1" required class="ltr"></label>
-      <label>حداقل درصد اشتراک <input name="minPercentShare" type="number" min="0" max="100" step="0.01" class="ltr"></label>
-      <label>حداقل تعداد اشتراک <input name="minCountShare" type="number" min="1" step="1" class="ltr"></label>
-      <label id="volume-tolerance" hidden>درصد تحمل حجم <input name="volumeTolerancePercent" type="number" min="0" max="100" step="0.01" class="ltr"></label>
-      <label>مرتب‌سازی
+      <label>Login <input name="login" type="number" min="1" step="1" required></label>
+      <label>Seconds before <input name="secondsBefore" type="number" min="0" max="120" step="1" required></label>
+      <label>Seconds after <input name="secondsAfter" type="number" min="0" max="120" step="1" required></label>
+      <label>Min share (%) <input name="minPercentShare" type="number" min="0" max="100" step="0.01"></label>
+      <label>Min share (count) <input name="minCountShare" type="number" min="1" step="1"></label>
+      <label id="volume-tolerance" hidden>Volume tolerance (%) <input name="volumeTolerancePercent" type="number" min="0" max="100" step="0.01"></label>
+      <label>Sort by
         <select name="sortBy">
-          <option value="CountShare">تعداد اشتراک</option>
-          <option value="PercentShare">درصد اشتراک</option>
-          <option value="ProfitLoss">سود/زیان</option>
-          <option value="RelatedLogin">لاگین مرتبط</option>
+          <option value="CountShare">Share count</option>
+          <option value="PercentShare">Share (%)</option>
+          <option value="ProfitLoss">Profit/loss</option>
+          <option value="RelatedLogin">Related login</option>
         </select>
       </label>
-      <label>جهت
+      <label>Direction
         <select name="sortDirection">
-          <option value="Desc">نزولی</option>
-          <option value="Asc">صعودی</option>
+          <option value="Desc">Descending</option>
+          <option value="Asc">Ascending</option>
         </select>
       </label>
-      <button type="submit">نمایش</button>
+      <button type="submit">Search</button>
     </form>
     <p class="message" id="message"></p>
 
@@ -47,9 +47,9 @@
       <div id="list"></div>
       <div id="list-pager"></div>
       <ul class="help">
-        <li>تعداد اشتراک: تعداد پوزیشن‌های این لاگین که لاگین مرتبط با آن جفت شده است (هر پوزیشن حداکثر یک جفت).</li>
-        <li>درصد اشتراک: تعداد اشتراک تقسیم بر کل پوزیشن‌های این لاگین.</li>
-        <li>برای دیدن جفت پوزیشن‌ها روی هر سطر کلیک کنید.</li>
+        <li><strong>Share count:</strong> the number of this login's positions matched with a position of the related login (each position is matched at most once).</li>
+        <li><strong>Share (%):</strong> the share count divided by all positions of this login.</li>
+        <li>Click a row to see the matched position pairs.</li>
       </ul>
     </section>
 
@@ -57,21 +57,21 @@
       <div class="section-head"><h2 id="positions-title"></h2></div>
       <div class="summary" id="positions-metadata"></div>
       <form class="filters" id="positions-filters">
-        <label>مرتب‌سازی
+        <label>Sort by
           <select name="sortBy">
-            <option value="MainOpenTime">زمان باز شدن اصلی</option>
-            <option value="OffsetSeconds">اختلاف زمانی</option>
-            <option value="MainProfitLoss">سود/زیان اصلی</option>
-            <option value="RelatedProfitLoss">سود/زیان مرتبط</option>
+            <option value="MainOpenTime">Main open time</option>
+            <option value="OffsetSeconds">Time offset</option>
+            <option value="MainProfitLoss">Main profit/loss</option>
+            <option value="RelatedProfitLoss">Related profit/loss</option>
           </select>
         </label>
-        <label>جهت
+        <label>Direction
           <select name="sortDirection">
-            <option value="Asc">صعودی</option>
-            <option value="Desc">نزولی</option>
+            <option value="Asc">Ascending</option>
+            <option value="Desc">Descending</option>
           </select>
         </label>
-        <button type="submit">اعمال</button>
+        <button type="submit">Apply</button>
       </form>
       <p class="message" id="positions-message"></p>
       <div id="positions"></div>

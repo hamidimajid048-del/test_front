@@ -74,13 +74,12 @@ html { background: var(--bg); }
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: Vazirmatn, "Segoe UI", Tahoma, system-ui, sans-serif;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   color: var(--text);
   background: var(--bg-accent), var(--bg);
   background-attachment: fixed;
-  direction: rtl;
   transition: background-color .2s ease, color .2s ease;
 }
 
@@ -91,8 +90,6 @@ main { max-width: 1600px; margin: 0 auto; padding: 24px; }
 
 h2 { color: var(--text); }
 
-/* Numbers, IPs and timestamps read left to right inside the RTL layout. */
-.ltr { direction: ltr; unicode-bidi: isolate; }
 
 /* ---------- Top navigation ---------- */
 
@@ -303,7 +300,6 @@ section form.filters { padding: 0; border: 0; box-shadow: none; background: none
   font-size: 13px;
 }
 .hint:empty { display: none; }
-.hint .ltr { color: var(--text); font-weight: 600; }
 .hint button { height: 30px; padding: 0 12px; font-size: 12.5px; }
 
 /* ---------- Tables ---------- */
@@ -315,7 +311,7 @@ section form.filters { padding: 0; border: 0; box-shadow: none; background: none
   border-radius: 12px;
 }
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 10px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+th, td { padding: 10px 14px; text-align: left; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
 th {
   color: var(--text-muted);
   background: var(--surface-2);
@@ -328,8 +324,17 @@ tbody tr:nth-child(even) { background: var(--row-stripe); }
 tbody tr:last-child td { border-bottom: 0; }
 tr.clickable { cursor: pointer; transition: background-color .1s ease; }
 tr.clickable:hover { background: var(--row-hover); }
-td.ltr { text-align: left; font-variant-numeric: tabular-nums; }
-th.align-ltr { text-align: left; }
+.actions { display: flex; gap: 6px; }
+.action-link {
+  padding: 3px 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.action-link:hover { color: var(--primary); background: var(--primary-soft); border-color: transparent; text-decoration: none; }
 td.empty { padding: 32px; text-align: center; color: var(--text-faint); }
 
 /* ---------- Paging and tabs ---------- */
@@ -394,7 +399,7 @@ td.empty { padding: 32px; text-align: center; color: var(--text-faint); }
 /* ---------- Login ---------- */
 
 .login-page { display: grid; place-items: center; padding: 24px; }
-.login-page .theme-toggle { position: fixed; top: 16px; left: 16px; }
+.login-page .theme-toggle { position: fixed; top: 16px; right: 16px; }
 .login-box {
   width: 100%;
   max-width: 380px;

@@ -2,14 +2,14 @@
 
 const API_PREFIX = '/api/v1/';
 const SUCCESS_STATUS_CODE = 1;
-const UNAVAILABLE_MESSAGE = 'سرویس در دسترس نیست';
-const INVALID_INPUT_MESSAGE = 'ورودی‌ها را بررسی کنید';
+const UNAVAILABLE_MESSAGE = 'Service unavailable';
+const INVALID_INPUT_MESSAGE = 'Check the highlighted inputs';
 const PAGE_SIZES = [50, 100, 250, 500];
 
 const MENU_ITEMS = [
-  { href: '/logins.html', title: 'تاریخچهٔ لاگین' },
-  { href: '/similarity.html', title: 'شباهت IP/CID' },
-  { href: '/copy-trade.html', title: 'کپی‌ترید و هج' },
+  { href: '/logins.html', title: 'Login history' },
+  { href: '/similarity.html', title: 'IP/CID similarity' },
+  { href: '/copy-trade.html', title: 'Copy trade & hedge' },
 ];
 
 class ApiError extends Error {
@@ -76,7 +76,7 @@ function renderMenu() {
   const mark = document.createElement('span');
   mark.className = 'brand-mark';
   mark.innerHTML = BRAND_ICON;
-  brand.append(mark, 'پنل تخلفات');
+  brand.append(mark, 'Violation Panel');
 
   const links = MENU_ITEMS.map(item => {
     const link = document.createElement('a');
@@ -93,7 +93,7 @@ function renderMenu() {
   const button = document.createElement('button');
   button.type = 'submit';
   button.className = 'logout';
-  button.textContent = 'خروج';
+  button.textContent = 'Sign out';
   logout.append(button);
 
   const actions = document.createElement('div');
@@ -112,7 +112,7 @@ function formatUtc(value) {
 
 // Column definition for a UTC timestamp field.
 function utcColumn(key, title) {
-  return { key, title: `${title} (UTC)`, format: formatUtc, ltr: true };
+  return { key, title: `${title} (UTC)`, format: formatUtc };
 }
 
 // Renders "label: value" pairs, e.g. a report's metadata above its table.
@@ -120,7 +120,6 @@ function renderSummary(container, items) {
   container.replaceChildren(...items.map(([label, value]) => {
     const item = document.createElement('span');
     const strong = document.createElement('strong');
-    strong.className = 'ltr';
     strong.textContent = value ?? '—';
     item.append(`${label}: `, strong);
     return item;
@@ -136,7 +135,17 @@ function loginLink(login) {
   return link;
 }
 
-// columns: [{ key, title, format?(value, row) => string | Node, ltr?, group? }]
+// A button-like link for a row's "Actions" cell; the click does not also trigger the row's own click handler.
+function actionLink(text, href) {
+  const link = document.createElement('a');
+  link.className = 'action-link';
+  link.href = href;
+  link.textContent = text;
+  link.addEventListener('click', event => event.stopPropagation());
+  return link;
+}
+
+// columns: [{ key, title, format?(value, row) => string | Node, group? }]
 // Consecutive columns with the same group get a shared header cell above their titles.
 function renderTable(container, columns, rows, onRowClick) {
   const table = document.createElement('table');
@@ -159,8 +168,6 @@ function renderTable(container, columns, rows, onRowClick) {
   for (const column of columns) {
     const th = document.createElement('th');
     th.textContent = column.title;
-    // Left-to-right values (numbers, IPs, times) are left aligned, so their header is too.
-    if (column.ltr) th.classList.add('align-ltr');
     headRow.append(th);
   }
 
@@ -169,7 +176,7 @@ function renderTable(container, columns, rows, onRowClick) {
     const cell = body.insertRow().insertCell();
     cell.colSpan = columns.length;
     cell.className = 'empty';
-    cell.textContent = 'داده‌ای یافت نشد';
+    cell.textContent = 'No data found';
   }
   for (const row of rows ?? []) {
     const tr = body.insertRow();
@@ -179,7 +186,6 @@ function renderTable(container, columns, rows, onRowClick) {
     }
     for (const column of columns) {
       const td = tr.insertCell();
-      if (column.ltr) td.classList.add('ltr');
       const value = column.format ? column.format(row[column.key], row) : row[column.key];
       if (value instanceof Node) td.append(value);
       else td.textContent = value ?? '';
@@ -200,21 +206,21 @@ function renderPager(container, paging, onPage) {
 
   const previous = document.createElement('button');
   previous.type = 'button';
-  previous.textContent = 'قبلی';
+  previous.textContent = 'Previous';
   previous.disabled = currentPage <= 1;
   previous.addEventListener('click', () => onPage(currentPage - 1, pageSize));
 
   const next = document.createElement('button');
   next.type = 'button';
-  next.textContent = 'بعدی';
+  next.textContent = 'Next';
   next.disabled = currentPage >= totalPages;
   next.addEventListener('click', () => onPage(currentPage + 1, pageSize));
 
   const label = document.createElement('span');
-  label.textContent = `صفحهٔ ${currentPage} از ${totalPages}`;
+  label.textContent = `Page ${currentPage} of ${totalPages}`;
 
   const size = document.createElement('select');
-  for (const option of new Set([...PAGE_SIZES, pageSize])) size.add(new Option(`${option} ردیف`, option));
+  for (const option of new Set([...PAGE_SIZES, pageSize])) size.add(new Option(`${option} rows`, option));
   size.value = pageSize;
   size.addEventListener('change', () => onPage(1, Number(size.value)));
 
@@ -275,7 +281,7 @@ function showError(form, messageElement, error) {
 async function withLoading(form, messageElement, load) {
   const submit = form.querySelector('button[type="submit"]');
   clearMessages(form, messageElement);
-  messageElement.textContent = 'در حال بارگذاری...';
+  messageElement.textContent = 'Loading...';
   if (submit) submit.disabled = true;
   try {
     await load();

@@ -9,16 +9,14 @@ const DEFAULT_PAGE_SIZE = 100;
 const POSITIONS_QUERY_PREFIX = 'p_';
 
 const KINDS = {
-  'copy-trade': { title: 'کپی‌ترید', hasVolumeTolerance: false },
-  hedge: { title: 'هج', hasVolumeTolerance: true },
+  'copy-trade': { title: 'Copy trade', hasVolumeTolerance: false },
+  hedge: { title: 'Hedge', hasVolumeTolerance: true },
 };
 
 const WINDOW_KEYS = ['secondsBefore', 'secondsAfter', 'volumeTolerancePercent'];
 const LIST_KEYS = [...WINDOW_KEYS, 'minPercentShare', 'minCountShare', 'sortBy', 'sortDirection'];
 
-const DIRECTION_LABELS = { Buy: 'خرید', Sell: 'فروش' };
-const direction = value => DIRECTION_LABELS[value] ?? value;
-const shareLabels = row => [row.hasIpShare && 'IP مشترک', row.hasCidShare && 'CID مشترک'].filter(Boolean).join('، ');
+const shareLabels = row => [row.hasIpShare && 'Shared IP', row.hasCidShare && 'Shared CID'].filter(Boolean).join(', ');
 
 // Inputs of the last list search; the positions reuse them so they always match the list shown.
 let search = null;
@@ -37,11 +35,11 @@ function showVolumeTolerance() {
 // Checks the rules the service would reject, so the user gets a Persian message before any request.
 function validateInputs(values) {
   if (!values.minPercentShare && !values.minCountShare) {
-    const hint = ['یکی از دو حداقل اشتراک را پر کنید'];
+    const hint = ['Fill in at least one minimum share'];
     throw new ApiError(translateStatus({ description: 'MinimumShareRequired' }), { minPercentShare: hint, minCountShare: hint });
   }
   if (KINDS[values.kind]?.hasVolumeTolerance && values.volumeTolerancePercent === undefined) {
-    throw new ApiError('درصد تحمل حجم را وارد کنید', { volumeTolerancePercent: ['برای هج اجباری است؛ ۰ یعنی حجم برابر'] });
+    throw new ApiError('Enter the volume tolerance', { volumeTolerancePercent: ['Required for hedge; 0 means equal volume'] });
   }
 }
 
@@ -55,35 +53,35 @@ function writeState() {
 }
 
 const LIST_COLUMNS = [
-  { key: 'relatedLogin', title: 'لاگین مرتبط', format: loginLink, ltr: true },
-  { key: 'countShare', title: 'تعداد اشتراک', ltr: true },
-  { key: 'percentShare', title: 'درصد اشتراک', format: value => `${value}%`, ltr: true },
-  { key: 'profitLoss', title: 'سود/زیان', ltr: true },
-  { key: 'hasIpShare', title: 'شواهد مشترک', format: (_, row) => shareLabels(row) },
+  { key: 'relatedLogin', title: 'Related login', format: loginLink },
+  { key: 'countShare', title: 'Share count' },
+  { key: 'percentShare', title: 'Share (%)', format: value => `${value}%` },
+  { key: 'profitLoss', title: 'Profit/loss' },
+  { key: 'hasIpShare', title: 'Shared evidence', format: (_, row) => shareLabels(row) },
 ];
 
 const POSITION_COLUMNS = [
-  { key: 'mainPositionTicket', title: 'تیکت', group: 'اصلی', ltr: true },
-  { ...utcColumn('mainOpenTimeUtc', 'زمان باز شدن'), group: 'اصلی' },
-  { key: 'symbol', title: 'نماد', group: 'اصلی', ltr: true },
-  { key: 'mainDirection', title: 'جهت', group: 'اصلی', format: direction },
-  { key: 'mainVolume', title: 'حجم', group: 'اصلی', ltr: true },
-  { key: 'mainProfitLoss', title: 'سود/زیان', group: 'اصلی', ltr: true },
-  { key: 'relatedPositionTicket', title: 'تیکت', group: 'مرتبط', ltr: true },
-  { ...utcColumn('relatedOpenTimeUtc', 'زمان باز شدن'), group: 'مرتبط' },
-  { key: 'relatedDirection', title: 'جهت', group: 'مرتبط', format: direction },
-  { key: 'relatedVolume', title: 'حجم', group: 'مرتبط', ltr: true },
-  { key: 'relatedProfitLoss', title: 'سود/زیان', group: 'مرتبط', ltr: true },
-  { key: 'offsetSeconds', title: 'اختلاف (ثانیه)', ltr: true },
+  { key: 'mainPositionTicket', title: 'Ticket', group: 'Main' },
+  { ...utcColumn('mainOpenTimeUtc', 'Open time'), group: 'Main' },
+  { key: 'symbol', title: 'Symbol', group: 'Main' },
+  { key: 'mainDirection', title: 'Direction', group: 'Main' },
+  { key: 'mainVolume', title: 'Volume', group: 'Main' },
+  { key: 'mainProfitLoss', title: 'Profit/loss', group: 'Main' },
+  { key: 'relatedPositionTicket', title: 'Ticket', group: 'Related' },
+  { ...utcColumn('relatedOpenTimeUtc', 'Open time'), group: 'Related' },
+  { key: 'relatedDirection', title: 'Direction', group: 'Related' },
+  { key: 'relatedVolume', title: 'Volume', group: 'Related' },
+  { key: 'relatedProfitLoss', title: 'Profit/loss', group: 'Related' },
+  { key: 'offsetSeconds', title: 'Offset (s)' },
 ];
 
 function windowItems(metadata) {
   const items = [
-    ['بازه (UTC)', `${formatUtc(metadata.fromUtc)} — ${formatUtc(metadata.toUtc)}`],
-    ['ثانیه قبل', metadata.secondsBefore],
-    ['ثانیه بعد', metadata.secondsAfter],
+    ['Range (UTC)', `${formatUtc(metadata.fromUtc)} — ${formatUtc(metadata.toUtc)}`],
+    ['Seconds before', metadata.secondsBefore],
+    ['Seconds after', metadata.secondsAfter],
   ];
-  if (kind().hasVolumeTolerance) items.push(['درصد تحمل حجم', metadata.volumeTolerancePercent]);
+  if (kind().hasVolumeTolerance) items.push(['Volume tolerance (%)', metadata.volumeTolerancePercent]);
   return items;
 }
 
@@ -93,13 +91,13 @@ async function loadList() {
   const paging = report.paging?.normalPagingResponse;
   listPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? listPaging.pageSize };
 
-  document.getElementById('list-title').textContent = `${kind().title} — لاگین ${search.login}`;
+  document.getElementById('list-title').textContent = `${kind().title} — login ${search.login}`;
   renderSummary(document.getElementById('list-metadata'), [
-    ['لاگین', report.metadata.login],
+    ['Login', report.metadata.login],
     ['Account ID', report.metadata.accountId],
     ...windowItems(report.metadata),
-    ['تعداد پوزیشن', report.metadata.positionCount],
-    ['سود/زیان', report.metadata.profitLoss],
+    ['Positions', report.metadata.positionCount],
+    ['Profit/loss', report.metadata.profitLoss],
   ]);
   renderTable(document.getElementById('list'), LIST_COLUMNS, report.items, row => openPositions(row.relatedLogin));
   renderPager(document.getElementById('list-pager'), paging, (page, pageSize) => {
@@ -123,8 +121,8 @@ async function loadPositions() {
   positionsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? positionsPaging.pageSize };
 
   renderSummary(document.getElementById('positions-metadata'), [
-    ['لاگین مرتبط', report.metadata.relatedLogin],
-    ['تعداد جفت', report.metadata.pairCount],
+    ['Related login', report.metadata.relatedLogin],
+    ['Pairs', report.metadata.pairCount],
     ...windowItems(report.metadata),
   ]);
   renderTable(document.getElementById('positions'), POSITION_COLUMNS, report.items);
@@ -137,7 +135,7 @@ async function loadPositions() {
 
 function showPositionsSection() {
   document.getElementById('positions-title').textContent =
-    `جفت پوزیشن‌ها (${kind().title}): ${search.login} و ${relatedLogin}`;
+    `Matched position pairs (${kind().title}): ${search.login} and ${relatedLogin}`;
   const section = document.getElementById('positions-section');
   section.hidden = false;
   return section;

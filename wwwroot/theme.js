@@ -41,7 +41,7 @@ const THEME_ICONS = {
 function updateThemeToggle(button) {
   const dark = document.documentElement.dataset.theme === 'dark';
   button.innerHTML = dark ? THEME_ICONS.sun : THEME_ICONS.moon;
-  const label = dark ? 'تم روشن' : 'تم تیره';
+  const label = dark ? 'Switch to light theme' : 'Switch to dark theme';
   button.title = label;
   button.setAttribute('aria-label', label);
 }

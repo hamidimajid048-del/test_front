@@ -7,7 +7,13 @@ const DEFAULT_PAGE_SIZE = 100;
 let currentLogin = null;
 let currentTab = 'sessions';
 
-const yesNo = value => value === true ? 'بله' : value === false ? 'خیر' : '—';
+const yesNo = value => value === true ? 'Yes' : value === false ? 'No' : '—';
+
+// "isHttpProxy" -> "Http proxy"
+const flagLabel = key => {
+  const words = key.replace(/^is/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
 
 // Short warning labels shown in the sessions table for risky geo flags.
 const WARNING_FLAGS = [
@@ -20,9 +26,9 @@ const WARNING_FLAGS = [
 ];
 
 const GEO_FIELDS = [
-  ['continent', 'قاره'], ['country', 'کشور'], ['city', 'شهر'], ['region', 'منطقه'], ['province', 'استان'],
-  ['latitude', 'عرض جغرافیایی'], ['longitude', 'طول جغرافیایی'], ['asn', 'ASN'],
-  ['asnOrganization', 'سازمان ASN'], ['isp', 'ISP'], ['ispOrganization', 'سازمان ISP'], ['detailsFlags', 'DetailsFlags'],
+  ['continent', 'Continent'], ['country', 'Country'], ['city', 'City'], ['region', 'Region'], ['province', 'Province'],
+  ['latitude', 'Latitude'], ['longitude', 'Longitude'], ['asn', 'ASN'],
+  ['asnOrganization', 'ASN organization'], ['isp', 'ISP'], ['ispOrganization', 'ISP organization'], ['detailsFlags', 'Details flags'],
 ];
 
 const GEO_FLAGS = [
@@ -31,28 +37,28 @@ const GEO_FLAGS = [
 ];
 
 const SESSION_COLUMNS = [
-  utcColumn('loginAt', 'ورود'),
-  utcColumn('logoutAt', 'خروج'),
-  { key: 'ip', title: 'IP', ltr: true },
-  { key: 'cid', title: 'CID', ltr: true },
-  { key: 'platform', title: 'پلتفرم' },
+  utcColumn('loginAt', 'Login'),
+  utcColumn('logoutAt', 'Logout'),
+  { key: 'ip', title: 'IP' },
+  { key: 'cid', title: 'CID' },
+  { key: 'platform', title: 'Platform' },
   { key: 'accessPointName', title: 'Access Point' },
-  { key: 'pingMs', title: 'Ping (ms)', ltr: true },
-  { key: 'isSessionValid', title: 'جلسه معتبر', format: yesNo },
-  { key: 'isCidValid', title: 'CID معتبر', format: yesNo },
-  { key: 'geo', title: 'کشور / شهر', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
+  { key: 'pingMs', title: 'Ping (ms)' },
+  { key: 'isSessionValid', title: 'Session valid', format: yesNo },
+  { key: 'isCidValid', title: 'CID valid', format: yesNo },
+  { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
   {
     key: 'geo',
-    title: 'هشدار',
-    format: geo => geo ? WARNING_FLAGS.filter(flag => flag.isSet(geo)).map(flag => flag.label).join('، ') : '',
+    title: 'Warnings',
+    format: geo => geo ? WARNING_FLAGS.filter(flag => flag.isSet(geo)).map(flag => flag.label).join(', ') : '',
   },
 ];
 
 const mappingColumns = (key, title) => [
-  { key, title, ltr: true },
-  utcColumn('firstSeen', 'اولین مشاهده'),
-  utcColumn('lastSeen', 'آخرین مشاهده'),
-  { key: 'sessionCount', title: 'تعداد جلسه', ltr: true },
+  { key, title },
+  utcColumn('firstSeen', 'First seen'),
+  utcColumn('lastSeen', 'Last seen'),
+  { key: 'sessionCount', title: 'Sessions' },
 ];
 
 function showTab(tab) {
@@ -76,30 +82,30 @@ function updateQuery(paging) {
 
 function renderMetadata(metadata) {
   renderSummary(document.getElementById('metadata'), [
-    ['لاگین', metadata.login],
+    ['Login', metadata.login],
     ['Account ID', metadata.accountId],
     ['Account Server ID', metadata.accountServerId],
-    ['شروع داده (UTC)', formatUtc(metadata.firstDataTime)],
-    ['پایان داده (UTC)', formatUtc(metadata.lastDataTime)],
+    ['Data start (UTC)', formatUtc(metadata.firstDataTime)],
+    ['Data end (UTC)', formatUtc(metadata.lastDataTime)],
   ]);
 }
 
 function renderGeoDetails(session) {
   const container = document.getElementById('geo-details');
   const title = document.createElement('h3');
-  title.textContent = `جزئیات موقعیت — ورود ${formatUtc(session.loginAt)} از ${session.ip}`;
+  title.textContent = `Location details — login at ${formatUtc(session.loginAt)} from ${session.ip}`;
 
   if (!session.geo) {
     const empty = document.createElement('p');
-    empty.textContent = 'اطلاعات موقعیت موجود نیست';
+    empty.textContent = 'No location information available';
     container.replaceChildren(title, empty);
   } else {
     const rows = [
       ...GEO_FIELDS.map(([key, label]) => ({ label, value: session.geo[key] })),
-      ...GEO_FLAGS.map(key => ({ label: key, value: yesNo(session.geo[key]) })),
+      ...GEO_FLAGS.map(key => ({ label: flagLabel(key), value: yesNo(session.geo[key]) })),
     ];
     const table = document.createElement('div');
-    renderTable(table, [{ key: 'label', title: 'فیلد' }, { key: 'value', title: 'مقدار', ltr: true }], rows);
+    renderTable(table, [{ key: 'label', title: 'Field' }, { key: 'value', title: 'Value' }], rows);
     container.replaceChildren(title, table);
   }
   container.scrollIntoView({ behavior: 'smooth', block: 'start' });

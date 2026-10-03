@@ -30,11 +30,11 @@ const fromDayParam = day => (day ? `${day}T00:00:00Z` : undefined);
 const toDayParam = day => (day ? `${day}T23:59:59.9999999Z` : undefined);
 
 function validateRange(values) {
-  const missing = 'بازهٔ زمانی ناقص است؛ «از» و «تا» را با هم پر کنید یا هر دو را خالی بگذارید';
-  if (values.fromUtc && !values.toUtc) throw new ApiError(missing, { toUtc: ['«تا» را پر کنید'] });
-  if (!values.fromUtc && values.toUtc) throw new ApiError(missing, { fromUtc: ['«از» را پر کنید'] });
+  const missing = 'The date range is incomplete: fill in both From and To, or leave both empty';
+  if (values.fromUtc && !values.toUtc) throw new ApiError(missing, { toUtc: ['Fill in To'] });
+  if (!values.fromUtc && values.toUtc) throw new ApiError(missing, { fromUtc: ['Fill in From'] });
   if (values.fromUtc && values.fromUtc > values.toUtc) {
-    throw new ApiError('«از» نباید بعد از «تا» باشد', { fromUtc: ['«از» بعد از «تا» است'] });
+    throw new ApiError('From must not be after To', { fromUtc: ['From is after To'] });
   }
 }
 
@@ -61,7 +61,7 @@ function syncRangeInputs() {
   const custom = form.elements.range.value === 'custom';
   for (const name of ['fromUtc', 'toUtc']) {
     form.elements[name].readOnly = !custom;
-    form.elements[name].title = custom ? '' : 'برای انتخاب روز، بازهٔ «دلخواه» را انتخاب کنید';
+    form.elements[name].title = custom ? '' : 'Select the "Custom" range to pick days';
   }
 }
 
@@ -91,25 +91,24 @@ async function showAccountRange() {
     hint.replaceChildren();
     return;
   }
-  hint.textContent = 'در حال دریافت بازهٔ داده‌های حساب...';
+  hint.textContent = 'Loading the account data range...';
   try {
     const { metadata } = await apiGet(`reports/logins/${login}/complete`, { pageSize: 1 });
     if (login !== accountRangeLogin) return;
     const useRange = document.createElement('button');
     useRange.type = 'button';
-    useRange.textContent = 'استفاده از این بازه';
+    useRange.textContent = 'Use this range';
     useRange.addEventListener('click', () => {
       form.elements.range.value = 'custom';
       syncRangeInputs();
       setRange(toDayValue(new Date(metadata.firstDataTime)), toDayValue(new Date(metadata.lastDataTime)));
     });
     const range = document.createElement('span');
-    range.className = 'ltr';
     range.textContent = `${toDayValue(new Date(metadata.firstDataTime))} — ${toDayValue(new Date(metadata.lastDataTime))}`;
-    hint.replaceChildren(`بازهٔ داده‌های حساب ${login} (UTC): `, range, useRange);
+    hint.replaceChildren(`Data range of account ${login} (UTC): `, range, useRange);
   } catch (error) {
     if (login !== accountRangeLogin) return;
-    hint.textContent = `بازهٔ داده‌های حساب: ${error.message || UNAVAILABLE_MESSAGE}`;
+    hint.textContent = `Account data range: ${error.message || UNAVAILABLE_MESSAGE}`;
   }
 }
 
@@ -152,30 +151,40 @@ function writeState() {
 function renderMetadata(metadata) {
   const range = metadata.fromUtc
     ? `${toDayValue(new Date(metadata.fromUtc))} — ${toDayValue(new Date(metadata.toUtc))}`
-    : 'همهٔ زمان‌ها';
-  renderSummary(document.getElementById('summary-metadata'), [['لاگین', metadata.login], ['بازه (UTC)', range]]);
+    : 'All time';
+  renderSummary(document.getElementById('summary-metadata'), [['Login', metadata.login], ['Range (UTC)', range]]);
 }
 
 const SUMMARY_COLUMNS = [
-  { key: 'relatedLogin', title: 'لاگین مرتبط', format: loginLink, ltr: true },
-  { key: 'type', title: 'نوع', format: type => TYPE_LABELS[type] ?? type },
-  { key: 'sharedValueCount', title: 'تعداد مقدار مشترک', ltr: true },
-  { key: 'effectiveRepeatCount', title: 'تکرار مؤثر', ltr: true },
-  { key: 'occurrenceDays', title: 'روز وقوع', ltr: true },
-  { key: 'coOccurrenceDays', title: 'روز هم‌زمان', ltr: true },
+  { key: 'relatedLogin', title: 'Related login', format: loginLink },
+  { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type },
+  { key: 'sharedValueCount', title: 'Shared values' },
+  { key: 'effectiveRepeatCount', title: 'Effective repeats' },
+  { key: 'occurrenceDays', title: 'Occurrence days' },
+  { key: 'coOccurrenceDays', title: 'Co-occurrence days' },
+  {
+    key: 'relatedLogin',
+    title: 'Actions',
+    format: login => {
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.append(actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`));
+      return actions;
+    },
+  },
 ];
 
 const DETAILS_COLUMNS = [
-  { key: 'value', title: 'مقدار', ltr: true },
-  { key: 'logCount', title: 'تعداد لاگ', ltr: true },
-  { key: 'relatedLogCount', title: 'تعداد لاگ مرتبط', ltr: true },
-  { key: 'effectiveRepeatCount', title: 'تکرار مؤثر', ltr: true },
-  utcColumn('firstSeenUtc', 'اولین مشاهده'),
-  utcColumn('lastSeenUtc', 'آخرین مشاهده'),
-  utcColumn('relatedFirstSeenUtc', 'اولین مشاهدهٔ مرتبط'),
-  utcColumn('relatedLastSeenUtc', 'آخرین مشاهدهٔ مرتبط'),
-  { key: 'occurrenceDays', title: 'روز وقوع', ltr: true },
-  { key: 'coOccurrenceDays', title: 'روز هم‌زمان', ltr: true },
+  { key: 'value', title: 'Value' },
+  { key: 'logCount', title: 'Logs' },
+  { key: 'relatedLogCount', title: 'Related logs' },
+  { key: 'effectiveRepeatCount', title: 'Effective repeats' },
+  utcColumn('firstSeenUtc', 'First seen'),
+  utcColumn('lastSeenUtc', 'Last seen'),
+  utcColumn('relatedFirstSeenUtc', 'Related first seen'),
+  utcColumn('relatedLastSeenUtc', 'Related last seen'),
+  { key: 'occurrenceDays', title: 'Occurrence days' },
+  { key: 'coOccurrenceDays', title: 'Co-occurrence days' },
 ];
 
 async function loadSummary() {
@@ -206,7 +215,7 @@ async function loadDetails() {
 
 function showDetailsSection() {
   document.getElementById('details-title').textContent =
-    `جزئیات: ${filters.login} و ${selected.relatedLogin} (${TYPE_LABELS[selected.type] ?? selected.type})`;
+    `Details: ${filters.login} and ${selected.relatedLogin} (${TYPE_LABELS[selected.type] ?? selected.type})`;
   const section = document.getElementById('details-section');
   section.hidden = false;
   return section;
@@ -238,7 +247,7 @@ function fileNameFrom(contentDisposition) {
 async function downloadExport(path, params, button, messageElement) {
   button.disabled = true;
   messageElement.className = 'message';
-  messageElement.textContent = 'در حال آماده‌سازی فایل...';
+  messageElement.textContent = 'Preparing file...';
   try {
     let response;
     try {

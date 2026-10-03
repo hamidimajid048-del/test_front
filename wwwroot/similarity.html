@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>شباهت IP/CID — پنل تخلفات</title>
+  <title>IP/CID similarity — Violation Panel</title>
   <link rel="stylesheet" href="/app.css">
   <script src="/theme.js"></script>
 </head>
@@ -11,62 +11,62 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <form class="filters" id="filters">
-      <label>لاگین <input name="login" type="number" min="1" step="1" required class="ltr"></label>
-      <label>نوع
+      <label>Login <input name="login" type="number" min="1" step="1" required></label>
+      <label>Type
         <select name="type">
-          <option value="">همه</option>
+          <option value="">All</option>
           <option value="Ip">IP</option>
           <option value="Cid">CID</option>
         </select>
       </label>
-      <label>بازهٔ زمانی
+      <label>Date range
         <select name="range">
-          <option value="">همهٔ زمان‌ها</option>
-          <option value="week">هفتهٔ گذشته</option>
-          <option value="month">ماه گذشته</option>
-          <option value="3months">سه ماه گذشته</option>
-          <option value="6months">شش ماه گذشته</option>
-          <option value="year">یک سال گذشته</option>
-          <option value="custom">دلخواه</option>
+          <option value="">All time</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
         </select>
       </label>
-      <label>از روز (UTC) <input name="fromUtc" type="date" class="ltr"></label>
-      <label>تا روز (UTC) <input name="toUtc" type="date" class="ltr"></label>
-      <label>کشور <input name="country" maxlength="200"></label>
-      <label>شهر <input name="city" maxlength="200"></label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <label>Country <input name="country" maxlength="200"></label>
+      <label>City <input name="city" maxlength="200"></label>
       <label>ISP <input name="isp" maxlength="200"></label>
-      <label>ASN <input name="asn" type="number" step="1" class="ltr"></label>
-      <label>نوع دستگاه <input name="deviceType" maxlength="200"></label>
-      <label>CID <input name="cid" maxlength="200" class="ltr"></label>
-      <label>لاگین مرتبط <input name="relatedLogin" type="number" min="1" step="1" class="ltr"></label>
-      <label>حداقل مقدار مشترک <input name="minSharedValueCount" type="number" min="0" step="1" class="ltr"></label>
-      <label>حداقل تکرار مؤثر <input name="minEffectiveRepeatCount" type="number" min="0" step="1" class="ltr"></label>
-      <label>حداقل روز وقوع <input name="minOccurrenceDays" type="number" min="0" step="1" class="ltr"></label>
-      <label>حداقل روز هم‌زمان <input name="minCoOccurrenceDays" type="number" min="0" step="1" class="ltr"></label>
-      <label>مرتب‌سازی
+      <label>ASN <input name="asn" type="number" step="1"></label>
+      <label>Device type <input name="deviceType" maxlength="200"></label>
+      <label>CID <input name="cid" maxlength="200"></label>
+      <label>Related login <input name="relatedLogin" type="number" min="1" step="1"></label>
+      <label>Min shared values <input name="minSharedValueCount" type="number" min="0" step="1"></label>
+      <label>Min effective repeats <input name="minEffectiveRepeatCount" type="number" min="0" step="1"></label>
+      <label>Min occurrence days <input name="minOccurrenceDays" type="number" min="0" step="1"></label>
+      <label>Min co-occurrence days <input name="minCoOccurrenceDays" type="number" min="0" step="1"></label>
+      <label>Sort by
         <select name="sortBy">
-          <option value="SharedValueCount">تعداد مقدار مشترک</option>
-          <option value="EffectiveRepeatCount">تکرار مؤثر</option>
-          <option value="OccurrenceDays">روز وقوع</option>
-          <option value="CoOccurrenceDays">روز هم‌زمان</option>
-          <option value="RelatedLogin">لاگین مرتبط</option>
-          <option value="Type">نوع</option>
+          <option value="SharedValueCount">Shared values</option>
+          <option value="EffectiveRepeatCount">Effective repeats</option>
+          <option value="OccurrenceDays">Occurrence days</option>
+          <option value="CoOccurrenceDays">Co-occurrence days</option>
+          <option value="RelatedLogin">Related login</option>
+          <option value="Type">Type</option>
         </select>
       </label>
-      <label>جهت
+      <label>Direction
         <select name="sortDirection">
-          <option value="Desc">نزولی</option>
-          <option value="Asc">صعودی</option>
+          <option value="Desc">Descending</option>
+          <option value="Asc">Ascending</option>
         </select>
       </label>
-      <button type="submit">نمایش</button>
+      <button type="submit">Search</button>
     </form>
     <p class="hint" id="account-range"></p>
     <p class="message" id="message"></p>
 
     <section id="summary-section" hidden>
       <div class="section-head">
-        <h2>خلاصه</h2>
+        <h2>Summary</h2>
         <button type="button" data-export="summary" data-format="Csv">CSV</button>
         <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
       </div>
@@ -75,46 +75,46 @@
       <div id="summary"></div>
       <div id="summary-pager"></div>
       <ul class="help">
-        <li><strong>تکرار مؤثر:</strong> جمع، روی همهٔ مقدارهای مشترک، از کمترین تعداد لاگ دو لاگین برای هر مقدار.</li>
-        <li><strong>روز وقوع:</strong> تعداد روزهای (UTC) متمایزی که دست‌کم یکی از دو لاگین یک مقدار مشترک را استفاده کرده است.</li>
-        <li><strong>روز هم‌زمان:</strong> تعداد روزهای (UTC) متمایزی که هر دو لاگین یک مقدار مشترک را استفاده کرده‌اند.</li>
-        <li>برای دیدن مقدارهای مشترک روی هر سطر کلیک کنید.</li>
+        <li><strong>Effective repeats:</strong> the sum, over all shared values, of the smaller log count of the two logins for each value.</li>
+        <li><strong>Occurrence days:</strong> the number of distinct UTC days on which at least one of the two logins used a shared value.</li>
+        <li><strong>Co-occurrence days:</strong> the number of distinct UTC days on which both logins used a shared value.</li>
+        <li>Click a row to see its shared values.</li>
       </ul>
     </section>
 
     <section id="details-section" hidden>
       <div class="section-head">
-        <h2 id="details-title">جزئیات</h2>
+        <h2 id="details-title">Details</h2>
         <button type="button" data-export="details" data-format="Csv">CSV</button>
         <button type="button" data-export="details" data-format="Xlsx">Excel</button>
       </div>
       <p class="message" id="details-export-message"></p>
       <form class="filters" id="details-filters">
-        <label>مقدار (IP یا CID) <input name="value" class="ltr"></label>
-        <label>حداقل لاگ <input name="minLogCount" type="number" min="0" step="1" class="ltr"></label>
-        <label>حداقل لاگ مرتبط <input name="minRelatedLogCount" type="number" min="0" step="1" class="ltr"></label>
-        <label>حداقل تکرار مؤثر <input name="minEffectiveRepeatCount" type="number" min="0" step="1" class="ltr"></label>
-        <label>مرتب‌سازی
+        <label>Value (IP or CID) <input name="value"></label>
+        <label>Min logs <input name="minLogCount" type="number" min="0" step="1"></label>
+        <label>Min related logs <input name="minRelatedLogCount" type="number" min="0" step="1"></label>
+        <label>Min effective repeats <input name="minEffectiveRepeatCount" type="number" min="0" step="1"></label>
+        <label>Sort by
           <select name="sortBy">
-            <option value="EffectiveRepeatCount">تکرار مؤثر</option>
-            <option value="Value">مقدار</option>
-            <option value="LogCount">تعداد لاگ</option>
-            <option value="RelatedLogCount">تعداد لاگ مرتبط</option>
-            <option value="FirstSeenUtc">اولین مشاهده</option>
-            <option value="LastSeenUtc">آخرین مشاهده</option>
-            <option value="RelatedFirstSeenUtc">اولین مشاهدهٔ مرتبط</option>
-            <option value="RelatedLastSeenUtc">آخرین مشاهدهٔ مرتبط</option>
-            <option value="OccurrenceDays">روز وقوع</option>
-            <option value="CoOccurrenceDays">روز هم‌زمان</option>
+            <option value="EffectiveRepeatCount">Effective repeats</option>
+            <option value="Value">Value</option>
+            <option value="LogCount">Log count</option>
+            <option value="RelatedLogCount">Related log count</option>
+            <option value="FirstSeenUtc">First seen</option>
+            <option value="LastSeenUtc">Last seen</option>
+            <option value="RelatedFirstSeenUtc">Related first seen</option>
+            <option value="RelatedLastSeenUtc">Related last seen</option>
+            <option value="OccurrenceDays">Occurrence days</option>
+            <option value="CoOccurrenceDays">Co-occurrence days</option>
           </select>
         </label>
-        <label>جهت
+        <label>Direction
           <select name="sortDirection">
-            <option value="Desc">نزولی</option>
-            <option value="Asc">صعودی</option>
+            <option value="Desc">Descending</option>
+            <option value="Asc">Ascending</option>
           </select>
         </label>
-        <button type="submit">اعمال</button>
+        <button type="submit">Apply</button>
       </form>
       <p class="message" id="details-message"></p>
       <div id="details"></div>

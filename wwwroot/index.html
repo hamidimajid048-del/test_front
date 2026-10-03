@@ -1,32 +1,32 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>پنل تخلفات</title>
+  <title>Violation Panel</title>
   <link rel="stylesheet" href="/app.css">
   <script src="/theme.js"></script>
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
   <main>
-    <h1 class="page-title">گزارش‌های تخلفات</h1>
-    <p class="page-subtitle">یکی از گزارش‌ها را انتخاب کنید.</p>
+    <h1 class="page-title">Violation reports</h1>
+    <p class="page-subtitle">Choose a report.</p>
     <div class="cards">
       <a class="card" href="/logins.html">
-        <h3>تاریخچهٔ لاگین</h3>
-        <p>جلسات ورود یک لاگین با IP، CID، موقعیت و هشدارهای VPN و Proxy.</p>
+        <h3>Login history</h3>
+        <p>Sessions of a login with IP, CID, location and VPN/proxy warnings.</p>
       </a>
       <a class="card" href="/similarity.html">
-        <h3>شباهت IP/CID</h3>
-        <p>لاگین‌هایی که IP یا CID مشترک دارند، همراه با جزئیات و خروجی Excel و CSV.</p>
+        <h3>IP/CID similarity</h3>
+        <p>Logins that share an IP or CID, with details and Excel/CSV export.</p>
       </a>
       <a class="card" href="/copy-trade.html">
-        <h3>کپی‌ترید و هج</h3>
-        <p>حساب‌هایی که هم‌زمان با این لاگین، هم‌جهت یا خلاف‌جهت معامله باز کرده‌اند.</p>
+        <h3>Copy trade &amp; hedge</h3>
+        <p>Accounts that opened the same or the opposite trades around this login's openings.</p>
       </a>
     </div>
-    <span class="status" id="health">در حال بررسی وضعیت سرویس...</span>
+    <span class="status" id="health">Checking service status...</span>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
@@ -37,8 +37,8 @@
     fetch('/api/v1/health')
       .then(response => response.ok ? response.json() : Promise.reject())
       .then(body => body.status === 'Healthy' ? Promise.resolve() : Promise.reject())
-      .then(() => { health.textContent = 'سرویس Violation در دسترس است'; health.classList.add('ok'); })
-      .catch(() => { health.textContent = 'سرویس Violation در دسترس نیست'; health.classList.add('down'); });
+      .then(() => { health.textContent = 'Violation service is available'; health.classList.add('ok'); })
+      .catch(() => { health.textContent = 'Violation service is unavailable'; health.classList.add('down'); });
   </script>
 </body>
 </html>
