@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>پنل تخلفات</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <p>یکی از گزارش‌ها را از منوی بالا انتخاب کنید.</p>
+    <p>وضعیت سرویس Violation: <strong id="health">در حال بررسی...</strong></p>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script>
+    renderMenu();
+    // The health endpoint returns { status: "Healthy" } rather than the usual ResponseBase envelope.
+    fetch('/api/v1/health')
+      .then(response => response.ok ? response.json() : Promise.reject())
+      .then(body => body.status === 'Healthy' ? 'در دسترس' : Promise.reject())
+      .catch(() => 'در دسترس نیست')
+      .then(text => { document.getElementById('health').textContent = text; });
+  </script>
+</body>
+</html>

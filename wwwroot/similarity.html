@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>شباهت IP/CID — پنل تخلفات</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>لاگین <input name="login" type="number" min="1" step="1" required class="ltr"></label>
+      <label>نوع
+        <select name="type">
+          <option value="">همه</option>
+          <option value="Ip">IP</option>
+          <option value="Cid">CID</option>
+        </select>
+      </label>
+      <label>بازهٔ زمانی
+        <select name="range">
+          <option value="">همهٔ زمان‌ها</option>
+          <option value="week">هفتهٔ گذشته</option>
+          <option value="month">ماه گذشته</option>
+          <option value="3months">سه ماه گذشته</option>
+          <option value="6months">شش ماه گذشته</option>
+          <option value="year">یک سال گذشته</option>
+          <option value="custom">دلخواه</option>
+        </select>
+      </label>
+      <label>از روز (UTC) <input name="fromUtc" type="date" class="ltr"></label>
+      <label>تا روز (UTC) <input name="toUtc" type="date" class="ltr"></label>
+      <label>کشور <input name="country" maxlength="200"></label>
+      <label>شهر <input name="city" maxlength="200"></label>
+      <label>ISP <input name="isp" maxlength="200"></label>
+      <label>ASN <input name="asn" type="number" step="1" class="ltr"></label>
+      <label>نوع دستگاه <input name="deviceType" maxlength="200"></label>
+      <label>CID <input name="cid" maxlength="200" class="ltr"></label>
+      <label>لاگین مرتبط <input name="relatedLogin" type="number" min="1" step="1" class="ltr"></label>
+      <label>حداقل مقدار مشترک <input name="minSharedValueCount" type="number" min="0" step="1" class="ltr"></label>
+      <label>حداقل تکرار مؤثر <input name="minEffectiveRepeatCount" type="number" min="0" step="1" class="ltr"></label>
+      <label>حداقل روز وقوع <input name="minOccurrenceDays" type="number" min="0" step="1" class="ltr"></label>
+      <label>حداقل روز هم‌زمان <input name="minCoOccurrenceDays" type="number" min="0" step="1" class="ltr"></label>
+      <label>مرتب‌سازی
+        <select name="sortBy">
+          <option value="SharedValueCount">تعداد مقدار مشترک</option>
+          <option value="EffectiveRepeatCount">تکرار مؤثر</option>
+          <option value="OccurrenceDays">روز وقوع</option>
+          <option value="CoOccurrenceDays">روز هم‌زمان</option>
+          <option value="RelatedLogin">لاگین مرتبط</option>
+          <option value="Type">نوع</option>
+        </select>
+      </label>
+      <label>جهت
+        <select name="sortDirection">
+          <option value="Desc">نزولی</option>
+          <option value="Asc">صعودی</option>
+        </select>
+      </label>
+      <button type="submit">نمایش</button>
+    </form>
+    <p class="hint" id="account-range"></p>
+    <p class="message" id="message"></p>
+
+    <section id="summary-section" hidden>
+      <div class="section-head">
+        <h2>خلاصه</h2>
+        <button type="button" data-export="summary" data-format="Csv">CSV</button>
+        <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
+      </div>
+      <p class="message" id="summary-export-message"></p>
+      <div class="summary" id="summary-metadata"></div>
+      <div id="summary"></div>
+      <div id="summary-pager"></div>
+      <ul class="help">
+        <li><strong>تکرار مؤثر:</strong> جمع، روی همهٔ مقدارهای مشترک، از کمترین تعداد لاگ دو لاگین برای هر مقدار.</li>
+        <li><strong>روز وقوع:</strong> تعداد روزهای (UTC) متمایزی که دست‌کم یکی از دو لاگین یک مقدار مشترک را استفاده کرده است.</li>
+        <li><strong>روز هم‌زمان:</strong> تعداد روزهای (UTC) متمایزی که هر دو لاگین یک مقدار مشترک را استفاده کرده‌اند.</li>
+        <li>برای دیدن مقدارهای مشترک روی هر سطر کلیک کنید.</li>
+      </ul>
+    </section>
+
+    <section id="details-section" hidden>
+      <div class="section-head">
+        <h2 id="details-title">جزئیات</h2>
+        <button type="button" data-export="details" data-format="Csv">CSV</button>
+        <button type="button" data-export="details" data-format="Xlsx">Excel</button>
+      </div>
+      <p class="message" id="details-export-message"></p>
+      <form class="filters" id="details-filters">
+        <label>مقدار (IP یا CID) <input name="value" class="ltr"></label>
+        <label>حداقل لاگ <input name="minLogCount" type="number" min="0" step="1" class="ltr"></label>
+        <label>حداقل لاگ مرتبط <input name="minRelatedLogCount" type="number" min="0" step="1" class="ltr"></label>
+        <label>حداقل تکرار مؤثر <input name="minEffectiveRepeatCount" type="number" min="0" step="1" class="ltr"></label>
+        <label>مرتب‌سازی
+          <select name="sortBy">
+            <option value="EffectiveRepeatCount">تکرار مؤثر</option>
+            <option value="Value">مقدار</option>
+            <option value="LogCount">تعداد لاگ</option>
+            <option value="RelatedLogCount">تعداد لاگ مرتبط</option>
+            <option value="FirstSeenUtc">اولین مشاهده</option>
+            <option value="LastSeenUtc">آخرین مشاهده</option>
+            <option value="RelatedFirstSeenUtc">اولین مشاهدهٔ مرتبط</option>
+            <option value="RelatedLastSeenUtc">آخرین مشاهدهٔ مرتبط</option>
+            <option value="OccurrenceDays">روز وقوع</option>
+            <option value="CoOccurrenceDays">روز هم‌زمان</option>
+          </select>
+        </label>
+        <label>جهت
+          <select name="sortDirection">
+            <option value="Desc">نزولی</option>
+            <option value="Asc">صعودی</option>
+          </select>
+        </label>
+        <button type="submit">اعمال</button>
+      </form>
+      <p class="message" id="details-message"></p>
+      <div id="details"></div>
+      <div id="details-pager"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/similarity.js"></script>
+</body>
+</html>
