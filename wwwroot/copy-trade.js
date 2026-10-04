@@ -34,7 +34,7 @@ let positionsValues = {};
 let positionsPaging = { currentPage: 1, pageSize: TREE_PAGE_SIZE };
 let activeTab = 'tree';
 // Open nodes and open pair comparisons survive page changes, sorting and filtering.
-const treeState = { expanded: new Set(), opened: new Set() };
+const treeState = { expanded: new Set(), opened: new Set(), window: { before: 0, after: 0 } };
 
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]));
 const kind = () => KINDS[search.kind] ?? KINDS['copy-trade'];
@@ -171,6 +171,7 @@ async function loadTree() {
     ['Related positions shown', report.metadata.childCount],
     ['Counted in the share', report.metadata.assignedCount],
   ]);
+  treeState.window = { before: Number(report.metadata.secondsBefore), after: Number(report.metadata.secondsAfter) };
   renderPositionsTree(document.getElementById('positions'), search.kind, report.items, treeState);
   renderPager(document.getElementById('positions-pager'), paging, (page, pageSize) => {
     positionsPaging = { currentPage: page, pageSize };

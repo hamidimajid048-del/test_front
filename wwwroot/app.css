@@ -509,3 +509,7 @@ table.tree tr[hidden] { display: none; }
 .lifeline-bar.compared { background: #a855f7; }
 .lifeline-bar.open { opacity: 0.55; background-image: repeating-linear-gradient(45deg, transparent 0 6px, rgba(255, 255, 255, 0.35) 6px 12px); }
 .lifeline-axis { display: flex; justify-content: space-between; margin-left: 68px; }
+.meter.proximity { width: 80px; }
+.meter.proximity i.near { background: var(--danger); }
+.meter.proximity i.mid { background: var(--warning); }
+.meter.proximity i.far { background: var(--text-faint); }

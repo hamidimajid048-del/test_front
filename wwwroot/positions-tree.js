@@ -365,6 +365,21 @@ function lifeline(main, related) {
   return wrap;
 }
 
+// How close the related opening is to the main one inside the window the user typed: full at 0 seconds, empty at the
+// edge of the window (seconds before for an earlier opening, seconds after for a later one).
+function proximityBar(offsetSeconds, window) {
+  const limit = offsetSeconds < 0 ? window.before : window.after;
+  const ratio = limit > 0 ? Math.max(0, 1 - Math.abs(offsetSeconds) / limit) : (offsetSeconds === 0 ? 1 : 0);
+  const bar = document.createElement('span');
+  bar.className = 'meter proximity';
+  bar.title = `${Math.round(ratio * 100)}% close (window: ${window.before}s before, ${window.after}s after)`;
+  const fill = document.createElement('i');
+  fill.className = ratio >= 0.66 ? 'near' : ratio >= 0.33 ? 'mid' : 'far';
+  fill.style.width = `${ratio * 100}%`;
+  bar.append(fill);
+  return bar;
+}
+
 // Draws the tree for one page of main positions. `expanded` (a Set of main tickets) keeps the open nodes across
 // redraws; `opened` (a Set of "main:related" keys) keeps the open pair comparisons.
 function renderPositionsTree(container, kindKey, nodes, state) {
@@ -397,7 +412,7 @@ function renderPositionsTree(container, kindKey, nodes, state) {
     cell(parent, stopsText(main.takeProfit));
     cell(parent, pnl(main.profitLoss));
     cell(parent, `${node.children.length} (${node.assignedCount} counted)`);
-    cell(parent, duration(node.closestOffsetSeconds));
+    cell(parent, inline(duration(node.closestOffsetSeconds), proximityBar(node.children[0].comparison.relatedMinusMainOpenSeconds, state.window)));
     cell(parent, severityBadge(node.maxSeverity));
 
     const childRows = [headerRow(CHILD_HEADERS, 'tree-child tree-child-head')];
@@ -411,7 +426,7 @@ function renderPositionsTree(container, kindKey, nodes, state) {
       cell(row, related.positionTicket);
       cell(row, formatUtc(related.openTimeUtc));
       cell(row, closedText(related));
-      cell(row, signedDuration(child.comparison.relatedMinusMainOpenSeconds));
+      cell(row, inline(signedDuration(child.comparison.relatedMinusMainOpenSeconds), proximityBar(child.comparison.relatedMinusMainOpenSeconds, state.window)));
       cell(row, directionBadge(related.direction));
       cell(row, related.volume);
       cell(row, price(related.openPrice));
