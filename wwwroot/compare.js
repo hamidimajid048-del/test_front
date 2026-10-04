@@ -462,6 +462,11 @@ function tradeLink(kind, label) {
     p_pageSize: String(DEFAULT_PAGE_SIZE),
   });
   if (kind === 'hedge') query.set('volumeTolerancePercent', '10');
+  if (context.fromDay && context.toDay) {
+    query.set('range', 'custom');
+    query.set('fromUtc', context.fromDay);
+    query.set('toUtc', context.toDay);
+  }
   return actionLink(label, `/copy-trade.html?${query}`);
 }
 

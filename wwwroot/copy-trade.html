@@ -23,6 +23,19 @@
       <label>Min share (%) <input name="minPercentShare" type="number" min="0" max="100" step="0.01"></label>
       <label>Min share (count) <input name="minCountShare" type="number" min="1" step="1"></label>
       <label id="volume-tolerance" hidden>Volume tolerance (%) <input name="volumeTolerancePercent" type="number" min="0" max="100" step="0.01"></label>
+      <label>Date range
+        <select name="range">
+          <option value="">Whole account history</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
       <label>Sort by
         <select name="sortBy">
           <option value="CountShare">Share count</option>
@@ -49,23 +62,55 @@
       <ul class="help">
         <li><strong>Share count:</strong> the number of this login's positions matched with a position of the related login (each position is matched at most once).</li>
         <li><strong>Share (%):</strong> the share count divided by all positions of this login.</li>
-        <li>Click a row to see the matched position pairs.</li>
+        <li><strong>Compare logins</strong> opens the sessions comparison of the two accounts (shared IPs and CIDs, near logins). <strong>Positions</strong> opens the position comparison below.</li>
       </ul>
     </section>
 
     <section id="positions-section" hidden>
-      <div class="section-head"><h2 id="positions-title"></h2></div>
+      <div class="section-head">
+        <h2 id="positions-title"></h2>
+        <div class="actions">
+          <a class="action-link" id="positions-profile" href="#">Related profile</a>
+          <a class="action-link" id="positions-compare" href="#">Compare logins</a>
+          <button type="button" data-export="pairs" data-format="csv">Pairs CSV</button>
+          <button type="button" data-export="pairs" data-format="xlsx">Pairs Excel</button>
+          <button type="button" data-export="stats" data-dataset="Overview" data-format="csv">Statistics CSV</button>
+        </div>
+      </div>
+      <p class="message" id="export-message"></p>
       <div class="summary" id="positions-metadata"></div>
+      <div class="risk" id="positions-risk"></div>
+      <div class="stat-grid" id="positions-stats"></div>
+
       <form class="filters" id="positions-filters">
-        <label>Sort by
-          <select name="sortBy">
-            <option value="MainOpenTime">Main open time</option>
-            <option value="OffsetSeconds">Time offset</option>
-            <option value="MainProfitLoss">Main profit/loss</option>
-            <option value="RelatedProfitLoss">Related profit/loss</option>
+        <label>Symbol <input name="symbol" type="text" placeholder="All symbols" autocomplete="off"></label>
+        <label>Direction
+          <select name="direction">
+            <option value="">Both</option>
+            <option value="Buy">Buy</option>
+            <option value="Sell">Sell</option>
           </select>
         </label>
-        <label>Direction
+        <label>Minimum signal
+          <select name="minSignalSeverity">
+            <option value="">Any</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </label>
+        <label class="check"><input name="onlyAssigned" type="checkbox" value="true"> Only pairs counted in the share</label>
+        <label>Sort by
+          <select name="sortBy" id="positions-sort">
+            <option value="MainOpenTime">Main open time</option>
+            <option value="ChildCount">Number of matches</option>
+            <option value="ClosestOffset">Smallest time offset</option>
+            <option value="MainProfitLoss">Main profit/loss</option>
+            <option value="NetProfitLoss">Net profit/loss</option>
+            <option value="Severity">Signal severity</option>
+          </select>
+        </label>
+        <label>Order
           <select name="sortDirection">
             <option value="Asc">Ascending</option>
             <option value="Desc">Descending</option>
@@ -74,12 +119,41 @@
         <button type="submit">Apply</button>
       </form>
       <p class="message" id="positions-message"></p>
-      <div id="positions"></div>
-      <div id="positions-pager"></div>
+
+      <div class="tabs" id="positions-tabs">
+        <button type="button" data-tab="tree" class="active">Position tree</button>
+        <button type="button" data-tab="symbols">By symbol</button>
+        <button type="button" data-tab="timeline">Timeline</button>
+        <button type="button" data-tab="offsets">Time offsets</button>
+      </div>
+
+      <div id="tab-tree">
+        <div class="actions tree-actions">
+          <button type="button" id="expand-all">Expand all</button>
+          <button type="button" id="collapse-all">Collapse all</button>
+          <span class="muted">Click a related position to compare it side by side.</span>
+        </div>
+        <div id="positions"></div>
+        <div id="positions-pager"></div>
+      </div>
+      <div id="tab-symbols" hidden>
+        <div class="actions tree-actions"><button type="button" data-export="stats" data-dataset="BySymbol" data-format="csv">Export CSV</button></div>
+        <div id="symbols-table"></div>
+      </div>
+      <div id="tab-timeline" hidden>
+        <div class="actions tree-actions"><button type="button" data-export="stats" data-dataset="ByDay" data-format="csv">Export CSV</button></div>
+        <div id="timeline-chart"></div>
+      </div>
+      <div id="tab-offsets" hidden>
+        <div id="offsets-chart"></div>
+      </div>
+      <ul class="help" id="positions-help"></ul>
     </section>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
+  <script src="/range.js"></script>
+  <script src="/positions-tree.js"></script>
   <script src="/copy-trade.js"></script>
 </body>
 </html>
