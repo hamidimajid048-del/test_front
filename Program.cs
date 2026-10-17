@@ -17,6 +17,9 @@ const string ServiceStatusClient = "service-status";
 // The Violation service reads the admin's Identity token from this cookie (the foundation's admin access token cookie).
 const string AdminTokenCookie = "admin-client_token";
 const string AccessTokenClaim = "access_token";
+// TEMPORARY-PANEL-ACCESS: the header and minimum key length of the service's temporary panel access mode.
+const string PanelAccessHeader = "X-Panel-Key";
+const int MinimumPanelAccessKeyLength = 32;
 string[] publicPaths = [LoginPage, "/app.css", "/theme.js"];
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +30,12 @@ var apiBaseUrl = RequiredSetting(builder.Configuration, "Panel:ApiBaseUrl");
 // Optional: a token used when the sign-in form leaves the token empty, and a health URL that answers { status: "Healthy" }.
 var configuredAccessToken = builder.Configuration["Panel:AdminAccessToken"];
 var healthUrl = builder.Configuration["Panel:HealthUrl"];
+// TEMPORARY-PANEL-ACCESS: with a key, the service trusts the panel instead of an Identity token, and the sign-in asks
+// for no token. Remove with the service's mode; see docs/temporary-panel-access.md.
+var panelAccessKey = builder.Configuration["Panel:PanelAccessKey"] is { Length: > 0 } configuredKey
+    ? ValidPanelAccessKey(configuredKey.Trim())
+    : null;
+var temporaryPanelAccess = panelAccessKey is not null;
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -91,24 +100,52 @@ builder.Services
         ])
     .AddTransforms(context =>
     {
-        // The panel's own cookies never reach the service; only the signed-in admin's Identity token does.
+        // The panel's own cookies never reach the service; only the panel key or the signed-in admin's Identity token does.
         context.AddRequestHeaderRemove("Cookie");
+        context.AddRequestHeaderRemove(PanelAccessHeader);
         context.AddRequestTransform(transformContext =>
         {
+            var headers = transformContext.ProxyRequest.Headers;
+            if (temporaryPanelAccess)
+            {
+                headers.TryAddWithoutValidation(PanelAccessHeader, panelAccessKey);
+                return ValueTask.CompletedTask;
+            }
+
             var token = transformContext.HttpContext.User.FindFirstValue(AccessTokenClaim);
             if (!string.IsNullOrEmpty(token))
-                transformContext.ProxyRequest.Headers.TryAddWithoutValidation("Cookie", $"{AdminTokenCookie}={token}");
+                headers.TryAddWithoutValidation("Cookie", $"{AdminTokenCookie}={token}");
             return ValueTask.CompletedTask;
         });
-        // The service rejected the token (expired or revoked), so the panel session ends and the admin signs in again.
         context.AddResponseTransform(async transformContext =>
         {
-            if (transformContext.ProxyResponse?.StatusCode == HttpStatusCode.Unauthorized)
-                await transformContext.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (transformContext.ProxyResponse?.StatusCode != HttpStatusCode.Unauthorized)
+                return;
+
+            var httpContext = transformContext.HttpContext;
+            if (temporaryPanelAccess)
+            {
+                // A rejected panel key is a configuration fault, not an ended session: signing out would only loop.
+                httpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Sgb.Trading.Violation.Panel.Proxy")
+                    .LogError("The Violation service rejected the panel access key; Panel:PanelAccessKey must equal PanelAccess:AccessKey of the service.");
+                httpContext.Response.StatusCode = StatusCodes.Status502BadGateway;
+                transformContext.SuppressResponseBody = true;
+                return;
+            }
+
+            // The service rejected the token (expired or revoked), so the panel session ends and the admin signs in again.
+            await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         });
     });
 
 var app = builder.Build();
+
+if (temporaryPanelAccess)
+    app.Logger.LogWarning(
+        "TEMPORARY PANEL ACCESS: the panel signs in without an Identity token and sends {Header} to the service. " +
+        "Remove Panel:PanelAccessKey when the service is connected to Identity (docs/temporary-panel-access.md).",
+        PanelAccessHeader);
 
 // The login page and its stylesheet are the only files served before authentication.
 app.UseWhen(
@@ -129,19 +166,30 @@ app.MapPost("/auth/login", async (HttpContext context) =>
             !SecretEquals(form["password"].ToString(), panelPassword))
             return Results.Redirect($"{LoginPage}?error=invalid");
 
-        var enteredToken = form["accessToken"].ToString().Trim();
-        var accessToken = enteredToken.Length > 0 ? enteredToken : configuredAccessToken?.Trim();
-        if (string.IsNullOrEmpty(accessToken) || !IsUnexpiredJwt(accessToken))
-            return Results.Redirect($"{LoginPage}?error=token");
+        List<Claim> claims = [new Claim(ClaimTypes.Name, panelUsername)];
+        if (!temporaryPanelAccess)
+        {
+            var enteredToken = form["accessToken"].ToString().Trim();
+            var accessToken = enteredToken.Length > 0 ? enteredToken : configuredAccessToken?.Trim();
+            if (string.IsNullOrEmpty(accessToken) || !IsUnexpiredJwt(accessToken))
+                return Results.Redirect($"{LoginPage}?error=token");
+            claims.Add(new Claim(AccessTokenClaim, accessToken));
+        }
 
-        var identity = new ClaimsIdentity(
-            [new Claim(ClaimTypes.Name, panelUsername), new Claim(AccessTokenClaim, accessToken)],
-            CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
         return Results.Redirect("/");
     })
     .AllowAnonymous()
     .RequireRateLimiting(LoginRateLimitPolicy);
+
+// Tells the sign-in page whether to ask for an Identity token: "none" (temporary panel access), "optional" (a
+// configured token is the fallback) or "required".
+app.MapGet("/auth/options", () => Results.Ok(new
+    {
+        accessToken = temporaryPanelAccess ? "none" : string.IsNullOrWhiteSpace(configuredAccessToken) ? "required" : "optional"
+    }))
+    .AllowAnonymous();
 
 app.MapPost("/auth/logout", async (HttpContext context) =>
 {
@@ -179,6 +227,12 @@ static bool SecretEquals(string candidate, string expected) =>
     CryptographicOperations.FixedTimeEquals(
         SHA256.HashData(Encoding.UTF8.GetBytes(candidate)),
         SHA256.HashData(Encoding.UTF8.GetBytes(expected)));
+
+// TEMPORARY-PANEL-ACCESS: the service refuses shorter keys, so the panel fails at startup rather than on every request.
+static string ValidPanelAccessKey(string key) =>
+    key.Length >= MinimumPanelAccessKeyLength
+        ? key
+        : throw new InvalidOperationException($"Panel:PanelAccessKey must be at least {MinimumPanelAccessKeyLength} characters.");
 
 // Only a shape and expiry check; the service validates the signature, issuer, audience and token version.
 static bool IsUnexpiredJwt(string token)

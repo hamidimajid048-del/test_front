@@ -19,10 +19,12 @@
     <p id="error" class="message error" hidden></p>
     <label>Username <input name="username" autocomplete="username" required autofocus></label>
     <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
-    <label>Admin access token
-      <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
-    </label>
-    <small class="login-hint">The reports are for admins only. Leave empty only if the panel has a configured token.</small>
+    <div id="access-token" hidden>
+      <label>Admin access token
+        <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
+      </label>
+      <small class="login-hint" id="access-token-hint">The reports are for admins only.</small>
+    </div>
     <button type="submit">Sign in</button>
   </form>
   <script>
@@ -31,7 +33,7 @@
       invalid: 'Incorrect username or password',
       rate: 'Too many attempts. Try again in a minute',
       token: 'Enter a valid, unexpired admin access token',
-      expired: 'Your admin session has ended. Sign in again with a valid access token',
+      expired: 'Your session has ended. Sign in again',
     };
     const error = messages[new URLSearchParams(location.search).get('error')];
     if (error) {
@@ -39,6 +41,18 @@
       el.textContent = error;
       el.hidden = false;
     }
+
+    // "none" while the service runs in its temporary panel access mode; any failure shows the token field.
+    fetch('/auth/options')
+      .then(response => response.ok ? response.json() : Promise.reject())
+      .catch(() => ({ accessToken: 'required' }))
+      .then(({ accessToken }) => {
+        if (accessToken === 'none') return;
+        document.getElementById('access-token').hidden = false;
+        document.querySelector('[name="accessToken"]').required = accessToken === 'required';
+        if (accessToken === 'optional')
+          document.getElementById('access-token-hint').textContent += ' Leave empty to use the configured token.';
+      });
   </script>
 </body>
 </html>
