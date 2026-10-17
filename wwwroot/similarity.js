@@ -11,7 +11,7 @@ const DETAILS_QUERY_PREFIX = 'd_';
 const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'country', 'city', 'isp', 'asn', 'deviceType', 'cid'];
 const SUMMARY_KEYS = [
   ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount', 'minEffectiveRepeatCount', 'minOccurrenceDays',
-  'minCoOccurrenceDays', 'sortBy', 'sortDirection',
+  'minCoOccurrenceDays', 'sortItem', 'sortDirection',
 ];
 
 const TYPE_LABELS = { Ip: 'IP', Cid: 'CID' };
@@ -41,7 +41,7 @@ async function showAccountRange() {
   }
   hint.textContent = 'Loading the account data range...';
   try {
-    const { metadata } = await apiGet(`reports/logins/${login}/complete`, { pageSize: 1 });
+    const { metadata } = await apiGet('login-reports/get-login-sessions-complete', { login, pageSize: 1 });
     if (login !== accountRangeLogin) return;
     const useRange = document.createElement('button');
     useRange.type = 'button';
@@ -63,7 +63,9 @@ async function showAccountRange() {
 form.elements.login.addEventListener('change', showAccountRange);
 
 function commonParams() {
-  return { ...pick(filters, COMMON_KEYS), fromUtc: fromDayParam(filters.fromUtc), toUtc: toDayParam(filters.toUtc) };
+  return {
+    login: filters.login, ...pick(filters, COMMON_KEYS), fromUtc: fromDayParam(filters.fromUtc), toUtc: toDayParam(filters.toUtc),
+  };
 }
 
 function summaryParams() {
@@ -147,7 +149,7 @@ const DETAILS_COLUMNS = [
 ];
 
 async function loadSummary() {
-  const report = await apiGet(`reports/similarity/${filters.login}/summary`, summaryParams());
+  const report = await apiGet('similarity-reports/get-summary', summaryParams());
   const paging = report.paging?.normalPagingResponse;
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
@@ -161,7 +163,7 @@ async function loadSummary() {
 }
 
 async function loadDetails() {
-  const report = await apiGet(`reports/similarity/${filters.login}/details`, detailsParams());
+  const report = await apiGet('similarity-reports/get-details', detailsParams());
   const paging = report.paging?.normalPagingResponse;
   detailsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? detailsPaging.pageSize };
   renderTable(document.getElementById('details'), DETAILS_COLUMNS, report.items);
@@ -201,7 +203,7 @@ document.querySelectorAll('[data-export]').forEach(button => button.addEventList
   const kind = button.dataset.export;
   const { currentPage, pageSize, ...params } = kind === 'summary' ? summaryParams() : detailsParams();
   downloadExport(
-    `reports/similarity/${filters.login}/${kind}/export`,
+    `similarity-reports/export-${kind}`,
     { ...params, format: button.dataset.format },
     button,
     document.getElementById(`${kind}-export-message`));
@@ -248,7 +250,7 @@ async function restoreFromQuery() {
   if (!relatedLogin || !type || document.getElementById('summary-section').hidden) return;
   selected = { relatedLogin, type };
   for (const element of detailsForm.elements) {
-    const value = element.name && query.get(DETAILS_QUERY_PREFIX + element.name);
+    const value = element.name && queryValue(query, DETAILS_QUERY_PREFIX + element.name);
     if (value) element.value = value;
   }
   detailsValues = formValues(detailsForm);

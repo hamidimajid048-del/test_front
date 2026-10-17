@@ -37,7 +37,7 @@
       <label>From day (UTC) <input name="fromUtc" type="date"></label>
       <label>To day (UTC) <input name="toUtc" type="date"></label>
       <label>Sort by
-        <select name="sortBy">
+        <select name="sortItem">
           <option value="CountShare">Share count</option>
           <option value="PercentShare">Share (%)</option>
           <option value="ProfitLoss">Profit/loss</option>
@@ -87,8 +87,8 @@
         <label>Direction
           <select name="direction">
             <option value="">Both</option>
-            <option value="Buy">Buy</option>
-            <option value="Sell">Sell</option>
+            <option value="BUY">Buy</option>
+            <option value="SELL">Sell</option>
           </select>
         </label>
         <label>Minimum signal
@@ -101,7 +101,7 @@
         </label>
         <label class="check"><input name="onlyAssigned" type="checkbox" value="true"> Only pairs counted in the share</label>
         <label>Sort by
-          <select name="sortBy" id="positions-sort">
+          <select name="sortItem" id="positions-sort">
             <option value="MainOpenTime">Main open time</option>
             <option value="ChildCount">Number of matches</option>
             <option value="ClosestOffset">Smallest time offset</option>

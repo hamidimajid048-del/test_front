@@ -1,10 +1,15 @@
 // Shared helpers for all panel pages: API calls, tables, paging, form <-> query string, loading state.
 
-const API_PREFIX = '/api/v1/';
+const API_PREFIX = '/api/';
 const SUCCESS_STATUS_CODE = 1;
+const VALIDATION_ERROR_STATUS_CODE = 201;
+const INVALID_PARAMETER_PREFIX = 'InvalidParameter:';
 const UNAVAILABLE_MESSAGE = 'Service unavailable';
 const INVALID_INPUT_MESSAGE = 'Check the highlighted inputs';
+const INVALID_VALUE_MESSAGE = 'This value is not valid';
 const PAGE_SIZES = [50, 100, 250, 500];
+// A 401 means the panel session or the admin's Identity token ended; the panel signs out and asks for a new sign-in.
+const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
 const MENU_ITEMS = [
   { href: '/logins.html', title: 'Login history' },
@@ -14,13 +19,28 @@ const MENU_ITEMS = [
 ];
 
 class ApiError extends Error {
-  // fieldErrors: { fieldName: [messages] } from an ASP.NET ValidationProblemDetails response.
+  // fieldErrors: { fieldName: [messages] } for request values the service could not read (a ValidationError response).
   // reason: the service's failure reason (status.description), such as "AccountNotFound", when there is one.
   constructor(message, fieldErrors = {}, reason = '') {
     super(message);
     this.fieldErrors = fieldErrors;
     this.reason = reason;
   }
+}
+
+// A ValidationError response lists each unreadable parameter as "InvalidParameter:<name>".
+function isValidationError(body) {
+  return body?.status?.code === VALIDATION_ERROR_STATUS_CODE && Array.isArray(body.errors);
+}
+
+function fieldErrorsOf(errors) {
+  const fields = {};
+  for (const error of errors) {
+    const description = error?.description ?? '';
+    const field = description.startsWith(INVALID_PARAMETER_PREFIX) ? description.slice(INVALID_PARAMETER_PREFIX.length) : description;
+    if (field) (fields[field] ??= []).push(INVALID_VALUE_MESSAGE);
+  }
+  return fields;
 }
 
 // Builds a query string from the non-empty values of params.
@@ -33,7 +53,7 @@ function toQueryString(params) {
   return text ? `?${text}` : '';
 }
 
-// Calls GET /api/v1/{path} and returns `result`, or throws ApiError with a Persian message.
+// Calls GET /api/{path} and returns `result`, or throws ApiError with a Persian message.
 async function apiGet(path, params) {
   let response;
   try {
@@ -43,7 +63,7 @@ async function apiGet(path, params) {
   }
 
   if (response.status === 401) {
-    location.href = '/login.html';
+    location.href = SESSION_EXPIRED_PAGE;
     throw new ApiError('');
   }
 
@@ -54,11 +74,11 @@ async function apiGet(path, params) {
     // Non-JSON bodies are handled below as an unavailable service.
   }
 
+  if (isValidationError(body)) throw new ApiError(INVALID_INPUT_MESSAGE, fieldErrorsOf(body.errors));
   if (body?.status && typeof body.status === 'object') {
     if (response.ok && body.status.code === SUCCESS_STATUS_CODE) return body.result;
     throw new ApiError(translateStatus(body.status), {}, body.status.description ?? '');
   }
-  if (body?.errors) throw new ApiError(INVALID_INPUT_MESSAGE, body.errors);
   throw new ApiError(UNAVAILABLE_MESSAGE);
 }
 
@@ -85,7 +105,7 @@ async function downloadExport(path, params, button, messageElement) {
       throw new ApiError(UNAVAILABLE_MESSAGE);
     }
     if (response.status === 401) {
-      location.href = '/login.html';
+      location.href = SESSION_EXPIRED_PAGE;
       return;
     }
     const contentType = response.headers.get('Content-Type') ?? '';
@@ -102,8 +122,8 @@ async function downloadExport(path, params, button, messageElement) {
       return;
     }
     const body = await response.json().catch(() => null);
+    if (isValidationError(body)) throw new ApiError([INVALID_INPUT_MESSAGE, ...Object.keys(fieldErrorsOf(body.errors))].join(' — '));
     if (body?.status && typeof body.status === 'object') throw new ApiError(translateStatus(body.status));
-    if (body?.errors) throw new ApiError([INVALID_INPUT_MESSAGE, ...Object.values(body.errors).flat()].join(' — '));
     throw new ApiError(UNAVAILABLE_MESSAGE);
   } catch (error) {
     messageElement.className = 'message error';
@@ -304,11 +324,25 @@ function formValues(form) {
   return values;
 }
 
+// The value of a page query parameter. Links written before the sort item was renamed carry sortBy (or a prefixed
+// p_sortBy/d_sortBy), so a missing sortItem falls back to it.
+function queryValue(query, name) {
+  if (query.has(name)) return query.get(name);
+  const legacy = name.replace(/sortItem$/, 'sortBy');
+  return legacy !== name && query.has(legacy) ? query.get(legacy) : null;
+}
+
 // Fills the form's named fields from the page query string.
 function fillFormFromQuery(form) {
   const query = new URLSearchParams(location.search);
   for (const element of form.elements) {
-    if (element.name && query.has(element.name)) element.value = query.get(element.name);
+    const value = element.name ? queryValue(query, element.name) : null;
+    if (value === null) continue;
+    // A select matches its option without regard to case, as the API does, so older links (direction=Buy) still work.
+    const option = element.tagName === 'SELECT'
+      ? [...element.options].find(candidate => candidate.value.toLowerCase() === value.toLowerCase())
+      : null;
+    element.value = option ? option.value : value;
   }
   return query.toString() !== '';
 }

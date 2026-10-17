@@ -37,10 +37,10 @@
   <script>
     renderMenu();
     const health = document.getElementById('health');
-    // The health endpoint returns { status: "Healthy" } rather than the usual ResponseBase envelope.
-    fetch('/api/v1/health')
+    // The panel probes the service itself and answers { available } rather than the usual ResponseBase envelope.
+    fetch('/service-status')
       .then(response => response.ok ? response.json() : Promise.reject())
-      .then(body => body.status === 'Healthy' ? Promise.resolve() : Promise.reject())
+      .then(body => body.available ? Promise.resolve() : Promise.reject())
       .then(() => { health.textContent = 'Violation service is available'; health.classList.add('ok'); })
       .catch(() => { health.textContent = 'Violation service is unavailable'; health.classList.add('down'); });
   </script>

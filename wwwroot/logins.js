@@ -93,12 +93,12 @@ function renderMapping(containerId, tab, label, key, outcome) {
 // Reads a page of sessions in the account's data range; without a usable range, of all recorded sessions.
 // accountNote is null when the account range was used, otherwise why it could not be.
 async function sessionsRequest(page, pageSize) {
-  const params = { currentPage: page, pageSize };
+  const params = { login: currentLogin, currentPage: page, pageSize };
   try {
-    return { report: await apiGet(`reports/logins/${currentLogin}/complete`, params), accountNote: null };
+    return { report: await apiGet('login-reports/get-login-sessions-complete', params), accountNote: null };
   } catch (error) {
     if (!(error instanceof ApiError) || !ACCOUNT_REASONS.has(error.reason)) throw error;
-    return { report: await apiGet(`reports/logins/${currentLogin}/sessions`, params), accountNote: error.message };
+    return { report: await apiGet('login-reports/get-login-sessions', params), accountNote: error.message };
   }
 }
 
@@ -107,8 +107,8 @@ async function loadReport(login, page, pageSize) {
   await withLoading(form, message, async () => {
     const [sessions, ips, cids] = await Promise.allSettled([
       sessionsRequest(page, pageSize),
-      apiGet(`reports/logins/${login}/ip-mappings`),
-      apiGet(`reports/logins/${login}/cid-mappings`),
+      apiGet('login-reports/get-ip-mappings', { login }),
+      apiGet('login-reports/get-cid-mappings', { login }),
     ]);
     renderMapping('ips', 'ips', 'IP', 'ip', ips);
     renderMapping('cids', 'cids', 'CID', 'cid', cids);

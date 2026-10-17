@@ -10,7 +10,8 @@ const exportMessage = document.getElementById('export-message');
 const DEFAULT_PAGE_SIZE = 100;
 const TREE_PAGE_SIZE = 50;
 const POSITIONS_QUERY_PREFIX = 'p_';
-const BASE_PATH = 'reports/copy-trade-and-hedge';
+const LIST_PATH = 'copy-trade-and-hedge-reports';
+const POSITIONS_PATH = 'position-compare-reports';
 
 const KINDS = {
   'copy-trade': { title: 'Copy trade', hasVolumeTolerance: false },
@@ -18,7 +19,7 @@ const KINDS = {
 };
 
 const WINDOW_KEYS = ['secondsBefore', 'secondsAfter', 'volumeTolerancePercent'];
-const LIST_KEYS = ['minPercentShare', 'minCountShare', 'sortBy', 'sortDirection'];
+const LIST_KEYS = ['minPercentShare', 'minCountShare', 'sortItem', 'sortDirection'];
 const FILTER_KEYS = ['symbol', 'direction', 'minSignalSeverity'];
 const TABS = ['tree', 'symbols', 'timeline', 'offsets'];
 
@@ -57,27 +58,35 @@ function validateInputs(values) {
   }
 }
 
-// The window and range every request of the page carries.
+// The login, window and range every request of the page carries.
 function windowParams() {
-  return { ...pick(search, WINDOW_KEYS), fromUtc: fromDayParam(search.fromUtc), toUtc: toDayParam(search.toUtc) };
+  return {
+    login: search.login, ...pick(search, WINDOW_KEYS), fromUtc: fromDayParam(search.fromUtc), toUtc: toDayParam(search.toUtc),
+  };
+}
+
+// The position comparison adds the related login.
+function pairParams() {
+  return { ...windowParams(), relatedLogin };
 }
 
 function listParams() {
   return { ...windowParams(), ...pick(search, LIST_KEYS), currentPage: listPaging.currentPage, pageSize: listPaging.pageSize };
 }
 
-const positionsPath = suffix => `${BASE_PATH}/${search.kind}/${search.login}/related/${relatedLogin}/${suffix}`;
+// The position comparison actions are named <verb>-<kind>-<report>, e.g. get-hedge-position-tree.
+const positionsPath = (verb, report) => `${POSITIONS_PATH}/${verb}-${search.kind}-${report}`;
 
 function treeParams() {
   return {
-    ...windowParams(), ...positionsValues,
+    ...pairParams(), ...positionsValues,
     currentPage: positionsPaging.currentPage, pageSize: positionsPaging.pageSize,
   };
 }
 
 // The statistics describe the counted pairs; sorting and paging do not apply to them.
 function statsParams() {
-  return { ...windowParams(), ...pick(positionsValues, FILTER_KEYS) };
+  return { ...pairParams(), ...pick(positionsValues, FILTER_KEYS) };
 }
 
 function writeState() {
@@ -135,7 +144,7 @@ function windowItems(metadata) {
 }
 
 async function loadList() {
-  const report = await apiGet(`${BASE_PATH}/${search.kind}/${search.login}`, listParams());
+  const report = await apiGet(`${LIST_PATH}/get-${search.kind}`, listParams());
   const paging = report.paging?.normalPagingResponse;
   listPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? listPaging.pageSize };
 
@@ -160,7 +169,7 @@ async function loadList() {
 // ---- position comparison ----
 
 async function loadTree() {
-  const report = await apiGet(positionsPath('position-tree'), treeParams());
+  const report = await apiGet(positionsPath('get', 'position-tree'), treeParams());
   const paging = report.paging?.normalPagingResponse;
   positionsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? positionsPaging.pageSize };
 
@@ -181,7 +190,7 @@ async function loadTree() {
 }
 
 async function loadStats() {
-  const stats = await apiGet(positionsPath('position-stats'), statsParams());
+  const stats = await apiGet(positionsPath('get', 'position-stats'), statsParams());
   renderRisk(document.getElementById('positions-risk'), stats.risk);
   renderStatCards(document.getElementById('positions-stats'), stats, search.kind);
   renderSymbols(document.getElementById('symbols-table'), stats.bySymbol);
@@ -229,7 +238,7 @@ function openPositions(login) {
   relatedLogin = login;
   positionsForm.reset();
   const defaults = KIND_VIEWS[search.kind].defaultSort;
-  positionsForm.elements.sortBy.value = defaults.sortBy;
+  positionsForm.elements.sortItem.value = defaults.sortItem;
   positionsForm.elements.sortDirection.value = defaults.sortDirection;
   positionsValues = formValues(positionsForm);
   positionsPaging = { currentPage: 1, pageSize: TREE_PAGE_SIZE };
@@ -296,9 +305,9 @@ document.getElementById('collapse-all').addEventListener('click', () => setAllEx
 document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
   const pairs = button.dataset.export === 'pairs';
   const params = pairs
-    ? { ...windowParams(), ...positionsValues }
+    ? { ...pairParams(), ...positionsValues }
     : { ...statsParams(), dataset: button.dataset.dataset };
-  downloadExport(positionsPath(pairs ? 'position-tree/export' : 'position-stats/export'),
+  downloadExport(positionsPath('export', pairs ? 'position-tree' : 'position-stats'),
     { ...params, format: button.dataset.format }, button, exportMessage);
 }));
 
@@ -323,7 +332,7 @@ async function restoreFromQuery() {
   if (!related || document.getElementById('list-section').hidden) return;
   relatedLogin = related;
   for (const element of positionsForm.elements) {
-    const value = element.name && query.get(POSITIONS_QUERY_PREFIX + element.name);
+    const value = element.name && queryValue(query, POSITIONS_QUERY_PREFIX + element.name);
     if (!value) continue;
     if (element.type === 'checkbox') element.checked = value === 'true';
     else element.value = value;

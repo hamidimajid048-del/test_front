@@ -37,7 +37,7 @@ const RISK_LEVEL_KINDS = { Low: 'ok', Medium: 'warn', High: 'danger' };
 // What differs between the two report types in the view: the help text and the extra statistics cards.
 const KIND_VIEWS = {
   'copy-trade': {
-    defaultSort: { sortBy: 'MainOpenTime', sortDirection: 'Asc' },
+    defaultSort: { sortItem: 'MainOpenTime', sortDirection: 'Asc' },
     help: [
       'Copy trade: the related account opened the same direction on the same symbol close to the main position.',
       '"Related opened later" means the related account may be following the main one; "first" means the main may be following it.',
@@ -58,7 +58,7 @@ const KIND_VIEWS = {
     },
   },
   hedge: {
-    defaultSort: { sortBy: 'NetProfitLoss', sortDirection: 'Asc' },
+    defaultSort: { sortItem: 'NetProfitLoss', sortDirection: 'Asc' },
     help: [
       'Hedge: the related account opened the opposite direction on the same symbol close to the main position, with a similar volume.',
       'A pair "offsets" when one side wins and the other loses. A net result near zero on many pairs means the accounts cancel each other out.',
@@ -124,7 +124,10 @@ function pnl(value) {
   return span;
 }
 
-const directionBadge = direction => badge(direction, direction === 'Buy' ? 'ok' : 'danger');
+// The API sends a position's direction as its deal type: BUY or SELL.
+const DIRECTION_LABELS = { BUY: 'Buy', SELL: 'Sell' };
+const directionLabel = direction => DIRECTION_LABELS[direction] ?? direction;
+const directionBadge = direction => badge(directionLabel(direction), direction === 'BUY' ? 'ok' : 'danger');
 
 const stopsText = value => (value === null || value === undefined ? '—' : price(value));
 
@@ -300,7 +303,7 @@ function comparePanel(main, child, kindKey) {
     ['Closed (UTC)', main.closeTimeUtc ? formatUtc(main.closeTimeUtc) : 'Open', related.closeTimeUtc ? formatUtc(related.closeTimeUtc) : 'Open', signedDuration(comparison.relatedMinusMainCloseSeconds)],
     ['Held for', hold(main), hold(related), signedDuration(comparison.durationDiffSeconds)],
     ['Time both were open', '', '', comparison.overlapSeconds === null || comparison.overlapSeconds === undefined ? '—' : duration(comparison.overlapSeconds)],
-    ['Direction', main.direction, related.direction, main.direction === related.direction ? 'Same' : 'Opposite'],
+    ['Direction', directionLabel(main.direction), directionLabel(related.direction), main.direction === related.direction ? 'Same' : 'Opposite'],
     ['Volume', main.volume, related.volume, `×${comparison.volumeRatio} (${comparison.volumeDiffPercent > 0 ? '+' : ''}${comparison.volumeDiffPercent}%)`],
     ['Entry price', price(main.openPrice), price(related.openPrice), signedMoney(comparison.openPriceDiff)],
     ['Exit price', price(main.closePrice), price(related.closePrice), main.closePrice !== null && related.closePrice !== null ? signedMoney(related.closePrice - main.closePrice) : '—'],

@@ -144,21 +144,22 @@ const direction = (value, labels = ['Descending', 'Ascending']) => ({
   options: [['Desc', labels[0]], ['Asc', labels[1]]],
 });
 
-const compareBase = (c) => `reports/compare/${c.login}/${c.other}`;
+const COMPARE_PATH = 'compare-reports';
 const rangeParams = c => ({ fromUtc: c.fromUtc, toUtc: c.toUtc });
-const proximityParams = c => ({ ...rangeParams(c), windowSeconds: c.windowSeconds, matchLevel: c.match });
+const compareParams = c => ({ login: c.login, otherLogin: c.other, ...rangeParams(c) });
+const proximityParams = c => ({ ...compareParams(c), windowSeconds: c.windowSeconds, matchLevel: c.match });
 
 const TABS = [
   {
     key: 'shared-ips',
     title: 'Shared IPs',
-    path: c => `${compareBase(c)}/shared-ips`,
+    path: `${COMPARE_PATH}/get-shared-ips`,
     exportPath: 'shared-ips',
-    params: rangeParams,
+    params: compareParams,
     columns: SHARED_IP_COLUMNS,
     controls: [
       {
-        name: 'sortBy', label: 'Sort by', kind: 'select', value: 'EffectiveRepeatCount',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'EffectiveRepeatCount',
         options: [
           ['EffectiveRepeatCount', 'Effective repeats'], ['Value', 'IP'], ['LogCount', 'Logs'],
           ['RelatedLogCount', 'Compared logs'], ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
@@ -174,13 +175,13 @@ const TABS = [
   {
     key: 'shared-cids',
     title: 'Shared CIDs',
-    path: c => `${compareBase(c)}/shared-cids`,
+    path: `${COMPARE_PATH}/get-shared-cids`,
     exportPath: 'shared-cids',
-    params: rangeParams,
+    params: compareParams,
     columns: SHARED_CID_COLUMNS,
     controls: [
       {
-        name: 'sortBy', label: 'Sort by', kind: 'select', value: 'EffectiveRepeatCount',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'EffectiveRepeatCount',
         options: [
           ['EffectiveRepeatCount', 'Effective repeats'], ['Value', 'CID'], ['LogCount', 'Logs'],
           ['RelatedLogCount', 'Compared logs'], ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
@@ -196,13 +197,13 @@ const TABS = [
   {
     key: 'near-logins',
     title: 'Near logins',
-    path: c => `${compareBase(c)}/near-logins`,
+    path: `${COMPARE_PATH}/get-near-logins`,
     exportPath: 'near-logins',
     params: proximityParams,
     columns: NEAR_COLUMNS,
     controls: [
       {
-        name: 'sortBy', label: 'Sort by', kind: 'select', value: 'DeltaSeconds',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'DeltaSeconds',
         options: [['DeltaSeconds', 'Smallest gap'], ['LoginAt', 'Main login time']],
       },
       direction('Asc', ['Descending', 'Ascending']),
@@ -213,12 +214,12 @@ const TABS = [
   {
     key: 'overlapping-sessions',
     title: 'Overlapping sessions',
-    path: c => `${compareBase(c)}/overlapping-sessions`,
-    params: rangeParams,
+    path: `${COMPARE_PATH}/get-overlapping-sessions`,
+    params: compareParams,
     columns: OVERLAP_COLUMNS,
     controls: [
       {
-        name: 'sortBy', label: 'Sort by', kind: 'select', value: 'OverlapSeconds',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'OverlapSeconds',
         options: [['OverlapSeconds', 'Overlap duration'], ['LoginAt', 'Main login time']],
       },
       direction('Desc'),
@@ -232,8 +233,8 @@ const TABS = [
   {
     key: 'timeline',
     title: 'Timeline',
-    path: c => `${compareBase(c)}/timeline`,
-    params: rangeParams,
+    path: `${COMPARE_PATH}/get-timeline`,
+    params: compareParams,
     columns: TIMELINE_COLUMNS,
     controls: [
       direction('Desc', ['Newest first', 'Oldest first']),
@@ -245,8 +246,8 @@ const TABS = [
   {
     key: 'sessions-main',
     title: 'Sessions (main)',
-    path: c => `reports/logins/${c.login}/sessions`,
-    params: rangeParams,
+    path: 'login-reports/get-login-sessions',
+    params: c => ({ login: c.login, ...rangeParams(c) }),
     columns: SESSION_COLUMNS,
     controls: [],
     geoDetails: true,
@@ -255,8 +256,8 @@ const TABS = [
   {
     key: 'sessions-compared',
     title: 'Sessions (compared)',
-    path: c => `reports/logins/${c.other}/sessions`,
-    params: rangeParams,
+    path: 'login-reports/get-login-sessions',
+    params: c => ({ login: c.other, ...rangeParams(c) }),
     columns: SESSION_COLUMNS,
     controls: [],
     geoDetails: true,
@@ -372,7 +373,7 @@ function showPanel() {
       button.textContent = text;
       button.addEventListener('click', () => {
         downloadExport(
-          `${compareBase(context)}/${tab.exportPath}/export`,
+          `${COMPARE_PATH}/export-${tab.exportPath}`,
           { ...tab.params(context), ...controlParams(tab, state), format },
           button,
           exportMessage);
@@ -407,7 +408,7 @@ function showPanel() {
 async function load(tab, state, toolbar, tabMessage, parts) {
   const token = context;
   await withLoading(toolbar, tabMessage, async () => {
-    const report = await apiGet(tab.path(context), {
+    const report = await apiGet(tab.path, {
       ...tab.params(context),
       ...controlParams(tab, state),
       currentPage: state.page,
@@ -457,8 +458,8 @@ const profileLink = login => actionLink('Profile', `/logins.html?login=${encodeU
 function tradeLink(kind, label) {
   const query = new URLSearchParams({
     kind, login: context.login, secondsBefore: '5', secondsAfter: '5', minCountShare: '1',
-    sortBy: 'CountShare', sortDirection: 'Desc', currentPage: '1', pageSize: String(DEFAULT_PAGE_SIZE),
-    p_relatedLogin: context.other, p_sortBy: 'MainOpenTime', p_sortDirection: 'Asc', p_currentPage: '1',
+    sortItem: 'CountShare', sortDirection: 'Desc', currentPage: '1', pageSize: String(DEFAULT_PAGE_SIZE),
+    p_relatedLogin: context.other, p_sortItem: 'MainOpenTime', p_sortDirection: 'Asc', p_currentPage: '1',
     p_pageSize: String(DEFAULT_PAGE_SIZE),
   });
   if (kind === 'hedge') query.set('volumeTolerancePercent', '10');
@@ -601,8 +602,8 @@ async function run(page, pageSize) {
     for (const key of Object.keys(states)) delete states[key];
     Object.assign(stateOf(tabByKey(activeTab)), { page, pageSize });
 
-    const overview = await apiGet(`${compareBase(context)}/overview`, {
-      ...rangeParams(context),
+    const overview = await apiGet(`${COMPARE_PATH}/get-overview`, {
+      ...compareParams(context),
       windowSeconds: context.windowSeconds,
       matchLevel: context.match,
     });

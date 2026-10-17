@@ -19,6 +19,10 @@
     <p id="error" class="message error" hidden></p>
     <label>Username <input name="username" autocomplete="username" required autofocus></label>
     <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <label>Admin access token
+      <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
+    </label>
+    <small class="login-hint">The reports are for admins only. Leave empty only if the panel has a configured token.</small>
     <button type="submit">Sign in</button>
   </form>
   <script>
@@ -26,6 +30,8 @@
     const messages = {
       invalid: 'Incorrect username or password',
       rate: 'Too many attempts. Try again in a minute',
+      token: 'Enter a valid, unexpired admin access token',
+      expired: 'Your admin session has ended. Sign in again with a valid access token',
     };
     const error = messages[new URLSearchParams(location.search).get('error')];
     if (error) {
