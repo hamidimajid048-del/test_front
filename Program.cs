@@ -7,6 +7,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Transforms;
@@ -146,6 +147,13 @@ if (temporaryPanelAccess)
         "TEMPORARY PANEL ACCESS: the panel signs in without an Identity token and sends {Header} to the service. " +
         "Remove Panel:PanelAccessKey when the service is connected to Identity (docs/temporary-panel-access.md).",
         PanelAccessHeader);
+
+// Behind a reverse proxy on this machine (nginx), the client address and scheme come from its X-Forwarded headers, so
+// the sign-in rate limit counts each client instead of the proxy. Only loopback proxies are trusted (the default).
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // The login page and its stylesheet are the only files served before authentication.
 app.UseWhen(
