@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Users — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <p class="message" id="message"></p>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="accounts">Accounts</button>
+      <button type="button" data-tab="audit">Audit log</button>
+    </div>
+
+    <section data-panel="accounts">
+      <div class="section-head"><h2>Add an account</h2></div>
+      <form class="filters" id="create-form" autocomplete="off">
+        <label>Username <input name="username" maxlength="64" required autocomplete="off"></label>
+        <label>Password <input name="password" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
+        <label>Repeat password <input name="confirm" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
+        <label>Role
+          <select name="role">
+            <option value="admin">Admin (reports)</option>
+            <option value="superadmin">Super admin (reports and accounts)</option>
+          </select>
+        </label>
+        <button type="submit">Add account</button>
+        <p class="form-note">The new account signs in with this password and an authenticator code; its key is shown once, after it is created.</p>
+      </form>
+
+      <div class="two-factor-setup" id="two-factor-setup" hidden>
+        <img id="two-factor-qr" alt="Authenticator QR code">
+        <div>
+          <h3 id="two-factor-title"></h3>
+          <ol>
+            <li>Open Google Authenticator or Microsoft Authenticator and add an account.</li>
+            <li>Scan the QR code, or choose "Enter a setup key" and type the key below (time-based).</li>
+            <li>Sign in with the username, the password and the 6-digit code the app shows.</li>
+          </ol>
+          <code class="secret-key" id="two-factor-key"></code>
+          <div class="actions">
+            <button type="button" id="two-factor-copy">Copy key</button>
+            <button type="button" id="two-factor-close">Done, hide the key</button>
+          </div>
+          <p class="form-note">This key is shown only now. Give it to the account's owner over a private channel.</p>
+        </div>
+      </div>
+
+      <div class="section-head" style="margin-top: 24px"><h2>Accounts</h2></div>
+      <div id="users"></div>
+    </section>
+
+    <section data-panel="audit" hidden>
+      <form class="filters" id="audit-form">
+        <label>Username <input name="username" maxlength="64" placeholder="All accounts"></label>
+        <label>Entries
+          <select name="limit">
+            <option>100</option>
+            <option selected>200</option>
+            <option>500</option>
+          </select>
+        </label>
+        <button type="submit">Show</button>
+      </form>
+      <div id="audit"></div>
+    </section>
+  </main>
+
+  <dialog class="panel-dialog" id="password-dialog">
+    <form method="dialog" id="password-form">
+      <h3>Set a new password</h3>
+      <p id="password-dialog-text"></p>
+      <label>New password <input name="password" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
+      <label>Repeat password <input name="confirm" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
+      <p class="message error" id="password-dialog-error"></p>
+      <div class="dialog-buttons">
+        <button type="button" id="password-cancel">Cancel</button>
+        <button type="submit">Set password</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/users.js"></script>
+</body>
+</html>

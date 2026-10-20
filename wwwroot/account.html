@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <div class="summary" id="account"></div>
+    <p class="message" id="message"></p>
+
+    <section>
+      <div class="section-head"><h2>Change password</h2></div>
+      <form class="filters" id="password-form">
+        <!-- Lets password managers tie the new password to this account. -->
+        <input name="username" autocomplete="username" hidden>
+        <label>Current password <input name="currentPassword" type="password" maxlength="256" required autocomplete="current-password"></label>
+        <label>New password <input name="newPassword" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
+        <label>Repeat new password <input name="confirm" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
+        <button type="submit">Change password</button>
+        <p class="form-note">At least 6 characters, without your username. Your other sessions end; this one stays signed in. Repeated wrong current passwords lock the account, like failed sign-ins.</p>
+      </form>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Authenticator</h2></div>
+      <p class="form-note">If you lose the phone with your authenticator app, ask a super admin to reset your 2FA; you then receive a new key.</p>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/account.js"></script>
+</body>
+</html>

@@ -181,11 +181,61 @@ function renderMenu() {
   button.textContent = 'Sign out';
   logout.append(button);
 
+  // The signed-in account links to its Account page; super admins also get the Users page.
+  const signedInAs = document.createElement('a');
+  signedInAs.className = 'nav-user';
+  signedInAs.href = '/account.html';
+  signedInAs.title = 'Account';
+  if (location.pathname === '/account.html') signedInAs.classList.add('active');
+
   const actions = document.createElement('div');
   actions.className = 'nav-actions';
-  actions.append(createThemeToggle(), logout);
+  actions.append(signedInAs, createThemeToggle(), logout);
 
   nav.replaceChildren(brand, ...links, actions);
+
+  currentAccount().then(me => {
+    if (!me) return;
+    signedInAs.textContent = me.username;
+    if (me.role !== 'superadmin') return;
+    const users = document.createElement('a');
+    users.className = 'nav-link';
+    users.href = '/users.html';
+    users.textContent = 'Users';
+    if (location.pathname === '/users.html') users.classList.add('active');
+    actions.before(users);
+  });
+}
+
+let currentAccountRequest;
+
+// The signed-in account ({ id, username, role }), or null when it cannot be read.
+function currentAccount() {
+  currentAccountRequest ??= fetch('/panel-api/me', { headers: { Accept: 'application/json' } })
+    .then(response => response.ok ? response.json() : null)
+    .catch(() => null);
+  return currentAccountRequest;
+}
+
+// Calls the panel's own account API (/panel-api/...). Returns the JSON body (null for an empty answer), or throws
+// ApiError with the panel's message.
+async function panelRequest(method, path, body) {
+  const headers = { Accept: 'application/json', 'X-Panel-Request': '1' };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  let response;
+  try {
+    response = await fetch(`/panel-api/${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  } catch {
+    throw new ApiError(UNAVAILABLE_MESSAGE);
+  }
+
+  if (response.status === 401) {
+    location.href = SESSION_EXPIRED_PAGE;
+    throw new ApiError('');
+  }
+  const result = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) throw new ApiError(result?.error ?? UNAVAILABLE_MESSAGE);
+  return result;
 }
 
 // Formats an ISO timestamp as "yyyy-MM-dd HH:mm:ss" in UTC.

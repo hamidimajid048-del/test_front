@@ -17,8 +17,11 @@
     </div>
     <p class="login-subtitle">Sign in to continue</p>
     <p id="error" class="message error" hidden></p>
-    <label>Username <input name="username" autocomplete="username" required autofocus></label>
-    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <label>Username <input name="username" autocomplete="username" maxlength="64" required autofocus></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
+    <label>Authentication code
+      <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="6-digit code from your authenticator app" required>
+    </label>
     <div id="access-token" hidden>
       <label>Admin access token
         <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
@@ -30,7 +33,7 @@
   <script>
     document.body.append(createThemeToggle());
     const messages = {
-      invalid: 'Incorrect username or password',
+      invalid: 'Incorrect username, password or code. Repeated failures lock the account for a while',
       rate: 'Too many attempts. Try again in a minute',
       token: 'Enter a valid, unexpired admin access token',
       expired: 'Your session has ended. Sign in again',

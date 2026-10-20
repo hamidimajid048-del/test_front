@@ -1,13 +1,13 @@
 using System.Net;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Npgsql;
+using Sgb.Trading.Violation.Panel.Auth;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Transforms;
@@ -18,15 +18,33 @@ const string ServiceStatusClient = "service-status";
 // The Violation service reads the admin's Identity token from this cookie (the foundation's admin access token cookie).
 const string AdminTokenCookie = "admin-client_token";
 const string AccessTokenClaim = "access_token";
+const string AuthCookieName = "violation-panel.session";
 // TEMPORARY-PANEL-ACCESS: the header and minimum key length of the service's temporary panel access mode.
 const string PanelAccessHeader = "X-Panel-Key";
 const int MinimumPanelAccessKeyLength = 32;
 string[] publicPaths = [LoginPage, "/app.css", "/theme.js"];
 
 var builder = WebApplication.CreateBuilder(args);
+// Machine-specific settings (connection string, keys) kept next to the app and out of appsettings.json; they override
+// every other source.
+builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: false);
 
-var panelUsername = RequiredSetting(builder.Configuration, "Panel:Username");
-var panelPassword = RequiredSetting(builder.Configuration, "Panel:Password");
+// Accounts, sessions and the sign-in audit log live in PostgreSQL; see docs/panel-authentication.md.
+var authConnectionString = builder.Configuration.GetConnectionString(PanelAuthOptions.ConnectionStringName) is { Length: > 0 } connection
+    ? connection
+    : throw new InvalidOperationException($"Connection string '{PanelAuthOptions.ConnectionStringName}' is required.");
+PanelAuthStore.ValidateConnectionString(authConnectionString);
+var authOptions = (builder.Configuration.GetSection(PanelAuthOptions.SectionName).Get<PanelAuthOptions>() ?? new()).Validate();
+var authDataSource = NpgsqlDataSource.Create(authConnectionString);
+
+// "users ..." manages the accounts instead of running the panel.
+if (args.FirstOrDefault() == PanelUserCommands.CommandName)
+    // Host options such as --environment may follow; they are configuration, not command arguments.
+    return await PanelUserCommands.RunAsync([.. args[1..].TakeWhile(arg => !arg.StartsWith("--"))], new PanelAuthStore(authDataSource));
+
+var hasLegacyCredentials =
+    builder.Configuration["Panel:Username"] is { Length: > 0 } || builder.Configuration["Panel:Password"] is { Length: > 0 };
+
 var apiBaseUrl = RequiredSetting(builder.Configuration, "Panel:ApiBaseUrl");
 // Optional: a token used when the sign-in form leaves the token empty, and a health URL that answers { status: "Healthy" }.
 var configuredAccessToken = builder.Configuration["Panel:AdminAccessToken"];
@@ -38,20 +56,39 @@ var panelAccessKey = builder.Configuration["Panel:PanelAccessKey"] is { Length: 
     : null;
 var temporaryPanelAccess = panelAccessKey is not null;
 
+builder.Services.AddSingleton(authDataSource);
+builder.Services.AddSingleton(authOptions);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<PanelAuthStore>();
+builder.Services.AddSingleton<PanelSignInService>();
+
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = LoginPage;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;
+        // The cookie lasts at most the session lifetime; the idle timeout and revocation are checked in the database.
+        options.ExpireTimeSpan = authOptions.SessionLifetime;
+        options.SlidingExpiration = false;
+        options.Cookie.Name = AuthCookieName;
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Strict;
         // HTTPS-only once the panel is served over HTTPS; plain HTTP is allowed for local runs.
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            var token = context.Principal?.FindFirstValue(PanelClaims.Session);
+            var store = context.HttpContext.RequestServices.GetRequiredService<PanelAuthStore>();
+            if (token is not null &&
+                await store.TouchSessionAsync(PanelSignInService.HashSessionToken(token), authOptions.IdleTimeout))
+                return;
+
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        };
         options.Events.OnRedirectToLogin = context =>
         {
-            if (context.Request.Path.StartsWithSegments("/api"))
+            if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments(PanelUserEndpoints.Prefix))
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             else
                 context.Response.Redirect(LoginPage);
@@ -136,11 +173,18 @@ builder.Services
             }
 
             // The service rejected the token (expired or revoked), so the panel session ends and the admin signs in again.
-            await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await EndSessionAsync(httpContext, "identity_token_rejected");
         });
     });
 
 var app = builder.Build();
+
+var authStore = app.Services.GetRequiredService<PanelAuthStore>();
+await authStore.EnsureSchemaAsync();
+if (!await authStore.AnyActiveUserAsync())
+    app.Logger.LogWarning("The panel has no active account; create one with 'users add <username>' (docs/panel-authentication.md).");
+if (hasLegacyCredentials)
+    app.Logger.LogWarning("Panel:Username and Panel:Password are no longer used (accounts are in the database); remove them.");
 
 if (temporaryPanelAccess)
     app.Logger.LogWarning(
@@ -155,6 +199,37 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
+if (!app.Environment.IsDevelopment())
+    app.UseHsts();
+
+app.Use(async (context, next) =>
+{
+    // A state-changing request must come from the panel's own pages (browsers send Sec-Fetch-Site on every request).
+    if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method) &&
+        context.Request.Headers["Sec-Fetch-Site"].ToString() is { Length: > 0 } fetchSite &&
+        fetchSite is not ("same-origin" or "none"))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return;
+    }
+
+    context.Response.OnStarting(() =>
+    {
+        var headers = context.Response.Headers;
+        headers.XContentTypeOptions = "nosniff";
+        headers.XFrameOptions = "DENY";
+        headers["Referrer-Policy"] = "no-referrer";
+        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+        headers.ContentSecurityPolicy = "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+        // Sign-in and account responses (which can carry an authenticator key) are never cached.
+        if (context.Request.Path.StartsWithSegments("/auth") || context.Request.Path.StartsWithSegments(PanelUserEndpoints.Prefix) ||
+            string.Equals(context.Request.Path.Value, LoginPage, StringComparison.OrdinalIgnoreCase))
+            headers.CacheControl = "no-store";
+        return Task.CompletedTask;
+    });
+    await next(context);
+});
+
 // The login page and its stylesheet are the only files served before authentication.
 app.UseWhen(
     context => publicPaths.Contains(context.Request.Path.Value, StringComparer.OrdinalIgnoreCase),
@@ -167,22 +242,37 @@ app.UseAuthorization();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapPost("/auth/login", async (HttpContext context) =>
+app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn) =>
     {
         var form = await context.Request.ReadFormAsync();
-        if (!SecretEquals(form["username"].ToString(), panelUsername) |
-            !SecretEquals(form["password"].ToString(), panelPassword))
-            return Results.Redirect($"{LoginPage}?error=invalid");
+        var client = ClientInfo.From(context);
 
-        List<Claim> claims = [new Claim(ClaimTypes.Name, panelUsername)];
+        // The token is checked first: a sign-in with a bad token neither counts against the account nor uses the code.
+        string? accessToken = null;
         if (!temporaryPanelAccess)
         {
             var enteredToken = form["accessToken"].ToString().Trim();
-            var accessToken = enteredToken.Length > 0 ? enteredToken : configuredAccessToken?.Trim();
+            accessToken = enteredToken.Length > 0 ? enteredToken : configuredAccessToken?.Trim();
             if (string.IsNullOrEmpty(accessToken) || !IsUnexpiredJwt(accessToken))
                 return Results.Redirect($"{LoginPage}?error=token");
-            claims.Add(new Claim(AccessTokenClaim, accessToken));
         }
+
+        var user = await signIn.VerifyAsync(
+            form["username"].ToString(), form["password"].ToString(), form["code"].ToString(), client, context.RequestAborted);
+        if (user is null)
+            return Results.Redirect($"{LoginPage}?error=invalid");
+
+        // A new session on every sign-in, so a session from before the sign-in is never reused.
+        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        var sessionToken = await signIn.CreateSessionAsync(user, client, context.RequestAborted);
+        List<Claim> claims =
+        [
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(PanelClaims.UserId, user.Id.ToString()),
+            new Claim(PanelClaims.Session, sessionToken)
+        ];
+        if (accessToken is not null)
+            claims.Add(new Claim(AccessTokenClaim, accessToken));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
@@ -201,9 +291,12 @@ app.MapGet("/auth/options", () => Results.Ok(new
 
 app.MapPost("/auth/logout", async (HttpContext context) =>
 {
-    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await EndSessionAsync(context, "sign_out");
     return Results.Redirect(LoginPage);
 });
+
+// The signed-in account (/panel-api/me) and account management; see docs/panel-authentication.md.
+app.MapPanelUserEndpoints();
 
 // The service's own health endpoint listens on a restricted port (and not at all in local mode), so the panel probes it.
 app.MapGet("/service-status", async (IHttpClientFactory httpClientFactory, CancellationToken cancellationToken) =>
@@ -224,17 +317,27 @@ app.MapGet("/service-status", async (IHttpClientFactory httpClientFactory, Cance
 app.MapReverseProxy();
 
 await app.RunAsync();
+return 0;
 
 static string RequiredSetting(IConfiguration configuration, string key) =>
     configuration[key] is { Length: > 0 } value
         ? value
         : throw new InvalidOperationException($"Configuration value '{key}' is required.");
 
-// Hashing first keeps the comparison constant-time regardless of input length.
-static bool SecretEquals(string candidate, string expected) =>
-    CryptographicOperations.FixedTimeEquals(
-        SHA256.HashData(Encoding.UTF8.GetBytes(candidate)),
-        SHA256.HashData(Encoding.UTF8.GetBytes(expected)));
+// Revokes the signed-in session in the database, records why, and removes the cookie.
+static async Task EndSessionAsync(HttpContext context, string auditEvent)
+{
+    var user = context.User;
+    if (user.GetSessionTokenHash() is { } tokenHash)
+    {
+        var store = context.RequestServices.GetRequiredService<PanelAuthStore>();
+        var client = ClientInfo.From(context);
+        await store.RevokeSessionAsync(tokenHash);
+        await store.AuditAsync(auditEvent, user.Identity?.Name, user.GetUserId(), client.IpAddress, client.UserAgent);
+    }
+
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+}
 
 // TEMPORARY-PANEL-ACCESS: the service refuses shorter keys, so the panel fails at startup rather than on every request.
 static string ValidPanelAccessKey(string key) =>
