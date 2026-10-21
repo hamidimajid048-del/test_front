@@ -118,6 +118,8 @@ const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type },
   { key: 'sharedValueCount', title: 'Shared values' },
+  { key: 'logCount', title: 'Logs' },
+  { key: 'relatedLogCount', title: 'Related logs' },
   { key: 'effectiveRepeatCount', title: 'Effective repeats' },
   {
     key: 'relatedLogin',

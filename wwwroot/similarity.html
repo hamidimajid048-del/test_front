@@ -44,6 +44,8 @@
       <label>Sort by
         <select name="sortItem">
           <option value="SharedValueCount">Shared values</option>
+          <option value="LogCount">Logs</option>
+          <option value="RelatedLogCount">Related logs</option>
           <option value="EffectiveRepeatCount">Effective repeats</option>
           <option value="RelatedLogin">Related login</option>
           <option value="Type">Type</option>
@@ -71,6 +73,7 @@
       <div id="summary"></div>
       <div id="summary-pager"></div>
       <ul class="help">
+        <li><strong>Logs / Related logs:</strong> the recorded logins of this login and of the related login on all shared values, over the whole recorded range.</li>
         <li><strong>Effective repeats:</strong> the sum, over all shared values, of the smaller log count of the two logins for each value.</li>
         <li>Click a row to see its shared values.</li>
       </ul>
