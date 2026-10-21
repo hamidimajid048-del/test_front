@@ -10,8 +10,8 @@ const DETAILS_QUERY_PREFIX = 'd_';
 
 const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'country', 'city', 'isp', 'asn', 'deviceType', 'cid'];
 const SUMMARY_KEYS = [
-  ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount', 'minEffectiveRepeatCount', 'minOccurrenceDays',
-  'minCoOccurrenceDays', 'sortItem', 'sortDirection',
+  ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount', 'minEffectiveRepeatCount',
+  'sortItem', 'sortDirection',
 ];
 
 const TYPE_LABELS = { Ip: 'IP', Cid: 'CID' };
@@ -119,8 +119,6 @@ const SUMMARY_COLUMNS = [
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type },
   { key: 'sharedValueCount', title: 'Shared values' },
   { key: 'effectiveRepeatCount', title: 'Effective repeats' },
-  { key: 'occurrenceDays', title: 'Occurrence days' },
-  { key: 'coOccurrenceDays', title: 'Co-occurrence days' },
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -144,8 +142,6 @@ const DETAILS_COLUMNS = [
   utcColumn('lastSeenUtc', 'Last seen'),
   utcColumn('relatedFirstSeenUtc', 'Related first seen'),
   utcColumn('relatedLastSeenUtc', 'Related last seen'),
-  { key: 'occurrenceDays', title: 'Occurrence days' },
-  { key: 'coOccurrenceDays', title: 'Co-occurrence days' },
 ];
 
 async function loadSummary() {

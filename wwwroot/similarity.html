@@ -41,14 +41,10 @@
       <label>Related login <input name="relatedLogin" type="number" min="1" step="1"></label>
       <label>Min shared values <input name="minSharedValueCount" type="number" min="0" step="1"></label>
       <label>Min effective repeats <input name="minEffectiveRepeatCount" type="number" min="0" step="1"></label>
-      <label>Min occurrence days <input name="minOccurrenceDays" type="number" min="0" step="1"></label>
-      <label>Min co-occurrence days <input name="minCoOccurrenceDays" type="number" min="0" step="1"></label>
       <label>Sort by
         <select name="sortItem">
           <option value="SharedValueCount">Shared values</option>
           <option value="EffectiveRepeatCount">Effective repeats</option>
-          <option value="OccurrenceDays">Occurrence days</option>
-          <option value="CoOccurrenceDays">Co-occurrence days</option>
           <option value="RelatedLogin">Related login</option>
           <option value="Type">Type</option>
         </select>
@@ -76,8 +72,6 @@
       <div id="summary-pager"></div>
       <ul class="help">
         <li><strong>Effective repeats:</strong> the sum, over all shared values, of the smaller log count of the two logins for each value.</li>
-        <li><strong>Occurrence days:</strong> the number of distinct UTC days on which at least one of the two logins used a shared value.</li>
-        <li><strong>Co-occurrence days:</strong> the number of distinct UTC days on which both logins used a shared value.</li>
         <li>Click a row to see its shared values.</li>
       </ul>
     </section>
@@ -104,8 +98,6 @@
             <option value="LastSeenUtc">Last seen</option>
             <option value="RelatedFirstSeenUtc">Related first seen</option>
             <option value="RelatedLastSeenUtc">Related last seen</option>
-            <option value="OccurrenceDays">Occurrence days</option>
-            <option value="CoOccurrenceDays">Co-occurrence days</option>
           </select>
         </label>
         <label>Direction
