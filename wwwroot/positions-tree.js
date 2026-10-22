@@ -162,7 +162,7 @@ function renderRisk(container, risk) {
       { key: 'weight', title: 'Weight' },
       { key: 'fraction', title: 'Match', format: fraction => percent(fraction * 100) },
       { key: 'points', title: 'Points' },
-    ], risk.reasons);
+    ], risk.reasons, undefined, { tools: false });
   } else {
     details.append('No matched pairs, so there is nothing to score.');
   }
@@ -263,6 +263,9 @@ function renderOffsets(container, buckets) {
 // ---- tree ----
 
 const TREE_COLUMNS = 14;
+// The report's sort items by parent column index, and the direction a first click on each starts with.
+const PARENT_SORT_KEYS = { 2: 'MainOpenTime', 10: 'MainProfitLoss', 11: 'ChildCount', 12: 'ClosestOffset', 13: 'Severity' };
+const TREE_SORT_NATURAL = { MainOpenTime: 'Asc', MainProfitLoss: 'Asc', ChildCount: 'Desc', ClosestOffset: 'Asc', Severity: 'Desc' };
 const PARENT_HEADERS = ['', 'Main ticket', 'Opened (UTC)', 'Closed (UTC)', 'Symbol', 'Direction', 'Volume', 'Entry', 'Stop loss', 'Take profit', 'Profit/loss', 'Matches', 'Closest offset', 'Signal'];
 const CHILD_HEADERS = ['', 'Related ticket', 'Opened (UTC)', 'Closed (UTC)', 'Offset', 'Direction', 'Volume', 'Entry', 'Stop loss', 'Take profit', 'Profit/loss', 'Counted', 'Net profit/loss', 'Signals'];
 
@@ -274,14 +277,26 @@ function cell(row, content, className) {
   return td;
 }
 
-function headerRow(titles, className) {
+// Header row; `sortKeys` maps a column index to the report's sort item and `sort` is the active
+// { item, direction, onChange } (server side, the tree is paged), which makes those headers sort buttons.
+function headerRow(titles, className, sortKeys = {}, sort = null, container = null) {
   const row = document.createElement('tr');
   row.className = className;
-  for (const title of titles) {
+  titles.forEach((title, index) => {
     const th = document.createElement('th');
-    th.textContent = title;
+    const key = sort && sortKeys[index];
+    if (key) {
+      const active = sort.item?.toLowerCase() === key.toLowerCase();
+      const direction = active ? (sort.direction?.toLowerCase() === 'asc' ? 'Asc' : 'Desc') : null;
+      sortButton(th, title, direction, () => {
+        const next = nextSort(sort, key, TREE_SORT_NATURAL[key] ?? 'Asc');
+        guarded(container, async () => sort.onChange(next.item, next.direction));
+      });
+    } else {
+      th.textContent = title;
+    }
     row.append(th);
-  }
+  });
   return row;
 }
 
@@ -316,7 +331,7 @@ function comparePanel(main, child, kindKey) {
     { key: 1, title: `Main (${main.accountId})` },
     { key: 2, title: `Related (${related.accountId})` },
     { key: 3, title: 'Difference' },
-  ], rows.map(row => ({ 0: row[0], 1: row[1], 2: row[2], 3: row[3] })));
+  ], rows.map(row => ({ 0: row[0], 1: row[1], 2: row[2], 3: row[3] })), undefined, { tools: false });
 
   panel.append(lifeline(main, related));
 
@@ -388,7 +403,7 @@ function proximityBar(offsetSeconds, window) {
 function renderPositionsTree(container, kindKey, nodes, state) {
   const table = document.createElement('table');
   table.className = 'tree';
-  table.createTHead().append(headerRow(PARENT_HEADERS));
+  table.createTHead().append(headerRow(PARENT_HEADERS, undefined, PARENT_SORT_KEYS, state.sort, container));
   const body = table.createTBody();
 
   if (!nodes.length) {

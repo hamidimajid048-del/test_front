@@ -111,14 +111,16 @@ function compareHref(login) {
 }
 
 const LIST_COLUMNS = [
-  { key: 'relatedLogin', title: 'Related login', format: loginLink },
-  { key: 'countShare', title: 'Share count' },
-  { key: 'percentShare', title: 'Share (%)', format: value => `${value}%` },
-  { key: 'profitLoss', title: 'Profit/loss' },
+  { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
+  { key: 'countShare', title: 'Share count', sortKey: 'CountShare' },
+  { key: 'percentShare', title: 'Share (%)', format: value => `${value}%`, sortKey: 'PercentShare' },
+  { key: 'profitLoss', title: 'Profit/loss', sortKey: 'ProfitLoss' },
   { key: 'hasIpShare', title: 'Shared evidence', format: (_, row) => shareLabels(row) },
   {
     key: 'relatedLogin',
     title: 'Actions',
+    sortable: false,
+    filterable: false,
     format: login => {
       const actions = document.createElement('div');
       actions.className = 'actions';
@@ -157,10 +159,21 @@ async function loadList() {
     ['Positions', report.metadata.positionCount],
     ['Profit/loss', report.metadata.profitLoss],
   ]);
-  renderTable(document.getElementById('list'), LIST_COLUMNS, report.items, row => openPositions(row.relatedLogin));
+  renderTable(document.getElementById('list'), LIST_COLUMNS, report.items, row => openPositions(row.relatedLogin), {
+    sort: {
+      item: search.sortItem,
+      direction: search.sortDirection,
+      onChange: (item, direction) => {
+        setSortFields(form, item, direction);
+        search = { ...search, sortItem: item, sortDirection: direction };
+        listPaging = { currentPage: 1, pageSize: listPaging.pageSize };
+        return withLoading(form, message, loadList);
+      },
+    },
+  });
   renderPager(document.getElementById('list-pager'), paging, (page, pageSize) => {
     listPaging = { currentPage: page, pageSize };
-    withLoading(form, message, loadList);
+    return withLoading(form, message, loadList);
   });
   document.getElementById('list-section').hidden = false;
   writeState();
@@ -181,10 +194,20 @@ async function loadTree() {
     ['Counted in the share', report.metadata.assignedCount],
   ]);
   treeState.window = { before: Number(report.metadata.secondsBefore), after: Number(report.metadata.secondsAfter) };
+  treeState.sort = {
+    item: positionsValues.sortItem,
+    direction: positionsValues.sortDirection,
+    onChange: (item, direction) => {
+      setSortFields(positionsForm, item, direction);
+      positionsValues = { ...positionsValues, sortItem: item, sortDirection: direction };
+      positionsPaging = { currentPage: 1, pageSize: positionsPaging.pageSize };
+      return withLoading(positionsForm, positionsMessage, loadTree);
+    },
+  };
   renderPositionsTree(document.getElementById('positions'), search.kind, report.items, treeState);
   renderPager(document.getElementById('positions-pager'), paging, (page, pageSize) => {
     positionsPaging = { currentPage: page, pageSize };
-    withLoading(positionsForm, positionsMessage, loadTree);
+    return withLoading(positionsForm, positionsMessage, loadTree);
   });
   writeState();
 }

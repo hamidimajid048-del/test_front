@@ -47,19 +47,19 @@ function topList(counts, limit = 4) {
 // ---- columns ----
 
 const SHARED_VALUE_COLUMNS = [
-  { key: 'logCount', title: 'Logs' },
-  { key: 'otherLogCount', title: 'Compared logs' },
-  { key: 'effectiveRepeatCount', title: 'Effective repeats' },
-  utcColumn('firstSeenUtc', 'First seen'),
-  utcColumn('lastSeenUtc', 'Last seen'),
+  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
+  { key: 'otherLogCount', title: 'Compared logs', sortKey: 'RelatedLogCount' },
+  { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
+  { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
+  { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
   utcColumn('otherFirstSeenUtc', 'Compared first seen'),
   utcColumn('otherLastSeenUtc', 'Compared last seen'),
-  { key: 'occurrenceDays', title: 'Occurrence days' },
-  { key: 'coOccurrenceDays', title: 'Co-occurrence days' },
+  { key: 'occurrenceDays', title: 'Occurrence days', sortKey: 'OccurrenceDays' },
+  { key: 'coOccurrenceDays', title: 'Co-occurrence days', sortKey: 'CoOccurrenceDays' },
 ];
 
 const SHARED_IP_COLUMNS = [
-  { key: 'value', title: 'IP' },
+  { key: 'value', title: 'IP', sortKey: 'Value' },
   { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
   { key: 'geo', title: 'ISP', format: geo => geo?.isp ?? '—' },
   { key: 'geo', title: 'ASN', format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
@@ -68,7 +68,7 @@ const SHARED_IP_COLUMNS = [
 ];
 
 const SHARED_CID_COLUMNS = [
-  { key: 'value', title: 'CID' },
+  { key: 'value', title: 'CID', sortKey: 'Value' },
   {
     key: 'isCidValid',
     title: 'Valid',
@@ -83,7 +83,7 @@ const SHARED_CID_COLUMNS = [
 ];
 
 const NEAR_COLUMNS = [
-  { ...utcColumn('loginAt', 'Login'), group: 'Main' },
+  { ...utcColumn('loginAt', 'Login'), group: 'Main', sortKey: 'LoginAt' },
   { key: 'ip', title: 'IP', group: 'Main' },
   { key: 'cid', title: 'CID', group: 'Main' },
   { key: 'platform', title: 'Platform', group: 'Main' },
@@ -91,14 +91,14 @@ const NEAR_COLUMNS = [
   { key: 'otherIp', title: 'IP', group: 'Compared' },
   { key: 'otherCid', title: 'CID', group: 'Compared' },
   { key: 'otherPlatform', title: 'Platform', group: 'Compared' },
-  { key: 'deltaSeconds', title: 'Gap', format: formatGap },
+  { key: 'deltaSeconds', title: 'Gap', format: formatGap, sortKey: 'DeltaSeconds' },
   { key: 'matchLevel', title: 'Match', format: level => badge(MATCH_LABELS[level] ?? level, MATCH_KINDS[level]) },
   { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'danger') },
   { key: 'sameDevice', title: 'Same device', format: same => yesBadge(same, 'warn') },
 ];
 
 const OVERLAP_COLUMNS = [
-  { ...utcColumn('loginAt', 'Login'), group: 'Main' },
+  { ...utcColumn('loginAt', 'Login'), group: 'Main', sortKey: 'LoginAt' },
   { ...utcColumn('logoutAt', 'Logout'), group: 'Main' },
   { key: 'ip', title: 'IP', group: 'Main' },
   { key: 'cid', title: 'CID', group: 'Main' },
@@ -108,7 +108,7 @@ const OVERLAP_COLUMNS = [
   { key: 'otherCid', title: 'CID', group: 'Compared' },
   { ...utcColumn('overlapStartUtc', 'From'), group: 'Overlap' },
   { ...utcColumn('overlapEndUtc', 'To'), group: 'Overlap' },
-  { key: 'overlapSeconds', title: 'Duration', group: 'Overlap', format: formatSpan },
+  { key: 'overlapSeconds', title: 'Duration', group: 'Overlap', format: formatSpan, sortKey: 'OverlapSeconds' },
   { key: 'sameIp', title: 'Same IP', format: same => yesBadge(same, 'danger') },
   { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'warn') },
 ];
@@ -119,7 +119,7 @@ const TIMELINE_COLUMNS = [
     title: 'Account',
     format: side => side === 'Main' ? badge('Main', 'main') : badge('Compared', 'compared'),
   },
-  utcColumn('loginAt', 'Login'),
+  { ...utcColumn('loginAt', 'Login'), sortKey: 'LoginAt' },
   utcColumn('logoutAt', 'Logout'),
   { key: 'ip', title: 'IP' },
   { key: 'cid', title: 'CID' },
@@ -361,6 +361,7 @@ function showPanel() {
   toolbar.append(apply);
   toolbar.addEventListener('submit', event => {
     event.preventDefault();
+    state.page = 1; // a new filter or sort starts from the first page, whatever page the old result was on
     load(tab, state, toolbar, tabMessage, parts);
   });
 
@@ -423,6 +424,25 @@ async function load(tab, state, toolbar, tabMessage, parts) {
   });
 }
 
+// Header-click sorting of a tab: the report's sort item and direction live in the tab's toolbar controls. A tab
+// with only a direction control (the timeline) sorts by its time column. Tabs with a fixed order sort the page on screen.
+function tabSort(tab, state, toolbar, tabMessage, parts) {
+  const hasDirection = tab.controls.some(control => control.name === 'sortDirection');
+  if (!hasDirection) return null;
+  const hasItem = tab.controls.some(control => control.name === 'sortItem');
+  return {
+    item: hasItem ? state.controls.sortItem : 'LoginAt',
+    direction: state.controls.sortDirection,
+    onChange: (item, direction) => {
+      if (hasItem) state.controls.sortItem = item;
+      state.controls.sortDirection = direction;
+      setSortFields(toolbar, hasItem ? item : undefined, direction);
+      state.page = 1;
+      return load(tab, state, toolbar, tabMessage, parts);
+    },
+  };
+}
+
 function render(tab, state, toolbar, tabMessage, parts) {
   const report = state.report;
   const paging = report.paging?.normalPagingResponse;
@@ -437,7 +457,8 @@ function render(tab, state, toolbar, tabMessage, parts) {
     parts.table,
     tab.columns,
     report.items,
-    tab.geoDetails ? session => renderGeoDetails(parts.detail, session) : undefined);
+    tab.geoDetails ? session => renderGeoDetails(parts.detail, session) : undefined,
+    { sort: tabSort(tab, state, toolbar, tabMessage, parts) });
   if (!report.items?.length) {
     parts.table.querySelector('td.empty').textContent = tab.empty;
   }
@@ -446,7 +467,7 @@ function render(tab, state, toolbar, tabMessage, parts) {
   renderPager(parts.pager, paging, (page, pageSize) => {
     state.page = page;
     state.pageSize = pageSize;
-    load(tab, state, toolbar, tabMessage, parts);
+    return load(tab, state, toolbar, tabMessage, parts);
   });
   writeState();
 }
@@ -541,7 +562,7 @@ function renderOverview(report) {
     { key: 'main', title: `Main · ${main.login}` },
     { key: 'other', title: `Compared · ${other.login}` },
     { key: 'shared', title: 'Shared' },
-  ], rows);
+  ], rows, undefined, { tools: false });
   document.getElementById('overview-section').hidden = false;
 }
 

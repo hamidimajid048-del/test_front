@@ -377,9 +377,31 @@ td.empty { padding: 32px; text-align: center; color: var(--text-faint); }
 
 /* ---------- Paging and tabs ---------- */
 
-.pager { display: flex; gap: 8px; align-items: center; margin-top: 14px; color: var(--text-muted); }
+.pager { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; color: var(--text-muted); }
 .pager span { padding: 0 6px; }
+.pager .gap { padding: 0 2px; }
+.pager .pager-label { margin-inline-start: auto; }
 .pager button, .pager select { height: 34px; }
+.pager button { min-width: 34px; padding: 0 10px; }
+.pager button.current { background: var(--primary); border-color: var(--primary); color: #fff; cursor: default; }
+.is-busy { opacity: .6; pointer-events: none; transition: opacity .1s ease; }
+
+/* Sortable headers and the filter row of every table. */
+th.sortable { padding: 0; }
+th .sort-button {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  padding: 10px 14px; height: auto; border: 0; border-radius: 0; background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+th .sort-button:hover:not(:disabled) { color: var(--text); background: var(--surface-3); border: 0; }
+th .sort-button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; box-shadow: none; }
+th .sort-icon { font-size: 10px; color: var(--text-faint); }
+th.sorted .sort-button, th.sorted .sort-icon { color: var(--primary); }
+thead tr.filter-row th { padding: 6px 8px; background: var(--surface); }
+thead tr.filter-row input { width: 100%; min-width: 72px; height: 30px; font-size: 12.5px; font-weight: 400; }
+.grid-meta { display: flex; gap: 12px; align-items: center; margin-top: 8px; color: var(--text-muted); font-size: 13px; }
+.grid-meta:empty { display: none; }
+.grid-meta button { height: 28px; padding: 0 10px; font-size: 12.5px; }
 
 .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
 .tabs button {

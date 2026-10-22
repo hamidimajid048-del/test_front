@@ -64,7 +64,7 @@ function renderGeoDetails(container, session) {
       ...GEO_FLAGS.map(key => ({ label: flagLabel(key), value: yesNo(session.geo[key]) })),
     ];
     const table = document.createElement('div');
-    renderTable(table, [{ key: 'label', title: 'Field' }, { key: 'value', title: 'Value' }], rows);
+    renderTable(table, [{ key: 'label', title: 'Field' }, { key: 'value', title: 'Value' }], rows, undefined, { tools: false });
     container.replaceChildren(title, table);
   }
   container.scrollIntoView({ behavior: 'smooth', block: 'start' });

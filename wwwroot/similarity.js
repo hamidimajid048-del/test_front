@@ -115,15 +115,17 @@ function compareHref(row) {
 }
 
 const SUMMARY_COLUMNS = [
-  { key: 'relatedLogin', title: 'Related login', format: loginLink },
-  { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type },
-  { key: 'sharedValueCount', title: 'Shared values' },
-  { key: 'logCount', title: 'Logs' },
-  { key: 'relatedLogCount', title: 'Related logs' },
-  { key: 'effectiveRepeatCount', title: 'Effective repeats' },
+  { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
+  { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
+  { key: 'sharedValueCount', title: 'Shared values', sortKey: 'SharedValueCount' },
+  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
+  { key: 'relatedLogCount', title: 'Related logs', sortKey: 'RelatedLogCount' },
+  { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
   {
     key: 'relatedLogin',
     title: 'Actions',
+    sortable: false,
+    filterable: false,
     format: (login, row) => {
       const actions = document.createElement('div');
       actions.className = 'actions';
@@ -136,14 +138,14 @@ const SUMMARY_COLUMNS = [
 ];
 
 const DETAILS_COLUMNS = [
-  { key: 'value', title: 'Value' },
-  { key: 'logCount', title: 'Logs' },
-  { key: 'relatedLogCount', title: 'Related logs' },
-  { key: 'effectiveRepeatCount', title: 'Effective repeats' },
-  utcColumn('firstSeenUtc', 'First seen'),
-  utcColumn('lastSeenUtc', 'Last seen'),
-  utcColumn('relatedFirstSeenUtc', 'Related first seen'),
-  utcColumn('relatedLastSeenUtc', 'Related last seen'),
+  { key: 'value', title: 'Value', sortKey: 'Value' },
+  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
+  { key: 'relatedLogCount', title: 'Related logs', sortKey: 'RelatedLogCount' },
+  { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
+  { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
+  { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
+  { ...utcColumn('relatedFirstSeenUtc', 'Related first seen'), sortKey: 'RelatedFirstSeenUtc' },
+  { ...utcColumn('relatedLastSeenUtc', 'Related last seen'), sortKey: 'RelatedLastSeenUtc' },
 ];
 
 async function loadSummary() {
@@ -151,10 +153,21 @@ async function loadSummary() {
   const paging = report.paging?.normalPagingResponse;
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
-  renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails);
+  renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails, {
+    sort: {
+      item: filters.sortItem,
+      direction: filters.sortDirection,
+      onChange: (item, direction) => {
+        setSortFields(form, item, direction);
+        filters = { ...filters, sortItem: item, sortDirection: direction };
+        summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
+        return withLoading(form, message, loadSummary);
+      },
+    },
+  });
   renderPager(document.getElementById('summary-pager'), paging, (page, pageSize) => {
     summaryPaging = { currentPage: page, pageSize };
-    withLoading(form, message, loadSummary);
+    return withLoading(form, message, loadSummary);
   });
   document.getElementById('summary-section').hidden = false;
   writeState();
@@ -164,10 +177,21 @@ async function loadDetails() {
   const report = await apiGet('similarity-reports/get-details', detailsParams());
   const paging = report.paging?.normalPagingResponse;
   detailsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? detailsPaging.pageSize };
-  renderTable(document.getElementById('details'), DETAILS_COLUMNS, report.items);
+  renderTable(document.getElementById('details'), DETAILS_COLUMNS, report.items, undefined, {
+    sort: {
+      item: detailsValues.sortItem,
+      direction: detailsValues.sortDirection,
+      onChange: (item, direction) => {
+        setSortFields(detailsForm, item, direction);
+        detailsValues = { ...detailsValues, sortItem: item, sortDirection: direction };
+        detailsPaging = { currentPage: 1, pageSize: detailsPaging.pageSize };
+        return withLoading(detailsForm, detailsMessage, loadDetails);
+      },
+    },
+  });
   renderPager(document.getElementById('details-pager'), paging, (page, pageSize) => {
     detailsPaging = { currentPage: page, pageSize };
-    withLoading(detailsForm, detailsMessage, loadDetails);
+    return withLoading(detailsForm, detailsMessage, loadDetails);
   });
   writeState();
 }

@@ -118,7 +118,7 @@ const USER_COLUMNS = [
   { key: 'activeSessions', title: 'Open sessions' },
   utcColumn('lastSignInAt', 'Last sign-in'),
   utcColumn('createdAt', 'Created'),
-  { key: 'id', title: 'Actions', format: (_, user) => userActions(user) },
+  { key: 'id', title: 'Actions', sortable: false, filterable: false, format: (_, user) => userActions(user) },
 ];
 
 async function loadUsers() {

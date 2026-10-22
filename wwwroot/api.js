@@ -280,9 +280,143 @@ function actionLink(text, href) {
   return link;
 }
 
-// columns: [{ key, title, format?(value, row) => string | Node, group? }]
+// ---- data grid: sorting, filtering and paging shared by every table ----
+
+// Runs `action` unless the same control is already busy, so a double click cannot start two overlapping requests
+// whose responses could arrive in the wrong order. The container is marked busy until the action settles.
+async function guarded(container, action) {
+  if (container.dataset.busy) return;
+  container.dataset.busy = '1';
+  container.classList.add('is-busy');
+  try {
+    await action();
+  } finally {
+    delete container.dataset.busy;
+    container.classList.remove('is-busy');
+  }
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T/;
+const NUMERIC = /^-?\d+(\.\d+)?$/;
+const NUMBER_FILTER = /^(>=|<=|>|<|=)\s*(-?\d+(?:\.\d+)?)$/;
+const textCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+// The text a cell shows: what the filter matches against and what sorting falls back to for structured values.
+function cellText(column, row) {
+  const value = column.format ? column.format(row[column.key], row) : row[column.key];
+  if (value instanceof Node) return value.textContent.trim();
+  return value === null || value === undefined ? '' : String(value);
+}
+
+// A value comparable across rows: numbers and dates become numbers, text stays text, empty becomes null.
+function sortValue(column, row) {
+  const value = column.sortValue ? column.sortValue(row) : row[column.key];
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  if (typeof value === 'string') {
+    if (NUMERIC.test(value)) return Number(value);
+    if (ISO_DATE.test(value)) return Date.parse(value);
+    return value;
+  }
+  return cellText(column, row) || null;
+}
+
+function compareValues(a, b) {
+  if (a === null || b === null) return (a === null) - (b === null); // empty values always sort last
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  return textCollator.compare(String(a), String(b));
+}
+
+// Numbers and dates read best largest/newest first; text alphabetically.
+function firstDirection(column, rows) {
+  if (column.firstDirection) return column.firstDirection;
+  const sample = rows?.map(row => sortValue(column, row)).find(value => value !== null);
+  return typeof sample === 'number' ? 'Desc' : 'Asc';
+}
+
+// Does the row satisfy the typed filter? ">5", "<=10", "=3" compare numbers; anything else is a case-insensitive
+// "contains" on the text shown in the cell.
+function matchesFilter(column, row, query) {
+  const numeric = NUMBER_FILTER.exec(query);
+  if (numeric) {
+    const value = sortValue(column, row);
+    if (typeof value === 'number') {
+      const limit = Number(numeric[2]);
+      switch (numeric[1]) {
+        case '>': return value > limit;
+        case '<': return value < limit;
+        case '>=': return value >= limit;
+        case '<=': return value <= limit;
+        default: return value === limit;
+      }
+    }
+  }
+  return cellText(column, row).toLowerCase().includes(query.toLowerCase());
+}
+
+const gridStates = new WeakMap();
+
+// Shows a sort chosen by clicking a header in the form's "Sort by" and "Direction" selects (the select matches its
+// option without regard to case, as the API does).
+function setSortFields(form, item, direction) {
+  for (const [name, value] of [['sortItem', item], ['sortDirection', direction]]) {
+    const select = form.elements[name];
+    const option = select && [...select.options].find(candidate => candidate.value.toLowerCase() === String(value).toLowerCase());
+    if (option) select.value = option.value;
+  }
+}
+
+// Turns a header cell into a sort button with a direction indicator. `direction` is 'Asc', 'Desc' or null.
+function sortButton(th, title, direction, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'sort-button';
+  button.title = `Sort by ${title}`;
+  const label = document.createElement('span');
+  label.textContent = title;
+  const icon = document.createElement('span');
+  icon.className = 'sort-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = direction === 'Asc' ? '▲' : direction === 'Desc' ? '▼' : '↕';
+  button.append(label, icon);
+  button.addEventListener('click', onClick);
+  th.classList.add('sortable');
+  th.setAttribute('aria-sort', direction === 'Asc' ? 'ascending' : direction === 'Desc' ? 'descending' : 'none');
+  if (direction) th.classList.add('sorted');
+  th.append(button);
+}
+
+// The next { item, direction } after a click on a header: same column flips the direction, a new one starts at
+// its natural direction.
+function nextSort(current, item, natural) {
+  if (current?.item?.toLowerCase() === item.toLowerCase()) {
+    return { item, direction: current.direction?.toLowerCase() === 'asc' ? 'Desc' : 'Asc' };
+  }
+  return { item, direction: natural };
+}
+
+// columns: [{ key, title, format?(value, row) => string | Node, group?, sortKey?, sortValue?(row), sortable?, filterable? }]
 // Consecutive columns with the same group get a shared header cell above their titles.
-function renderTable(container, columns, rows, onRowClick) {
+//
+// options.sort = { item, direction, onChange(item, direction) } sorts on the server (the report is paged, so the
+// whole result must be re-read): only columns with a sortKey are sortable and a click calls onChange with the key.
+// Without it, a click sorts the rows on screen. A row of filter boxes under the titles narrows the rows on screen;
+// options.tools = false turns sorting and filtering off for small fixed tables.
+function renderTable(container, columns, rows, onRowClick, options = {}) {
+  const tools = options.tools !== false;
+  const serverSort = tools ? options.sort : null;
+  const signature = columns.map(column => column.title).join('|');
+  let state = gridStates.get(container);
+  if (!state || state.signature !== signature) {
+    state = { signature, sortIndex: -1, direction: 'Asc', filters: columns.map(() => '') };
+    gridStates.set(container, state);
+  }
+  const allRows = rows ?? [];
+  const canSort = column => tools && column.sortable !== false && (serverSort ? Boolean(column.sortKey) : true);
+  const canFilter = column => tools && column.filterable !== false;
+  const filterable = tools && allRows.length > 1 && columns.some(canFilter);
+
   const table = document.createElement('table');
   const head = table.createTHead();
   if (columns.some(column => column.group)) {
@@ -299,69 +433,193 @@ function renderTable(container, columns, rows, onRowClick) {
       groupRow.append(th);
     }
   }
-  const headRow = head.insertRow();
-  for (const column of columns) {
-    const th = document.createElement('th');
-    th.textContent = column.title;
-    headRow.append(th);
-  }
 
   const body = table.createTBody();
-  if (!rows?.length) {
-    const cell = body.insertRow().insertCell();
-    cell.colSpan = columns.length;
-    cell.className = 'empty';
-    cell.textContent = 'No data found';
-  }
-  for (const row of rows ?? []) {
-    const tr = body.insertRow();
-    if (onRowClick) {
-      tr.classList.add('clickable');
-      tr.addEventListener('click', () => onRowClick(row));
+  const meta = document.createElement('div');
+  meta.className = 'grid-meta';
+
+  const visibleRows = () => {
+    let result = allRows;
+    const active = columns.map((column, index) => [column, state.filters[index].trim()]).filter(([column, query]) => query && canFilter(column));
+    if (active.length) result = result.filter(row => active.every(([column, query]) => matchesFilter(column, row, query)));
+    if (!serverSort && state.sortIndex >= 0) {
+      const column = columns[state.sortIndex];
+      const sign = state.direction === 'Desc' ? -1 : 1;
+      const keyed = result.map(row => [sortValue(column, row), row]);
+      // Empty values stay last in both directions, so only non-empty pairs flip with the sign.
+      keyed.sort((a, b) => (a[0] === null || b[0] === null ? compareValues(a[0], b[0]) : sign * compareValues(a[0], b[0])));
+      result = keyed.map(([, row]) => row);
     }
-    for (const column of columns) {
-      const td = tr.insertCell();
-      const value = column.format ? column.format(row[column.key], row) : row[column.key];
-      if (value instanceof Node) td.append(value);
-      else td.textContent = value ?? '';
+    return result;
+  };
+
+  const fill = () => {
+    body.replaceChildren();
+    const shown = visibleRows();
+    if (!shown.length) {
+      const cell = body.insertRow().insertCell();
+      cell.colSpan = columns.length;
+      cell.className = 'empty';
+      cell.textContent = allRows.length ? 'No rows match the filters' : 'No data found';
     }
+    for (const row of shown) {
+      const tr = body.insertRow();
+      if (onRowClick) {
+        tr.classList.add('clickable');
+        tr.addEventListener('click', () => onRowClick(row));
+      }
+      for (const column of columns) {
+        const td = tr.insertCell();
+        const value = column.format ? column.format(row[column.key], row) : row[column.key];
+        if (value instanceof Node) td.append(value);
+        else td.textContent = value ?? '';
+      }
+    }
+    const filtered = state.filters.some(query => query.trim());
+    meta.replaceChildren();
+    if (filtered) {
+      const text = document.createElement('span');
+      text.textContent = `Showing ${shown.length} of ${allRows.length} rows on this page`;
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.textContent = 'Clear filters';
+      clear.addEventListener('click', () => {
+        state.filters = columns.map(() => '');
+        for (const input of table.querySelectorAll('.filter-row input')) input.value = '';
+        fill();
+      });
+      meta.append(text, clear);
+    }
+  };
+
+  const headRow = head.insertRow();
+  const sortedItem = serverSort?.item?.toLowerCase();
+  columns.forEach((column, index) => {
+    const th = document.createElement('th');
+    if (!canSort(column)) {
+      th.textContent = column.title;
+      headRow.append(th);
+      return;
+    }
+    const active = serverSort
+      ? column.sortKey.toLowerCase() === sortedItem
+      : state.sortIndex === index;
+    const direction = active ? (serverSort ? (serverSort.direction?.toLowerCase() === 'asc' ? 'Asc' : 'Desc') : state.direction) : null;
+    sortButton(th, column.title, direction, () => {
+      if (serverSort) {
+        const next = nextSort(serverSort, column.sortKey, firstDirection(column, allRows));
+        guarded(container, async () => serverSort.onChange(next.item, next.direction));
+        return;
+      }
+      if (state.sortIndex === index) state.direction = state.direction === 'Asc' ? 'Desc' : 'Asc';
+      else {
+        state.sortIndex = index;
+        state.direction = firstDirection(column, allRows);
+      }
+      renderTable(container, columns, rows, onRowClick, options);
+    });
+    headRow.append(th);
+  });
+
+  if (filterable) {
+    const filterRow = head.insertRow();
+    filterRow.className = 'filter-row';
+    columns.forEach((column, index) => {
+      const th = document.createElement('th');
+      if (canFilter(column)) {
+        const input = document.createElement('input');
+        input.type = 'search';
+        input.placeholder = 'Filter';
+        input.autocomplete = 'off';
+        input.value = state.filters[index];
+        input.setAttribute('aria-label', `Filter ${column.title}`);
+        input.title = 'Filters the rows on this page. Numbers also accept >, <, >=, <= and =.';
+        let timer;
+        input.addEventListener('input', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            state.filters[index] = input.value;
+            fill();
+          }, 150);
+        });
+        th.append(input);
+      }
+      filterRow.append(th);
+    });
   }
 
+  fill();
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
-  container.replaceChildren(wrap);
+  container.replaceChildren(wrap, meta);
 }
 
-// paging: { pageSize, currentPage, totalPages }; onPage(page, pageSize) loads the requested page.
+// The page numbers to show: the first, the last, and a window around the current page; null marks a gap.
+function pageWindow(current, total) {
+  const pages = new Set([1, total, current - 2, current - 1, current, current + 1, current + 2]);
+  const sorted = [...pages].filter(page => page >= 1 && page <= total).sort((a, b) => a - b);
+  const result = [];
+  for (const page of sorted) {
+    if (result.length && page - result[result.length - 1] > 1) result.push(null);
+    result.push(page);
+  }
+  return result;
+}
+
+// paging: { pageSize, currentPage, totalPages }; onPage(page, pageSize) loads the requested page and may return a
+// promise: the pager ignores clicks until it settles, so requests cannot overlap.
 function renderPager(container, paging, onPage) {
-  const currentPage = paging?.currentPage ?? 1;
   const totalPages = Math.max(paging?.totalPages ?? 1, 1);
+  const currentPage = Math.min(Math.max(paging?.currentPage ?? 1, 1), totalPages);
   const pageSize = paging?.pageSize ?? 100;
 
-  const previous = document.createElement('button');
-  previous.type = 'button';
-  previous.textContent = 'Previous';
-  previous.disabled = currentPage <= 1;
-  previous.addEventListener('click', () => onPage(currentPage - 1, pageSize));
-
-  const next = document.createElement('button');
-  next.type = 'button';
-  next.textContent = 'Next';
-  next.disabled = currentPage >= totalPages;
-  next.addEventListener('click', () => onPage(currentPage + 1, pageSize));
-
-  const label = document.createElement('span');
-  label.textContent = `Page ${currentPage} of ${totalPages}`;
-
-  const size = document.createElement('select');
-  for (const option of new Set([...PAGE_SIZES, pageSize])) size.add(new Option(`${option} rows`, option));
-  size.value = pageSize;
-  size.addEventListener('change', () => onPage(1, Number(size.value)));
+  const go = (page, size = pageSize) => guarded(container, async () => onPage(page, size));
+  const button = (text, label, page, disabled, current) => {
+    const element = document.createElement('button');
+    element.type = 'button';
+    element.textContent = text;
+    element.title = label;
+    element.setAttribute('aria-label', label);
+    element.disabled = disabled;
+    if (current) {
+      element.classList.add('current');
+      element.setAttribute('aria-current', 'page');
+    }
+    element.addEventListener('click', () => go(page));
+    return element;
+  };
 
   const pager = document.createElement('div');
   pager.className = 'pager';
-  pager.append(previous, label, next, size);
+  pager.append(
+    button('«', 'First page', 1, currentPage <= 1),
+    button('‹', 'Previous page', currentPage - 1, currentPage <= 1));
+  for (const page of pageWindow(currentPage, totalPages)) {
+    if (page === null) {
+      const gap = document.createElement('span');
+      gap.className = 'gap';
+      gap.textContent = '…';
+      pager.append(gap);
+    } else {
+      pager.append(button(String(page), `Page ${page}`, page, false, page === currentPage));
+    }
+  }
+  pager.append(
+    button('›', 'Next page', currentPage + 1, currentPage >= totalPages),
+    button('»', 'Last page', totalPages, currentPage >= totalPages));
+
+  const label = document.createElement('span');
+  label.className = 'pager-label';
+  label.textContent = `Page ${currentPage} of ${totalPages}`;
+
+  const size = document.createElement('select');
+  size.setAttribute('aria-label', 'Rows per page');
+  for (const option of new Set([...PAGE_SIZES, pageSize])) size.add(new Option(`${option} rows`, option));
+  size.value = pageSize;
+  size.addEventListener('change', () => go(1, Number(size.value)));
+
+  pager.append(label, size);
   container.replaceChildren(pager);
 }
 
