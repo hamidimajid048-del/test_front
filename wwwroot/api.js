@@ -408,17 +408,23 @@ function nextSort(current, item, natural) {
 // with the new values, which re-reads the report from its first page. Only columns with such a key get a filter box, and
 // the boxes stay when no row matches. Without it, the boxes narrow the rows of the page on screen.
 // options.tools = false turns sorting and filtering off for small fixed tables.
-function renderTable(container, columns, rows, onRowClick, options = {}) {
+function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const tools = options.tools !== false;
   const serverSort = tools ? options.sort : null;
   const serverFilter = tools ? options.filter : null;
   const filterKeyOf = column => column.filterKey ?? column.sortKey;
-  const signature = columns.map(column => column.title).join('|');
+  const signature = allColumns.map(column => column.title).join('|');
   let state = gridStates.get(container);
   if (!state || state.signature !== signature) {
-    state = { signature, sortIndex: -1, direction: 'Asc', filters: columns.map(() => ''), focusKey: null, filterSeq: 0 };
+    state = {
+      signature, sortIndex: -1, direction: 'Asc', filters: allColumns.map(() => ''), focusKey: null, filterSeq: 0,
+      hidden: loadHiddenColumns(container, signature), pickerOpen: false,
+    };
     gridStates.set(container, state);
   }
+  // Only the columns the user has not hidden are drawn; state is indexed by the full column list.
+  const columns = tools ? allColumns.filter(column => !state.hidden.has(columnId(column))) : allColumns;
+  const indexOf = column => allColumns.indexOf(column);
   const allRows = rows ?? [];
   const canSort = column => tools && column.sortable !== false && (serverSort ? Boolean(column.sortKey) : true);
   const canFilter = column => tools && column.filterable !== false && (serverFilter ? Boolean(filterKeyOf(column)) : true);
@@ -450,10 +456,10 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
   const visibleRows = () => {
     let result = allRows;
     if (serverFilter) return result;
-    const active = columns.map((column, index) => [column, state.filters[index].trim()]).filter(([column, query]) => query && canFilter(column));
+    const active = columns.map(column => [column, state.filters[indexOf(column)].trim()]).filter(([column, query]) => query && canFilter(column));
     if (active.length) result = result.filter(row => active.every(([column, query]) => matchesFilter(column, row, query)));
     if (!serverSort && state.sortIndex >= 0) {
-      const column = columns[state.sortIndex];
+      const column = allColumns[state.sortIndex];
       const sign = state.direction === 'Desc' ? -1 : 1;
       const keyed = result.map(row => [sortValue(column, row), row]);
       // Empty values stay last in both directions, so only non-empty pairs flip with the sign.
@@ -510,7 +516,7 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
       clear.type = 'button';
       clear.textContent = 'Clear filters';
       clear.addEventListener('click', () => {
-        state.filters = columns.map(() => '');
+        state.filters = allColumns.map(() => '');
         for (const input of table.querySelectorAll('.filter-row input')) input.value = '';
         fill();
       });
@@ -520,7 +526,8 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
 
   const headRow = head.insertRow();
   const sortedItem = serverSort?.item?.toLowerCase();
-  columns.forEach((column, index) => {
+  columns.forEach(column => {
+    const index = indexOf(column);
     const th = document.createElement('th');
     if (!canSort(column)) {
       th.textContent = column.title;
@@ -542,7 +549,7 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
         state.sortIndex = index;
         state.direction = firstDirection(column, allRows);
       }
-      renderTable(container, columns, rows, onRowClick, options);
+      renderTable(container, allColumns, rows, onRowClick, options);
     });
     headRow.append(th);
   });
@@ -550,7 +557,8 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
   if (filterable) {
     const filterRow = head.insertRow();
     filterRow.className = 'filter-row';
-    columns.forEach((column, index) => {
+    columns.forEach(column => {
+      const index = indexOf(column);
       const th = document.createElement('th');
       if (canFilter(column)) {
         const input = document.createElement('input');
@@ -604,7 +612,71 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
-  container.replaceChildren(wrap, meta);
+  const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, () => renderTable(container, allColumns, rows, onRowClick, options)) : null;
+  container.replaceChildren(...(picker ? [picker] : []), wrap, meta);
+}
+
+// ---- column visibility: every table with tools lets the user hide and show its columns ----
+
+const columnId = column => `${column.group ?? ''}|${column.title}`;
+const hiddenColumnsKey = (container, signature) => `grid-columns:${location.pathname}:${container.id}:${signature}`;
+
+function loadHiddenColumns(container, signature) {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(hiddenColumnsKey(container, signature)) ?? '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveHiddenColumns(container, signature, hidden) {
+  try {
+    localStorage.setItem(hiddenColumnsKey(container, signature), JSON.stringify([...hidden]));
+  } catch {
+    // The choice then only lasts until the page is left.
+  }
+}
+
+// A "Columns" menu with one checkbox per column; the last visible column cannot be hidden.
+function columnPicker(allColumns, state, container, redraw) {
+  const details = document.createElement('details');
+  details.className = 'column-picker';
+  details.open = state.pickerOpen;
+  details.addEventListener('toggle', () => { state.pickerOpen = details.open; });
+  const summary = document.createElement('summary');
+  const hiddenCount = allColumns.filter(column => state.hidden.has(columnId(column))).length;
+  summary.textContent = hiddenCount ? `Columns (${allColumns.length - hiddenCount}/${allColumns.length})` : 'Columns';
+  const menu = document.createElement('div');
+  menu.className = 'column-picker-menu';
+  const visibleCount = allColumns.length - hiddenCount;
+  for (const column of allColumns) {
+    const id = columnId(column);
+    const label = document.createElement('label');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = !state.hidden.has(id);
+    box.disabled = box.checked && visibleCount <= 1;
+    box.addEventListener('change', () => {
+      if (box.checked) state.hidden.delete(id);
+      else state.hidden.add(id);
+      saveHiddenColumns(container, state.signature, state.hidden);
+      redraw();
+    });
+    label.append(box, ` ${column.group ? `${column.group}: ` : ''}${column.title}`);
+    menu.append(label);
+  }
+  const show = document.createElement('button');
+  show.type = 'button';
+  show.textContent = 'Show all';
+  show.disabled = !hiddenCount;
+  show.addEventListener('click', () => {
+    state.hidden.clear();
+    saveHiddenColumns(container, state.signature, state.hidden);
+    redraw();
+  });
+  menu.append(show);
+  details.append(summary, menu);
+  return details;
 }
 
 // The page numbers to show: the first, the last, and a window around the current page; null marks a gap.

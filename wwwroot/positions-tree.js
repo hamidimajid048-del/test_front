@@ -506,8 +506,46 @@ function renderPositionsTree(container, kindKey, nodes, state) {
     }
   }
 
+  const hiddenIndexes = group => TREE_HEADERS[group].map((title, index) => index).filter(index =>
+    index > 0 && treeColumnState(container, group).hidden.has(`${group}|${TREE_HEADERS[group][index]}`));
+  hideTreeColumns(table, hiddenIndexes('Main'), hiddenIndexes('Related'));
+
+  const bar = document.createElement('div');
+  bar.className = 'column-pickers';
+  for (const group of TREE_GROUPS) {
+    const columns = TREE_HEADERS[group].slice(1).map(title => ({ group, title }));
+    bar.append(columnPicker(columns, treeColumnState(container, group), container, () => renderPositionsTree(container, kindKey, nodes, state)));
+  }
+
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
-  container.replaceChildren(wrap);
+  container.replaceChildren(bar, wrap);
+}
+
+// ---- column visibility of the tree: the main rows and the related rows each have their own columns ----
+
+const TREE_GROUPS = ['Main', 'Related'];
+const TREE_HEADERS = { Main: PARENT_HEADERS, Related: CHILD_HEADERS };
+const treeColumnStates = new WeakMap();
+
+// The hidden-column state of one group of one tree container, restored from the browser on first use.
+function treeColumnState(container, group) {
+  let groups = treeColumnStates.get(container);
+  if (!groups) treeColumnStates.set(container, groups = {});
+  const signature = `tree-${group}`;
+  return groups[group] ??= { signature, hidden: loadHiddenColumns(container, signature), pickerOpen: false };
+}
+
+// Hides cells by position. The toggle column (0) always stays; a detail row spans what is left.
+function hideTreeColumns(table, hiddenMain, hiddenRelated) {
+  const hide = (row, indexes) => {
+    [...row.cells].forEach((cell, index) => { if (indexes.includes(index)) cell.hidden = true; });
+  };
+  for (const row of table.rows) {
+    if (row.classList.contains('tree-detail') || row.querySelector('td.empty')) continue;
+    hide(row, row.classList.contains('tree-child') ? hiddenRelated : hiddenMain);
+  }
+  const span = TREE_COLUMNS - Math.min(hiddenMain.length, hiddenRelated.length);
+  for (const cell of table.querySelectorAll('.tree-detail > td, td.empty')) cell.colSpan = span;
 }
