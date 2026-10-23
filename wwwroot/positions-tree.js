@@ -520,7 +520,8 @@ function renderPositionsTree(container, kindKey, nodes, state) {
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
-  container.replaceChildren(bar, wrap);
+  container.replaceChildren(wrap);
+  mountTools(container, bar);
 }
 
 // ---- column visibility of the tree: the main rows and the related rows each have their own columns ----

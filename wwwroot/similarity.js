@@ -155,7 +155,7 @@ const DETAILS_COLUMNS = [
 
 async function loadSummary() {
   const report = await apiGet('similarity-reports/get-summary', summaryParams());
-  const paging = report.paging?.normalPagingResponse;
+  const paging = pagingOf(report.paging);
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails, {
@@ -188,7 +188,7 @@ async function loadSummary() {
 
 async function loadDetails() {
   const report = await apiGet('similarity-reports/get-details', detailsParams());
-  const paging = report.paging?.normalPagingResponse;
+  const paging = pagingOf(report.paging);
   detailsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? detailsPaging.pageSize };
   renderTable(document.getElementById('details'), DETAILS_COLUMNS, report.items, undefined, {
     sort: {
@@ -232,7 +232,7 @@ function openDetails(row) {
   detailsColumnFilters = {};
   detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
   document.getElementById('details').replaceChildren();
-  document.getElementById('details-pager').replaceChildren();
+  clearPager(document.getElementById('details-pager'));
   document.getElementById('details-export-message').textContent = '';
   showDetailsSection().scrollIntoView({ behavior: 'smooth', block: 'start' });
   withLoading(detailsForm, detailsMessage, loadDetails);

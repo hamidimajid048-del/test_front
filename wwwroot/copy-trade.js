@@ -147,7 +147,7 @@ function windowItems(metadata) {
 
 async function loadList() {
   const report = await apiGet(`${LIST_PATH}/get-${search.kind}`, listParams());
-  const paging = report.paging?.normalPagingResponse;
+  const paging = pagingOf(report.paging);
   listPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? listPaging.pageSize };
 
   listRange = { from: toDayValue(new Date(report.metadata.fromUtc)), to: toDayValue(new Date(report.metadata.toUtc)) };
@@ -183,7 +183,7 @@ async function loadList() {
 
 async function loadTree() {
   const report = await apiGet(positionsPath('get', 'position-tree'), treeParams());
-  const paging = report.paging?.normalPagingResponse;
+  const paging = pagingOf(report.paging);
   positionsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? positionsPaging.pageSize };
 
   renderSummary(document.getElementById('positions-metadata'), [
@@ -249,9 +249,10 @@ function showPositionsSection() {
 }
 
 function resetPositionsView() {
-  for (const id of ['positions-metadata', 'positions-risk', 'positions-stats', 'positions', 'positions-pager', 'symbols-table', 'timeline-chart', 'offsets-chart']) {
+  for (const id of ['positions-metadata', 'positions-risk', 'positions-stats', 'positions', 'symbols-table', 'timeline-chart', 'offsets-chart']) {
     document.getElementById(id).replaceChildren();
   }
+  clearPager(document.getElementById('positions-pager'));
   exportMessage.textContent = '';
   treeState.expanded.clear();
   treeState.opened.clear();

@@ -417,7 +417,7 @@ async function load(tab, state, toolbar, tabMessage, parts) {
     });
     if (token !== context) return; // another comparison was started while this one was loading
     state.report = report;
-    const paging = report.paging?.normalPagingResponse;
+    const paging = pagingOf(report.paging);
     state.page = paging?.currentPage ?? state.page;
     state.pageSize = paging?.pageSize ?? state.pageSize;
     if (activeTab === tab.key) render(tab, state, toolbar, tabMessage, parts);
@@ -445,7 +445,7 @@ function tabSort(tab, state, toolbar, tabMessage, parts) {
 
 function render(tab, state, toolbar, tabMessage, parts) {
   const report = state.report;
-  const paging = report.paging?.normalPagingResponse;
+  const paging = pagingOf(report.paging);
 
   parts.description.textContent = tab.describe ? tab.describe(context) : '';
   parts.note.textContent = tab.notes ? tab.notes(report) : '';

@@ -58,7 +58,7 @@ function renderMetadata(result) {
 }
 
 function renderSessions(result) {
-  const paging = result.report.paging?.normalPagingResponse;
+  const paging = pagingOf(result.report.paging);
   renderMetadata(result);
   renderTable(
     document.getElementById('sessions'), SESSION_COLUMNS, result.report.items,
@@ -69,7 +69,8 @@ function renderSessions(result) {
 }
 
 function clearSessions() {
-  for (const id of ['metadata', 'sessions', 'sessions-pager', 'geo-details']) {
+  clearPager(document.getElementById('sessions-pager'));
+  for (const id of ['metadata', 'sessions', 'geo-details']) {
     document.getElementById(id).replaceChildren();
   }
 }

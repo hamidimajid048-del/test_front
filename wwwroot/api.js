@@ -623,7 +623,20 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   wrap.className = 'table-wrap';
   wrap.append(table);
   const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, () => renderTable(container, allColumns, rows, onRowClick, options)) : null;
-  container.replaceChildren(...(picker ? [picker] : []), wrap, meta);
+  container.replaceChildren(wrap, meta);
+  if (picker) mountTools(container, picker);
+}
+
+// The column menu goes into the bar above the table when the table has a pager (next to the rows-per-page choice and
+// the record counts), otherwise at the top of the table's own container.
+function mountTools(container, tools) {
+  const bar = container.previousElementSibling;
+  if (bar?.classList.contains('page-size-top')) {
+    bar.querySelectorAll(':scope > .column-picker, :scope > .column-pickers').forEach(old => old.remove());
+    bar.prepend(tools);
+  } else {
+    container.prepend(tools);
+  }
 }
 
 // ---- column visibility: every table with tools lets the user hide and show its columns ----
@@ -747,14 +760,61 @@ function renderPager(container, paging, onPage) {
   label.className = 'pager-label';
   label.textContent = `Page ${currentPage} of ${totalPages}`;
 
+  // The rows-per-page choice and the record counts sit above the table (the element just before the pager), next to
+  // the column menu; the page buttons stay below it.
   const size = document.createElement('select');
   size.setAttribute('aria-label', 'Rows per page');
-  for (const option of new Set([...PAGE_SIZES, pageSize])) size.add(new Option(`${option} rows`, option));
+  for (const option of new Set([...PAGE_SIZES, pageSize])) size.add(new Option(`${option}`, option));
   size.value = pageSize;
   size.addEventListener('change', () => go(1, Number(size.value)));
+  const sizeLabel = document.createElement('label');
+  sizeLabel.append('Rows per page ', size);
+  const counts = document.createElement('span');
+  counts.className = 'page-counts';
+  counts.textContent = recordSummary(paging, currentPage, totalPages, pageSize);
+  const bar = pageSizeBar(container);
+  bar.querySelectorAll(':scope > :not(.column-picker):not(.column-pickers)').forEach(old => old.remove());
+  bar.append(counts, sizeLabel);
+  // A column menu drawn before the bar existed moves up next to the counts.
+  container.previousElementSibling?.querySelectorAll(':scope > .column-picker, :scope > .column-pickers').forEach(menu => bar.prepend(menu));
 
-  pager.append(label, size);
+  pager.append(label);
   container.replaceChildren(pager);
+}
+
+// The report's paging with the number of rows of the whole result: `{ pageSize, currentPage, totalPages, totalRecords }`.
+function pagingOf(paging) {
+  return paging?.normalPagingResponse ? { ...paging.normalPagingResponse, totalRecords: paging.totalRecords } : undefined;
+}
+
+// "Records 101–200 of 1,234 · Page 2 of 13"
+function recordSummary(paging, currentPage, totalPages, pageSize) {
+  const total = paging?.totalRecords;
+  if (typeof total !== 'number') return `Page ${currentPage} of ${totalPages}`;
+  if (total === 0) return 'No records';
+  const first = (currentPage - 1) * pageSize + 1;
+  if (first > total) return `No records on this page · ${total.toLocaleString('en-US')} in total`;
+  const last = Math.min(currentPage * pageSize, total);
+  return `Records ${first.toLocaleString('en-US')}–${last.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} · Page ${currentPage} of ${totalPages}`;
+}
+
+// The bar above the table that the pager fills with the rows-per-page choice; created on first use.
+function pageSizeBar(pagerContainer) {
+  const table = pagerContainer.previousElementSibling;
+  let bar = table?.previousElementSibling;
+  if (!bar?.classList.contains('page-size-top')) {
+    bar = document.createElement('div');
+    bar.className = 'page-size-top';
+    table?.before(bar);
+  }
+  return bar;
+}
+
+// Empties a pager together with its rows-per-page choice above the table.
+function clearPager(pagerContainer) {
+  const bar = pagerContainer.previousElementSibling?.previousElementSibling;
+  if (bar?.classList.contains('page-size-top')) bar.replaceChildren();
+  pagerContainer.replaceChildren();
 }
 
 // Column filters travel to the API as Filters[Column]=text, and in the page's own link as `${prefix}cf_Column=text`.
