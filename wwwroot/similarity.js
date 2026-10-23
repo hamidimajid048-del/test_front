@@ -21,6 +21,9 @@ let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
 let selected = null;
 let detailsValues = {};
+// Column filters typed under the table headers; the server applies them to every page.
+let summaryColumnFilters = {};
+let detailsColumnFilters = {};
 let detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
 
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]));
@@ -72,6 +75,7 @@ function summaryParams() {
   return {
     ...pick(filters, SUMMARY_KEYS),
     ...commonParams(),
+    ...columnFilterParams(summaryColumnFilters),
     currentPage: summaryPaging.currentPage,
     pageSize: summaryPaging.pageSize,
   };
@@ -81,6 +85,7 @@ function detailsParams() {
   return {
     ...commonParams(),
     ...detailsValues,
+    ...columnFilterParams(detailsColumnFilters),
     type: selected.type,
     relatedLogin: selected.relatedLogin,
     currentPage: detailsPaging.currentPage,
@@ -89,9 +94,9 @@ function detailsParams() {
 }
 
 function writeState() {
-  const state = { ...filters, currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
+  const state = { ...filters, ...columnFilterState(summaryColumnFilters), currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
   if (selected) {
-    const prefixed = { ...detailsValues, relatedLogin: selected.relatedLogin, type: selected.type, ...detailsPaging };
+    const prefixed = { ...detailsValues, ...columnFilterState(detailsColumnFilters), relatedLogin: selected.relatedLogin, type: selected.type, ...detailsPaging };
     for (const [key, value] of Object.entries(prefixed)) state[DETAILS_QUERY_PREFIX + key] = value;
   }
   writeQuery(state);
@@ -164,6 +169,14 @@ async function loadSummary() {
         return withLoading(form, message, loadSummary);
       },
     },
+    filter: {
+      values: summaryColumnFilters,
+      onChange: values => {
+        summaryColumnFilters = values;
+        summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
+        return withLoading(form, message, loadSummary);
+      },
+    },
   });
   renderPager(document.getElementById('summary-pager'), paging, (page, pageSize) => {
     summaryPaging = { currentPage: page, pageSize };
@@ -188,6 +201,14 @@ async function loadDetails() {
         return withLoading(detailsForm, detailsMessage, loadDetails);
       },
     },
+    filter: {
+      values: detailsColumnFilters,
+      onChange: values => {
+        detailsColumnFilters = values;
+        detailsPaging = { currentPage: 1, pageSize: detailsPaging.pageSize };
+        return withLoading(detailsForm, detailsMessage, loadDetails);
+      },
+    },
   });
   renderPager(document.getElementById('details-pager'), paging, (page, pageSize) => {
     detailsPaging = { currentPage: page, pageSize };
@@ -208,6 +229,7 @@ function openDetails(row) {
   selected = { relatedLogin: row.relatedLogin, type: row.type };
   detailsForm.reset();
   detailsValues = {};
+  detailsColumnFilters = {};
   detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
   document.getElementById('details').replaceChildren();
   document.getElementById('details-pager').replaceChildren();
@@ -238,6 +260,7 @@ form.addEventListener('submit', event => {
     const values = formValues(form);
     validateRange(values);
     filters = values;
+    summaryColumnFilters = {};
     summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
     hideDetails();
     await loadSummary();
@@ -258,6 +281,7 @@ async function restoreFromQuery() {
   showAccountRange();
   const query = new URLSearchParams(location.search);
   filters = formValues(form);
+  summaryColumnFilters = readColumnFilters(query);
   summaryPaging = {
     currentPage: Number(query.get('currentPage')) || 1,
     pageSize: Number(query.get('pageSize')) || DEFAULT_PAGE_SIZE,
@@ -276,6 +300,7 @@ async function restoreFromQuery() {
     if (value) element.value = value;
   }
   detailsValues = formValues(detailsForm);
+  detailsColumnFilters = readColumnFilters(query, DETAILS_QUERY_PREFIX);
   detailsPaging = {
     currentPage: Number(query.get(`${DETAILS_QUERY_PREFIX}currentPage`)) || 1,
     pageSize: Number(query.get(`${DETAILS_QUERY_PREFIX}pageSize`)) || DEFAULT_PAGE_SIZE,

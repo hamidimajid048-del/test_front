@@ -401,21 +401,30 @@ function nextSort(current, item, natural) {
 //
 // options.sort = { item, direction, onChange(item, direction) } sorts on the server (the report is paged, so the
 // whole result must be re-read): only columns with a sortKey are sortable and a click calls onChange with the key.
-// Without it, a click sorts the rows on screen. A row of filter boxes under the titles narrows the rows on screen;
+// Without it, a click sorts the rows on screen. A row of filter boxes under the titles narrows the rows.
+//
+// options.filter = { values, onChange(values) } filters on the server the same way: `values` maps a column's filterKey
+// (its sortKey when it has no filterKey) to the typed text, and a change (after a short pause in typing) calls onChange
+// with the new values, which re-reads the report from its first page. Only columns with such a key get a filter box, and
+// the boxes stay when no row matches. Without it, the boxes narrow the rows of the page on screen.
 // options.tools = false turns sorting and filtering off for small fixed tables.
 function renderTable(container, columns, rows, onRowClick, options = {}) {
   const tools = options.tools !== false;
   const serverSort = tools ? options.sort : null;
+  const serverFilter = tools ? options.filter : null;
+  const filterKeyOf = column => column.filterKey ?? column.sortKey;
   const signature = columns.map(column => column.title).join('|');
   let state = gridStates.get(container);
   if (!state || state.signature !== signature) {
-    state = { signature, sortIndex: -1, direction: 'Asc', filters: columns.map(() => '') };
+    state = { signature, sortIndex: -1, direction: 'Asc', filters: columns.map(() => ''), focusKey: null, filterSeq: 0 };
     gridStates.set(container, state);
   }
   const allRows = rows ?? [];
   const canSort = column => tools && column.sortable !== false && (serverSort ? Boolean(column.sortKey) : true);
-  const canFilter = column => tools && column.filterable !== false;
-  const filterable = tools && allRows.length > 1 && columns.some(canFilter);
+  const canFilter = column => tools && column.filterable !== false && (serverFilter ? Boolean(filterKeyOf(column)) : true);
+  const serverValue = column => (serverFilter?.values?.[filterKeyOf(column)] ?? '').trim();
+  const serverFiltered = () => Boolean(serverFilter) && columns.some(column => canFilter(column) && serverValue(column));
+  const filterable = tools && columns.some(canFilter) && (serverFilter ? true : allRows.length > 1);
 
   const table = document.createElement('table');
   const head = table.createTHead();
@@ -440,6 +449,7 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
 
   const visibleRows = () => {
     let result = allRows;
+    if (serverFilter) return result;
     const active = columns.map((column, index) => [column, state.filters[index].trim()]).filter(([column, query]) => query && canFilter(column));
     if (active.length) result = result.filter(row => active.every(([column, query]) => matchesFilter(column, row, query)));
     if (!serverSort && state.sortIndex >= 0) {
@@ -453,6 +463,14 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
     return result;
   };
 
+  // Applies the typed filters on the server. A change made while a request runs waits for it, and only the newest wins.
+  const submitFilters = async values => {
+    const seq = ++state.filterSeq;
+    while (container.dataset.busy) await new Promise(resolve => setTimeout(resolve, 50));
+    if (seq !== state.filterSeq) return;
+    await guarded(container, async () => serverFilter.onChange(values));
+  };
+
   const fill = () => {
     body.replaceChildren();
     const shown = visibleRows();
@@ -460,7 +478,7 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
       const cell = body.insertRow().insertCell();
       cell.colSpan = columns.length;
       cell.className = 'empty';
-      cell.textContent = allRows.length ? 'No rows match the filters' : 'No data found';
+      cell.textContent = allRows.length || serverFiltered() ? 'No rows match the filters' : 'No data found';
     }
     for (const row of shown) {
       const tr = body.insertRow();
@@ -475,9 +493,17 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
         else td.textContent = value ?? '';
       }
     }
-    const filtered = state.filters.some(query => query.trim());
+    const filtered = serverFilter ? serverFiltered() : state.filters.some(query => query.trim());
     meta.replaceChildren();
-    if (filtered) {
+    if (filtered && serverFilter) {
+      const text = document.createElement('span');
+      text.textContent = 'Filters apply to all pages';
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.textContent = 'Clear filters';
+      clear.addEventListener('click', () => submitFilters({}));
+      meta.append(text, clear);
+    } else if (filtered) {
       const text = document.createElement('span');
       text.textContent = `Showing ${shown.length} of ${allRows.length} rows on this page`;
       const clear = document.createElement('button');
@@ -531,17 +557,43 @@ function renderTable(container, columns, rows, onRowClick, options = {}) {
         input.type = 'search';
         input.placeholder = 'Filter';
         input.autocomplete = 'off';
-        input.value = state.filters[index];
+        input.value = serverFilter ? serverValue(column) : state.filters[index];
         input.setAttribute('aria-label', `Filter ${column.title}`);
-        input.title = 'Filters the rows on this page. Numbers also accept >, <, >=, <= and =.';
+        input.title = serverFilter
+          ? 'Filters all pages. Numbers and dates also accept >, <, >=, <= and =.'
+          : 'Filters the rows on this page. Numbers also accept >, <, >=, <= and =.';
         let timer;
-        input.addEventListener('input', () => {
-          clearTimeout(timer);
-          timer = setTimeout(() => {
-            state.filters[index] = input.value;
-            fill();
-          }, 150);
-        });
+        if (serverFilter) {
+          const apply = () => {
+            clearTimeout(timer);
+            state.focusKey = document.activeElement === input ? filterKeyOf(column) : null;
+            const values = { ...serverFilter.values, [filterKeyOf(column)]: input.value.trim() };
+            return submitFilters(values);
+          };
+          input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(apply, 400);
+          });
+          input.addEventListener('keydown', event => {
+            if (event.key === 'Enter') apply();
+          });
+          if (state.focusKey === filterKeyOf(column)) {
+            state.focusKey = null;
+            queueMicrotask(() => {
+              if (!input.isConnected) return;
+              input.focus();
+              input.setSelectionRange(input.value.length, input.value.length);
+            });
+          }
+        } else {
+          input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+              state.filters[index] = input.value;
+              fill();
+            }, 150);
+          });
+        }
         th.append(input);
       }
       filterRow.append(th);
@@ -621,6 +673,22 @@ function renderPager(container, paging, onPage) {
 
   pager.append(label, size);
   container.replaceChildren(pager);
+}
+
+// Column filters travel to the API as Filters[Column]=text, and in the page's own link as `${prefix}cf_Column=text`.
+const COLUMN_FILTER_PREFIX = 'cf_';
+
+function columnFilterParams(values) {
+  return Object.fromEntries(Object.entries(values ?? {}).filter(([, text]) => text).map(([key, text]) => [`Filters[${key}]`, text]));
+}
+
+function columnFilterState(values, prefix = '') {
+  return Object.fromEntries(Object.entries(values ?? {}).filter(([, text]) => text).map(([key, text]) => [prefix + COLUMN_FILTER_PREFIX + key, text]));
+}
+
+function readColumnFilters(query, prefix = '') {
+  const start = prefix + COLUMN_FILTER_PREFIX;
+  return Object.fromEntries([...query.entries()].filter(([key, text]) => key.startsWith(start) && text).map(([key, text]) => [key.slice(start.length), text]));
 }
 
 // Returns the non-empty values of the form's named fields.
