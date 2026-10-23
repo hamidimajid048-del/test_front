@@ -8,7 +8,7 @@ const detailsMessage = document.getElementById('details-message');
 const DEFAULT_PAGE_SIZE = 100;
 const DETAILS_QUERY_PREFIX = 'd_';
 
-const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'country', 'city', 'isp', 'asn', 'deviceType', 'cid'];
+const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'deviceType', 'cid'];
 const SUMMARY_KEYS = [
   ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount', 'minEffectiveRepeatCount',
   'sortItem', 'sortDirection',
