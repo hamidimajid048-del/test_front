@@ -177,6 +177,8 @@ builder.Services
         });
     });
 
+builder.Services.AddSingleton(sp => new FrontendVersion(sp.GetRequiredService<IWebHostEnvironment>().WebRootFileProvider, TimeProvider.System));
+
 var app = builder.Build();
 
 var authStore = app.Services.GetRequiredService<PanelAuthStore>();
@@ -223,7 +225,8 @@ app.Use(async (context, next) =>
         headers.ContentSecurityPolicy = "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
         // Sign-in and account responses (which can carry an authenticator key) are never cached.
         if (context.Request.Path.StartsWithSegments("/auth") || context.Request.Path.StartsWithSegments(PanelUserEndpoints.Prefix) ||
-            string.Equals(context.Request.Path.Value, LoginPage, StringComparison.OrdinalIgnoreCase))
+            string.Equals(context.Request.Path.Value, LoginPage, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(context.Request.Path.Value, "/version", StringComparison.OrdinalIgnoreCase))
             headers.CacheControl = "no-store";
         return Task.CompletedTask;
     });
@@ -287,6 +290,10 @@ app.MapGet("/auth/options", () => Results.Ok(new
     {
         accessToken = temporaryPanelAccess ? "none" : string.IsNullOrWhiteSpace(configuredAccessToken) ? "required" : "optional"
     }))
+    .AllowAnonymous();
+
+// The version of the pages on this server (a hash of every file in wwwroot), shown in the menu, to compare with the source.
+app.MapGet("/version", (FrontendVersion version) => Results.Ok(new { frontend = version.Current }))
     .AllowAnonymous();
 
 app.MapPost("/auth/logout", async (HttpContext context) =>

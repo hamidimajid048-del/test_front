@@ -192,6 +192,16 @@ function renderMenu() {
   actions.className = 'nav-actions';
   actions.append(signedInAs, createThemeToggle(), logout);
 
+  // The version of the pages on this server: it changes with any edit of the front end, so it shows what is deployed.
+  const version = document.createElement('span');
+  version.className = 'nav-version';
+  version.title = 'Front-end version on this server';
+  actions.prepend(version);
+  fetch('/version', { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    .then(response => response.ok ? response.json() : null)
+    .then(body => { if (body?.frontend) version.textContent = `v ${body.frontend}`; })
+    .catch(() => {});
+
   nav.replaceChildren(brand, ...links, actions);
 
   currentAccount().then(me => {
