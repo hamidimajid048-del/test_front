@@ -17,20 +17,30 @@
     </form>
     <p class="message" id="message"></p>
 
+    <div class="summary" id="metadata"></div>
+
     <div class="tabs" id="tabs">
-      <button type="button" data-tab="sessions">Sessions</button>
-      <button type="button" data-tab="ips">IP</button>
-      <button type="button" data-tab="cids">CID</button>
+      <button type="button" data-tab="summary">Summary</button>
+      <button type="button" data-tab="details">Details</button>
     </div>
 
-    <section data-panel="sessions">
-      <div class="summary" id="metadata"></div>
+    <section data-panel="summary">
+      <div class="summary-columns">
+        <div>
+          <h3 id="ips-title">IP</h3>
+          <div id="ips"></div>
+        </div>
+        <div>
+          <h3 id="cids-title">CID</h3>
+          <div id="cids"></div>
+        </div>
+      </div>
+    </section>
+    <section data-panel="details" hidden>
       <div id="sessions"></div>
       <div id="sessions-pager"></div>
       <div id="geo-details"></div>
     </section>
-    <section data-panel="ips" hidden><div id="ips"></div></section>
-    <section data-panel="cids" hidden><div id="cids"></div></section>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>

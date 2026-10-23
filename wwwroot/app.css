@@ -590,3 +590,8 @@ dialog.panel-dialog .dialog-buttons { display: flex; gap: 8px; justify-content: 
 .column-picker-menu label { display: flex; gap: 6px; align-items: center; font-size: 13px; white-space: nowrap; cursor: pointer; }
 .column-picker-menu button { height: 28px; font-size: 12.5px; }
 table td[hidden], table th[hidden] { display: none; }
+
+/* Login history summary: IPs on the left, CIDs on the right */
+.summary-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.summary-columns h3 { margin: 0 0 8px; }
+@media (max-width: 900px) { .summary-columns { grid-template-columns: minmax(0, 1fr); } }

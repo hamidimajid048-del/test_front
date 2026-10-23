@@ -11,7 +11,7 @@ const ACCOUNT_REASONS = new Set([
 ]);
 
 let currentLogin = null;
-let currentTab = 'sessions';
+let currentTab = 'summary';
 
 const mappingColumns = (key, title) => [
   { key, title },
@@ -21,7 +21,8 @@ const mappingColumns = (key, title) => [
 ];
 
 function showTab(tab) {
-  currentTab = ['sessions', 'ips', 'cids'].includes(tab) ? tab : 'sessions';
+  // Older links name the IP and CID tabs (now the summary) and the sessions tab (now the details).
+  currentTab = ({ sessions: 'details', ips: 'summary', cids: 'summary' })[tab] ?? (['summary', 'details'].includes(tab) ? tab : 'summary');
   for (const button of document.querySelectorAll('#tabs button')) {
     button.classList.toggle('active', button.dataset.tab === currentTab);
   }
@@ -44,8 +45,6 @@ function renderMetadata(result) {
   if (result.accountNote === null) {
     renderSummary(document.getElementById('metadata'), [
       ['Login', metadata.login],
-      ['Account ID', metadata.accountId],
-      ['Account Server ID', metadata.accountServerId],
       ['Data start (UTC)', formatUtc(metadata.firstDataTime)],
       ['Data end (UTC)', formatUtc(metadata.lastDataTime)],
     ]);
@@ -77,16 +76,16 @@ function clearSessions() {
 
 function renderMapping(containerId, tab, label, key, outcome) {
   const container = document.getElementById(containerId);
-  const button = document.querySelector(`#tabs button[data-tab="${tab}"]`);
+  const title = document.getElementById(`${containerId}-title`);
   if (outcome.status === 'fulfilled') {
     renderTable(container, mappingColumns(key, label), outcome.value);
-    button.textContent = `${label} (${outcome.value?.length ?? 0})`;
+    title.textContent = `${label} summary (${outcome.value?.length ?? 0})`;
   } else {
     const error = document.createElement('p');
     error.className = 'message error';
     error.textContent = outcome.reason?.message || UNAVAILABLE_MESSAGE;
     container.replaceChildren(error);
-    button.textContent = label;
+    title.textContent = `${label} summary`;
   }
 }
 
