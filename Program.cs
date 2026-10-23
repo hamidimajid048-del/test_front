@@ -233,17 +233,24 @@ app.Use(async (context, next) =>
     await next(context);
 });
 
+// The pages change with every publish, so the browser checks (with the ETag, a cheap 304) before it reuses a file;
+// without a cache header it would keep an old script for hours by its Last-Modified date.
+var staticFiles = new StaticFileOptions
+{
+    OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = "no-cache"
+};
+
 // The login page, its stylesheet, theme script and favicon are the only files served before authentication.
 app.UseWhen(
     context => publicPaths.Contains(context.Request.Path.Value, StringComparer.OrdinalIgnoreCase),
-    branch => branch.UseStaticFiles());
+    branch => branch.UseStaticFiles(staticFiles));
 
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(staticFiles);
 
 app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn) =>
     {
