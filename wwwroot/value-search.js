@@ -172,32 +172,44 @@ async function loadDetails() {
 }
 
 function showDetailsSection(login) {
-  document.getElementById('details-title').textContent =
-    `Sessions: login ${login} on ${TYPE_LABELS[filters.type] ?? filters.type} ${filters.value}`;
+  document.getElementById('details-title').textContent = login
+    ? `Sessions: login ${login} on ${TYPE_LABELS[filters.type] ?? filters.type} ${filters.value}`
+    : `Sessions: every login on ${TYPE_LABELS[filters.type] ?? filters.type} ${filters.value}`;
   const section = document.getElementById('details-section');
   section.hidden = false;
   return section;
 }
 
-// Clicking a summary row drills into that login's own sessions on the searched value (an exact filter, so a
-// login like 12 never also matches 123).
-function openDetails(row) {
+function openDetailsWith(columnFilters, login) {
   detailsOpen = true;
-  detailsColumnFilters = { login: `=${row.login}` };
+  detailsColumnFilters = columnFilters;
   detailsSort = {};
   detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
   document.getElementById('details').replaceChildren();
   clearPager(document.getElementById('details-pager'));
   document.getElementById('details-export-message').textContent = '';
   document.getElementById('geo-details').replaceChildren();
-  showDetailsSection(row.login).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showDetailsSection(login).scrollIntoView({ behavior: 'smooth', block: 'start' });
   withDetailsLoading(loadDetails);
+}
+
+// Clicking a summary row drills into that login's own sessions on the searched value (an exact filter, so a
+// login like 12 never also matches 123).
+function openDetails(row) {
+  openDetailsWith({ login: `=${row.login}` }, row.login);
+}
+
+// Every session of every login that used the value, with no login filter at all.
+function openAllDetails() {
+  openDetailsWith({}, null);
 }
 
 function hideDetails() {
   detailsOpen = false;
   document.getElementById('details-section').hidden = true;
 }
+
+document.getElementById('view-all-sessions').addEventListener('click', openAllDetails);
 
 document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
   const kind = button.dataset.export;
@@ -249,8 +261,8 @@ async function restoreFromQuery() {
     currentPage: Number(query.get(`${DETAILS_QUERY_PREFIX}currentPage`)) || 1,
     pageSize: Number(query.get(`${DETAILS_QUERY_PREFIX}pageSize`)) || DEFAULT_PAGE_SIZE,
   };
-  const loginFilter = detailsColumnFilters.login ?? '';
-  showDetailsSection(loginFilter.replace(/^[<>=]+/, '') || '?');
+  const loginFilter = detailsColumnFilters.login;
+  showDetailsSection(loginFilter ? loginFilter.replace(/^[<>=]+/, '') : null);
   await withDetailsLoading(loadDetails);
 }
 
