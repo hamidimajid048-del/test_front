@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>CID / IP search — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Search by
+        <select name="type" required>
+          <option value="Cid">CID</option>
+          <option value="Ip">IP</option>
+        </select>
+      </label>
+      <label>Value <input name="value" required maxlength="200"></label>
+      <label>Date range
+        <select name="range">
+          <option value="">All time</option>
+          <option value="day">Last day</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <label>Sort by
+        <select name="sortItem">
+          <option value="LogCount">Logs</option>
+          <option value="Login">Login</option>
+          <option value="FirstSeenUtc">First seen</option>
+          <option value="LastSeenUtc">Last seen</option>
+        </select>
+      </label>
+      <label>Direction
+        <select name="sortDirection">
+          <option value="Desc">Descending</option>
+          <option value="Asc">Ascending</option>
+        </select>
+      </label>
+      <button type="submit">Search</button>
+    </form>
+    <p class="message" id="message"></p>
+
+    <section id="summary-section" hidden>
+      <div class="section-head">
+        <h2>Summary</h2>
+        <button type="button" data-export="summary" data-format="Csv">CSV</button>
+        <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
+      </div>
+      <p class="message" id="summary-export-message"></p>
+      <div class="summary" id="summary-metadata"></div>
+      <div id="summary"></div>
+      <div id="summary-pager"></div>
+      <ul class="help">
+        <li><strong>Logs:</strong> the recorded logins of that login on the searched value, over the applied range.</li>
+        <li>Click a row to see its individual sessions.</li>
+      </ul>
+    </section>
+
+    <section id="details-section" hidden>
+      <div class="section-head">
+        <h2 id="details-title">Sessions</h2>
+        <button type="button" data-export="details" data-format="Csv">CSV</button>
+        <button type="button" data-export="details" data-format="Xlsx">Excel</button>
+      </div>
+      <p class="message" id="details-export-message"></p>
+      <p class="message" id="details-message"></p>
+      <div id="details"></div>
+      <div id="details-pager"></div>
+      <div id="geo-details"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/range.js"></script>
+  <script src="/sessions-table.js"></script>
+  <script src="/value-search.js"></script>
+</body>
+</html>

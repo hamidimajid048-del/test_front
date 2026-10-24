@@ -14,6 +14,7 @@ const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 const MENU_ITEMS = [
   { href: '/logins.html', title: 'Login history' },
   { href: '/similarity.html', title: 'IP/CID similarity' },
+  { href: '/value-search.html', title: 'CID / IP search' },
   { href: '/copy-trade.html', title: 'Copy trade & hedge' },
   { href: '/compare.html', title: 'Compare accounts' },
 ];

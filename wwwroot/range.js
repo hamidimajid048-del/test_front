@@ -3,6 +3,7 @@
 
 // Quick ranges ending now (UTC); each moves the start date back.
 const RANGE_PRESETS = {
+  day: date => date.setUTCDate(date.getUTCDate() - 1),
   week: date => date.setUTCDate(date.getUTCDate() - 7),
   month: date => date.setUTCMonth(date.getUTCMonth() - 1),
   '3months': date => date.setUTCMonth(date.getUTCMonth() - 3),
