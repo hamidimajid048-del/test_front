@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using Microsoft.AspNetCore.Identity;
-
 namespace Sgb.Trading.Violation.Panel.Auth;
 
 /// <summary>

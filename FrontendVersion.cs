@@ -1,7 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.Extensions.FileProviders;
-
 /// <summary>
 /// The version of the pages served from <c>wwwroot</c>: a short hash of every file's path and content. It changes with
 /// any edit, however small, and is the same on every machine that holds the same files, so the version shown on the

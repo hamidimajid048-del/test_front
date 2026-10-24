@@ -1,17 +1,3 @@
-using System.Net;
-using System.Security.Claims;
-using System.Text.Json;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.HttpOverrides;
-using Npgsql;
-using Sgb.Trading.Violation.Panel.Auth;
-using Yarp.ReverseProxy.Configuration;
-using Yarp.ReverseProxy.Forwarder;
-using Yarp.ReverseProxy.Transforms;
-
 const string LoginRateLimitPolicy = "login";
 const string LoginPage = "/login.html";
 const string ServiceStatusClient = "service-status";

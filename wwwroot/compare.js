@@ -52,8 +52,8 @@ const SHARED_VALUE_COLUMNS = [
   { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
-  utcColumn('otherFirstSeenUtc', 'Compared first seen'),
-  utcColumn('otherLastSeenUtc', 'Compared last seen'),
+  { ...utcColumn('otherFirstSeenUtc', 'Compared first seen'), sortKey: 'RelatedFirstSeenUtc' },
+  { ...utcColumn('otherLastSeenUtc', 'Compared last seen'), sortKey: 'RelatedLastSeenUtc' },
   { key: 'occurrenceDays', title: 'Occurrence days', sortKey: 'OccurrenceDays' },
   { key: 'coOccurrenceDays', title: 'Co-occurrence days', sortKey: 'CoOccurrenceDays' },
 ];
@@ -84,33 +84,33 @@ const SHARED_CID_COLUMNS = [
 
 const NEAR_COLUMNS = [
   { ...utcColumn('loginAt', 'Login'), group: 'Main', sortKey: 'LoginAt' },
-  { key: 'ip', title: 'IP', group: 'Main' },
-  { key: 'cid', title: 'CID', group: 'Main' },
-  { key: 'platform', title: 'Platform', group: 'Main' },
-  { ...utcColumn('otherLoginAt', 'Login'), group: 'Compared' },
-  { key: 'otherIp', title: 'IP', group: 'Compared' },
-  { key: 'otherCid', title: 'CID', group: 'Compared' },
-  { key: 'otherPlatform', title: 'Platform', group: 'Compared' },
+  { key: 'ip', title: 'IP', group: 'Main', filterKey: 'Ip' },
+  { key: 'cid', title: 'CID', group: 'Main', filterKey: 'Cid' },
+  { key: 'platform', title: 'Platform', group: 'Main', filterKey: 'Platform' },
+  { ...utcColumn('otherLoginAt', 'Login'), group: 'Compared', filterKey: 'OtherLoginAt' },
+  { key: 'otherIp', title: 'IP', group: 'Compared', filterKey: 'OtherIp' },
+  { key: 'otherCid', title: 'CID', group: 'Compared', filterKey: 'OtherCid' },
+  { key: 'otherPlatform', title: 'Platform', group: 'Compared', filterKey: 'OtherPlatform' },
   { key: 'deltaSeconds', title: 'Gap', format: formatGap, sortKey: 'DeltaSeconds' },
-  { key: 'matchLevel', title: 'Match', format: level => badge(MATCH_LABELS[level] ?? level, MATCH_KINDS[level]) },
-  { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'danger') },
-  { key: 'sameDevice', title: 'Same device', format: same => yesBadge(same, 'warn') },
+  { key: 'matchLevel', title: 'Match', format: level => badge(MATCH_LABELS[level] ?? level, MATCH_KINDS[level]), filterKey: 'MatchLevel' },
+  { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'danger'), filterKey: 'SameCid' },
+  { key: 'sameDevice', title: 'Same device', format: same => yesBadge(same, 'warn'), filterKey: 'SameDevice' },
 ];
 
 const OVERLAP_COLUMNS = [
   { ...utcColumn('loginAt', 'Login'), group: 'Main', sortKey: 'LoginAt' },
-  { ...utcColumn('logoutAt', 'Logout'), group: 'Main' },
-  { key: 'ip', title: 'IP', group: 'Main' },
-  { key: 'cid', title: 'CID', group: 'Main' },
-  { ...utcColumn('otherLoginAt', 'Login'), group: 'Compared' },
-  { ...utcColumn('otherLogoutAt', 'Logout'), group: 'Compared' },
-  { key: 'otherIp', title: 'IP', group: 'Compared' },
-  { key: 'otherCid', title: 'CID', group: 'Compared' },
-  { ...utcColumn('overlapStartUtc', 'From'), group: 'Overlap' },
-  { ...utcColumn('overlapEndUtc', 'To'), group: 'Overlap' },
+  { ...utcColumn('logoutAt', 'Logout'), group: 'Main', filterKey: 'LogoutAt' },
+  { key: 'ip', title: 'IP', group: 'Main', filterKey: 'Ip' },
+  { key: 'cid', title: 'CID', group: 'Main', filterKey: 'Cid' },
+  { ...utcColumn('otherLoginAt', 'Login'), group: 'Compared', filterKey: 'OtherLoginAt' },
+  { ...utcColumn('otherLogoutAt', 'Logout'), group: 'Compared', filterKey: 'OtherLogoutAt' },
+  { key: 'otherIp', title: 'IP', group: 'Compared', filterKey: 'OtherIp' },
+  { key: 'otherCid', title: 'CID', group: 'Compared', filterKey: 'OtherCid' },
+  { ...utcColumn('overlapStartUtc', 'From'), group: 'Overlap', filterKey: 'OverlapStartUtc' },
+  { ...utcColumn('overlapEndUtc', 'To'), group: 'Overlap', filterKey: 'OverlapEndUtc' },
   { key: 'overlapSeconds', title: 'Duration', group: 'Overlap', format: formatSpan, sortKey: 'OverlapSeconds' },
-  { key: 'sameIp', title: 'Same IP', format: same => yesBadge(same, 'danger') },
-  { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'warn') },
+  { key: 'sameIp', title: 'Same IP', format: same => yesBadge(same, 'danger'), filterKey: 'SameIp' },
+  { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'warn'), filterKey: 'SameCid' },
 ];
 
 const TIMELINE_COLUMNS = [
@@ -118,20 +118,15 @@ const TIMELINE_COLUMNS = [
     key: 'side',
     title: 'Account',
     format: side => side === 'Main' ? badge('Main', 'main') : badge('Compared', 'compared'),
+    filterKey: 'Side',
   },
   { ...utcColumn('loginAt', 'Login'), sortKey: 'LoginAt' },
-  utcColumn('logoutAt', 'Logout'),
-  { key: 'ip', title: 'IP' },
-  { key: 'cid', title: 'CID' },
-  { key: 'platform', title: 'Platform' },
-  {
-    key: 'sharedIp',
-    title: 'Shared with the other',
-    format: (_, row) => {
-      const shared = [row.sharedIp && badge('IP', 'danger'), row.sharedCid && badge('CID', 'warn')].filter(Boolean);
-      return shared.length ? inline(...shared) : '';
-    },
-  },
+  { ...utcColumn('logoutAt', 'Logout'), filterKey: 'LogoutAt' },
+  { key: 'ip', title: 'IP', filterKey: 'Ip' },
+  { key: 'cid', title: 'CID', filterKey: 'Cid' },
+  { key: 'platform', title: 'Platform', filterKey: 'Platform' },
+  { key: 'sharedIp', title: 'Shared IP', format: shared => shared ? badge('IP', 'danger') : '', filterKey: 'SharedIp' },
+  { key: 'sharedCid', title: 'Shared CID', format: shared => shared ? badge('CID', 'warn') : '', filterKey: 'SharedCid' },
 ];
 
 // ---- tabs ----
@@ -143,6 +138,12 @@ const direction = (value, labels = ['Descending', 'Ascending']) => ({
   value,
   options: [['Desc', labels[0]], ['Asc', labels[1]]],
 });
+
+// The sessions of one login are ordered by the service like the other tabs (newest login first by default).
+const SESSION_CONTROLS = () => [
+  { name: 'sortItem', label: 'Sort by', kind: 'select', value: 'LoginAt', options: [] },
+  direction('Desc'),
+];
 
 const COMPARE_PATH = 'compare-reports';
 const rangeParams = c => ({ fromUtc: c.fromUtc, toUtc: c.toUtc });
@@ -249,7 +250,7 @@ const TABS = [
     path: 'login-reports/get-login-sessions',
     params: c => ({ login: c.login, ...rangeParams(c) }),
     columns: SESSION_COLUMNS,
-    controls: [],
+    controls: SESSION_CONTROLS(),
     geoDetails: true,
     empty: 'No sessions in this range',
   },
@@ -259,7 +260,7 @@ const TABS = [
     path: 'login-reports/get-login-sessions',
     params: c => ({ login: c.other, ...rangeParams(c) }),
     columns: SESSION_COLUMNS,
-    controls: [],
+    controls: SESSION_CONTROLS(),
     geoDetails: true,
     empty: 'No sessions in this range',
   },
@@ -267,11 +268,28 @@ const TABS = [
 
 const tabByKey = key => TABS.find(tab => tab.key === key);
 
+// The "Sort by" choices of a tab are its sortable columns, the default one first, so a header click can always be shown.
+function sortOptions(columns, first) {
+  const options = new Map();
+  for (const column of columns) {
+    if (column.sortKey && !options.has(column.sortKey)) {
+      options.set(column.sortKey, column.group ? `${column.group} · ${column.title}` : column.title);
+    }
+  }
+  return [...options].sort(([a], [b]) => (b === first) - (a === first));
+}
+
+for (const tab of TABS) {
+  const control = tab.controls.find(candidate => candidate.name === 'sortItem');
+  if (control && !control.options.length) control.options = sortOptions(tab.columns, control.value);
+}
+
 function stateOf(tab) {
   states[tab.key] ??= {
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
     report: null,
+    columnFilters: {}, // typed under the table headers; the server applies them to every page
     controls: Object.fromEntries(tab.controls.map(control => [control.name, control.value ?? ''])),
   };
   return states[tab.key];
@@ -375,7 +393,7 @@ function showPanel() {
       button.addEventListener('click', () => {
         downloadExport(
           `${COMPARE_PATH}/export-${tab.exportPath}`,
-          { ...tab.params(context), ...controlParams(tab, state), format },
+          { ...tab.params(context), ...controlParams(tab, state), ...columnFilterParams(state.columnFilters), format },
           button,
           exportMessage);
       });
@@ -412,6 +430,7 @@ async function load(tab, state, toolbar, tabMessage, parts) {
     const report = await apiGet(tab.path, {
       ...tab.params(context),
       ...controlParams(tab, state),
+      ...columnFilterParams(state.columnFilters),
       currentPage: state.page,
       pageSize: state.pageSize,
     });
@@ -443,6 +462,19 @@ function tabSort(tab, state, toolbar, tabMessage, parts) {
   };
 }
 
+// Header filters of a tab: the typed texts go to the server with the sort, so they narrow every page.
+function tabFilter(tab, state, toolbar, tabMessage, parts) {
+  if (!tab.columns.some(column => column.sortKey || column.filterKey)) return null;
+  return {
+    values: state.columnFilters,
+    onChange: values => {
+      state.columnFilters = values;
+      state.page = 1;
+      return load(tab, state, toolbar, tabMessage, parts);
+    },
+  };
+}
+
 function render(tab, state, toolbar, tabMessage, parts) {
   const report = state.report;
   const paging = pagingOf(report.paging);
@@ -458,8 +490,11 @@ function render(tab, state, toolbar, tabMessage, parts) {
     tab.columns,
     report.items,
     tab.geoDetails ? session => renderGeoDetails(parts.detail, session) : undefined,
-    { sort: tabSort(tab, state, toolbar, tabMessage, parts) });
-  if (!report.items?.length) {
+    {
+      sort: tabSort(tab, state, toolbar, tabMessage, parts),
+      filter: tabFilter(tab, state, toolbar, tabMessage, parts),
+    });
+  if (!report.items?.length && !Object.values(state.columnFilters).some(Boolean)) {
     parts.table.querySelector('td.empty').textContent = tab.empty;
   }
   parts.detail.replaceChildren();

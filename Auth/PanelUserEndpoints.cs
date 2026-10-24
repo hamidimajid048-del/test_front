@@ -1,5 +1,3 @@
-using QRCoder;
-
 namespace Sgb.Trading.Violation.Panel.Auth;
 
 /// <summary>

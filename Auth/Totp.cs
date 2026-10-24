@@ -1,7 +1,3 @@
-using System.Buffers.Binary;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Sgb.Trading.Violation.Panel.Auth;
 
 /// <summary>Time-based one-time codes (RFC 6238: HMAC-SHA1, 6 digits, 30-second steps), as authenticator apps use.</summary>

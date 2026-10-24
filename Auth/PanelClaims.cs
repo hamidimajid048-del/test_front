@@ -1,5 +1,3 @@
-using System.Security.Claims;
-
 namespace Sgb.Trading.Violation.Panel.Auth;
 
 /// <summary>The claims of the panel's sign-in cookie.</summary>

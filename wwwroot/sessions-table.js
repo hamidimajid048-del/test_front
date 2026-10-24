@@ -35,16 +35,17 @@ function warningBadges(geo) {
   return flags.length ? inline(...flags.map(flag => badge(flag.label, 'warn'))) : '';
 }
 
+// The sort keys are the sessions report's columns: sorting and the typed filters are done by the service on every page.
 const SESSION_COLUMNS = [
-  utcColumn('loginAt', 'Login'),
-  utcColumn('logoutAt', 'Logout'),
-  { key: 'ip', title: 'IP' },
-  { key: 'cid', title: 'CID' },
-  { key: 'platform', title: 'Platform' },
-  { key: 'accessPointName', title: 'Access Point' },
-  { key: 'pingMs', title: 'Ping (ms)' },
-  { key: 'isSessionValid', title: 'Session valid', format: yesNo },
-  { key: 'isCidValid', title: 'CID valid', format: yesNo },
+  { ...utcColumn('loginAt', 'Login'), sortKey: 'LoginAt' },
+  { ...utcColumn('logoutAt', 'Logout'), sortKey: 'LogoutAt' },
+  { key: 'ip', title: 'IP', sortKey: 'Ip' },
+  { key: 'cid', title: 'CID', sortKey: 'Cid' },
+  { key: 'platform', title: 'Platform', sortKey: 'Platform' },
+  { key: 'accessPointName', title: 'Access Point', sortKey: 'AccessPointName' },
+  { key: 'pingMs', title: 'Ping (ms)', sortKey: 'PingMs' },
+  { key: 'isSessionValid', title: 'Session valid', format: yesNo, sortKey: 'IsSessionValid' },
+  { key: 'isCidValid', title: 'CID valid', format: yesNo, sortKey: 'IsCidValid' },
   { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
   { key: 'geo', title: 'Warnings', format: warningBadges },
 ];

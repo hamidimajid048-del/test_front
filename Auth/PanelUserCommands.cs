@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Sgb.Trading.Violation.Panel.Auth;
 
 /// <summary>

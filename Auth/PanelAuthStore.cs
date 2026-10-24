@@ -1,5 +1,3 @@
-using Npgsql;
-
 namespace Sgb.Trading.Violation.Panel.Auth;
 
 public sealed record PanelUser(

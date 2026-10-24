@@ -12,6 +12,9 @@ const ACCOUNT_REASONS = new Set([
 
 let currentLogin = null;
 let currentTab = 'summary';
+// Sort and column filters of the sessions table; the service applies them to every page.
+let sessionSort = { item: 'LoginAt', direction: 'Desc' };
+let sessionFilters = {};
 
 const mappingColumns = (key, title) => [
   { key, title },
@@ -37,6 +40,9 @@ function updateQuery(paging) {
     tab: currentTab,
     currentPage: paging?.currentPage,
     pageSize: paging?.pageSize,
+    sortItem: sessionSort.item,
+    sortDirection: sessionSort.direction,
+    ...columnFilterState(sessionFilters),
   });
 }
 
@@ -62,7 +68,24 @@ function renderSessions(result) {
   renderMetadata(result);
   renderTable(
     document.getElementById('sessions'), SESSION_COLUMNS, result.report.items,
-    session => renderGeoDetails(document.getElementById('geo-details'), session));
+    session => renderGeoDetails(document.getElementById('geo-details'), session),
+    {
+      sort: {
+        item: sessionSort.item,
+        direction: sessionSort.direction,
+        onChange: (item, direction) => {
+          sessionSort = { item, direction };
+          return loadSessionsPage(1, paging?.pageSize ?? DEFAULT_PAGE_SIZE);
+        },
+      },
+      filter: {
+        values: sessionFilters,
+        onChange: values => {
+          sessionFilters = values;
+          return loadSessionsPage(1, paging?.pageSize ?? DEFAULT_PAGE_SIZE);
+        },
+      },
+    });
   renderPager(document.getElementById('sessions-pager'), paging, loadSessionsPage);
   document.getElementById('geo-details').replaceChildren();
   updateQuery(paging);
@@ -93,7 +116,10 @@ function renderMapping(containerId, tab, label, key, outcome) {
 // Reads a page of sessions in the account's data range; without a usable range, of all recorded sessions.
 // accountNote is null when the account range was used, otherwise why it could not be.
 async function sessionsRequest(page, pageSize) {
-  const params = { login: currentLogin, currentPage: page, pageSize };
+  const params = {
+    login: currentLogin, sortItem: sessionSort.item, sortDirection: sessionSort.direction,
+    ...columnFilterParams(sessionFilters), currentPage: page, pageSize,
+  };
   try {
     return { report: await apiGet('login-reports/get-login-sessions-complete', params), accountNote: null };
   } catch (error) {
@@ -137,6 +163,8 @@ document.getElementById('tabs').addEventListener('click', event => {
 
 form.addEventListener('submit', event => {
   event.preventDefault();
+  sessionSort = { item: 'LoginAt', direction: 'Desc' };
+  sessionFilters = {};
   loadReport(formValues(form).login, 1, DEFAULT_PAGE_SIZE);
 });
 
@@ -144,6 +172,11 @@ renderMenu();
 const initialQuery = new URLSearchParams(location.search);
 showTab(initialQuery.get('tab'));
 if (fillFormFromQuery(form) && form.elements.login.value) {
+  sessionSort = {
+    item: initialQuery.get('sortItem') || sessionSort.item,
+    direction: initialQuery.get('sortDirection') || sessionSort.direction,
+  };
+  sessionFilters = readColumnFilters(initialQuery);
   loadReport(
     form.elements.login.value,
     Number(initialQuery.get('currentPage')) || 1,

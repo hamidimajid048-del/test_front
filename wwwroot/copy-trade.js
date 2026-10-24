@@ -28,6 +28,8 @@ const shareLabels = row => [row.hasIpShare && 'Shared IP', row.hasCidShare && 'S
 // Inputs of the last list search; the positions reuse them so they always match the list shown.
 let search = null;
 let listPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
+// Column filters typed under the list headers; the server applies them to every page.
+let listColumnFilters = {};
 // Day range of the last list report, handed to the compare page when no range was typed in.
 let listRange = null;
 let relatedLogin = null;
@@ -71,7 +73,10 @@ function pairParams() {
 }
 
 function listParams() {
-  return { ...windowParams(), ...pick(search, LIST_KEYS), currentPage: listPaging.currentPage, pageSize: listPaging.pageSize };
+  return {
+    ...windowParams(), ...pick(search, LIST_KEYS), ...columnFilterParams(listColumnFilters),
+    currentPage: listPaging.currentPage, pageSize: listPaging.pageSize,
+  };
 }
 
 // The position comparison actions are named <verb>-<kind>-<report>, e.g. get-hedge-position-tree.
@@ -90,7 +95,9 @@ function statsParams() {
 }
 
 function writeState() {
-  const state = { ...search, currentPage: listPaging.currentPage, pageSize: listPaging.pageSize };
+  const state = {
+    ...search, ...columnFilterState(listColumnFilters), currentPage: listPaging.currentPage, pageSize: listPaging.pageSize,
+  };
   if (relatedLogin) {
     const prefixed = { ...positionsValues, relatedLogin, ...positionsPaging, tab: activeTab };
     for (const [key, value] of Object.entries(prefixed)) state[POSITIONS_QUERY_PREFIX + key] = value;
@@ -166,6 +173,14 @@ async function loadList() {
       onChange: (item, direction) => {
         setSortFields(form, item, direction);
         search = { ...search, sortItem: item, sortDirection: direction };
+        listPaging = { currentPage: 1, pageSize: listPaging.pageSize };
+        return withLoading(form, message, loadList);
+      },
+    },
+    filter: {
+      values: listColumnFilters,
+      onChange: values => {
+        listColumnFilters = values;
         listPaging = { currentPage: 1, pageSize: listPaging.pageSize };
         return withLoading(form, message, loadList);
       },
@@ -292,6 +307,7 @@ form.addEventListener('submit', event => {
     const values = readSearch();
     validateInputs(values);
     search = values;
+    listColumnFilters = {};
     listPaging = { currentPage: 1, pageSize: listPaging.pageSize };
     hidePositions();
     await loadList();
@@ -341,6 +357,7 @@ async function restoreFromQuery() {
   showVolumeTolerance();
   rangeControls.restore();
   const query = new URLSearchParams(location.search);
+  listColumnFilters = readColumnFilters(query);
   listPaging = {
     currentPage: Number(query.get('currentPage')) || 1,
     pageSize: Number(query.get('pageSize')) || DEFAULT_PAGE_SIZE,
