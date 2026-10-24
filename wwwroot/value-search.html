@@ -51,10 +51,14 @@
     </form>
     <p class="message" id="message"></p>
 
-    <section id="summary-section" hidden>
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="summary" class="active">Summary</button>
+      <button type="button" data-tab="details">Details</button>
+    </div>
+
+    <section data-panel="summary">
       <div class="section-head">
         <h2>Summary</h2>
-        <button type="button" id="view-all-sessions">All sessions</button>
         <button type="button" data-export="summary" data-format="Csv">CSV</button>
         <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
       </div>
@@ -64,13 +68,14 @@
       <div id="summary-pager"></div>
       <ul class="help">
         <li><strong>Logins:</strong> the recorded logins of that login on the searched value, over the applied range.</li>
-        <li>Click a row to see that login's own sessions, or use <strong>All sessions</strong> to see every session of every login at once.</li>
+        <li>Click a row to see that login's own sessions, or open the <strong>Details</strong> tab for every session of every login at once.</li>
       </ul>
     </section>
 
-    <section id="details-section" hidden>
+    <section data-panel="details" hidden>
       <div class="section-head">
         <h2 id="details-title">Sessions</h2>
+        <button type="button" id="view-all-sessions">All sessions</button>
         <button type="button" data-export="details" data-format="Csv">CSV</button>
         <button type="button" data-export="details" data-format="Xlsx">Excel</button>
       </div>

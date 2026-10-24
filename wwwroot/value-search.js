@@ -18,10 +18,20 @@ const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in sour
 let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
 let summaryColumnFilters = {};
+let summaryLoaded = false;
+let currentTab = 'summary';
 let detailsOpen = false;
 let detailsSort = {};
 let detailsColumnFilters = {};
 let detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
+
+function showTab(tab) {
+  currentTab = tab === 'details' ? 'details' : 'summary';
+  for (const button of document.querySelectorAll('#tabs button'))
+    button.classList.toggle('active', button.dataset.tab === currentTab);
+  for (const panel of document.querySelectorAll('[data-panel]'))
+    panel.hidden = panel.dataset.panel !== currentTab;
+}
 
 const rangeControls = initRangeControls(form);
 
@@ -50,9 +60,13 @@ function detailsParams() {
 }
 
 function writeState() {
-  const state = { ...filters, ...columnFilterState(summaryColumnFilters), currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
+  const state = {
+    ...filters, ...columnFilterState(summaryColumnFilters),
+    currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize,
+    tab: currentTab,
+  };
   if (detailsOpen) {
-    const prefixed = { open: '1', ...detailsSort, ...columnFilterState(detailsColumnFilters), ...detailsPaging };
+    const prefixed = { ...detailsSort, ...columnFilterState(detailsColumnFilters), ...detailsPaging };
     for (const [key, value] of Object.entries(prefixed)) state[DETAILS_QUERY_PREFIX + key] = value;
   }
   writeQuery(state);
@@ -135,7 +149,7 @@ async function loadSummary() {
     summaryPaging = { currentPage: page, pageSize };
     return withLoading(form, message, loadSummary);
   });
-  document.getElementById('summary-section').hidden = false;
+  summaryLoaded = true;
   writeState();
 }
 
@@ -171,13 +185,10 @@ async function loadDetails() {
   writeState();
 }
 
-function showDetailsSection(login) {
+function setDetailsTitle(login) {
   document.getElementById('details-title').textContent = login
     ? `Sessions: login ${login} on ${TYPE_LABELS[filters.type] ?? filters.type} ${filters.value}`
     : `Sessions: every login on ${TYPE_LABELS[filters.type] ?? filters.type} ${filters.value}`;
-  const section = document.getElementById('details-section');
-  section.hidden = false;
-  return section;
 }
 
 function openDetailsWith(columnFilters, login) {
@@ -189,7 +200,8 @@ function openDetailsWith(columnFilters, login) {
   clearPager(document.getElementById('details-pager'));
   document.getElementById('details-export-message').textContent = '';
   document.getElementById('geo-details').replaceChildren();
-  showDetailsSection(login).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setDetailsTitle(login);
+  showTab('details');
   withDetailsLoading(loadDetails);
 }
 
@@ -206,10 +218,21 @@ function openAllDetails() {
 
 function hideDetails() {
   detailsOpen = false;
-  document.getElementById('details-section').hidden = true;
+  document.getElementById('details').replaceChildren();
+  clearPager(document.getElementById('details-pager'));
+  document.getElementById('geo-details').replaceChildren();
 }
 
 document.getElementById('view-all-sessions').addEventListener('click', openAllDetails);
+
+document.getElementById('tabs').addEventListener('click', event => {
+  const tab = event.target.closest('button')?.dataset.tab;
+  if (!tab || tab === currentTab) return;
+  // Opening Details for the first time (no row clicked yet) defaults to every session of every login.
+  if (tab === 'details' && !detailsOpen && filters) openAllDetails();
+  else showTab(tab);
+  writeState();
+});
 
 document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
   const kind = button.dataset.export;
@@ -230,6 +253,7 @@ form.addEventListener('submit', event => {
     summaryColumnFilters = {};
     summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
     hideDetails();
+    showTab('summary');
     await loadSummary();
   });
 });
@@ -250,7 +274,7 @@ async function restoreFromQuery() {
     await loadSummary();
   });
 
-  if (!query.get(`${DETAILS_QUERY_PREFIX}open`) || document.getElementById('summary-section').hidden) return;
+  if (query.get('tab') !== 'details' || !summaryLoaded) return;
   detailsOpen = true;
   detailsColumnFilters = readColumnFilters(query, DETAILS_QUERY_PREFIX);
   detailsSort = {
@@ -262,7 +286,8 @@ async function restoreFromQuery() {
     pageSize: Number(query.get(`${DETAILS_QUERY_PREFIX}pageSize`)) || DEFAULT_PAGE_SIZE,
   };
   const loginFilter = detailsColumnFilters.login;
-  showDetailsSection(loginFilter ? loginFilter.replace(/^[<>=]+/, '') : null);
+  setDetailsTitle(loginFilter ? loginFilter.replace(/^[<>=]+/, '') : null);
+  showTab('details');
   await withDetailsLoading(loadDetails);
 }
 
