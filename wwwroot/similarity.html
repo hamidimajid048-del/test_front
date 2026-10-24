@@ -37,13 +37,11 @@
       <label>CID <input name="cid" maxlength="200"></label>
       <label>Related login <input name="relatedLogin" type="number" min="1" step="1"></label>
       <label>Min shared values <input name="minSharedValueCount" type="number" min="0" step="1"></label>
-      <label>Min effective repeats <input name="minEffectiveRepeatCount" type="number" min="0" step="1"></label>
       <label>Sort by
         <select name="sortItem">
           <option value="SharedValueCount">Shared values</option>
           <option value="LogCount">Logs</option>
           <option value="RelatedLogCount">Related logs</option>
-          <option value="EffectiveRepeatCount">Effective repeats</option>
           <option value="RelatedLogin">Related login</option>
           <option value="Type">Type</option>
         </select>
@@ -71,7 +69,6 @@
       <div id="summary-pager"></div>
       <ul class="help">
         <li><strong>Logs / Related logs:</strong> the recorded logins of this login and of the related login on all shared values, over the whole recorded range.</li>
-        <li><strong>Effective repeats:</strong> the sum, over all shared values, of the smaller log count of the two logins for each value.</li>
         <li>Click a row to see its shared values.</li>
       </ul>
     </section>
@@ -87,13 +84,11 @@
         <label>Value (IP or CID) <input name="value"></label>
         <label>Min logs <input name="minLogCount" type="number" min="0" step="1"></label>
         <label>Min related logs <input name="minRelatedLogCount" type="number" min="0" step="1"></label>
-        <label>Min effective repeats <input name="minEffectiveRepeatCount" type="number" min="0" step="1"></label>
         <label>Sort by
           <select name="sortItem">
-            <option value="EffectiveRepeatCount">Effective repeats</option>
+            <option value="RelatedLogCount">Related log count</option>
             <option value="Value">Value</option>
             <option value="LogCount">Log count</option>
-            <option value="RelatedLogCount">Related log count</option>
             <option value="FirstSeenUtc">First seen</option>
             <option value="LastSeenUtc">Last seen</option>
             <option value="RelatedFirstSeenUtc">Related first seen</option>

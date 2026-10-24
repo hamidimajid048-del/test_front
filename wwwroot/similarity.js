@@ -10,7 +10,7 @@ const DETAILS_QUERY_PREFIX = 'd_';
 
 const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'deviceType', 'cid'];
 const SUMMARY_KEYS = [
-  ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount', 'minEffectiveRepeatCount',
+  ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount',
   'sortItem', 'sortDirection',
 ];
 
@@ -125,7 +125,6 @@ const SUMMARY_COLUMNS = [
   { key: 'sharedValueCount', title: 'Shared values', sortKey: 'SharedValueCount' },
   { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
   { key: 'relatedLogCount', title: 'Related logs', sortKey: 'RelatedLogCount' },
-  { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -146,7 +145,6 @@ const DETAILS_COLUMNS = [
   { key: 'value', title: 'Value', sortKey: 'Value' },
   { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
   { key: 'relatedLogCount', title: 'Related logs', sortKey: 'RelatedLogCount' },
-  { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
   { ...utcColumn('relatedFirstSeenUtc', 'Related first seen'), sortKey: 'RelatedFirstSeenUtc' },

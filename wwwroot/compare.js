@@ -49,7 +49,6 @@ function topList(counts, limit = 4) {
 const SHARED_VALUE_COLUMNS = [
   { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
   { key: 'otherLogCount', title: 'Compared logs', sortKey: 'RelatedLogCount' },
-  { key: 'effectiveRepeatCount', title: 'Effective repeats', sortKey: 'EffectiveRepeatCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
   { ...utcColumn('otherFirstSeenUtc', 'Compared first seen'), sortKey: 'RelatedFirstSeenUtc' },
@@ -160,16 +159,15 @@ const TABS = [
     columns: SHARED_IP_COLUMNS,
     controls: [
       {
-        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'EffectiveRepeatCount',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'RelatedLogCount',
         options: [
-          ['EffectiveRepeatCount', 'Effective repeats'], ['Value', 'IP'], ['LogCount', 'Logs'],
-          ['RelatedLogCount', 'Compared logs'], ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
+          ['RelatedLogCount', 'Compared logs'], ['Value', 'IP'], ['LogCount', 'Logs'],
+          ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
           ['OccurrenceDays', 'Occurrence days'], ['CoOccurrenceDays', 'Co-occurrence days'],
         ],
       },
       direction('Desc'),
       { name: 'value', label: 'IP (exact)', kind: 'text' },
-      { name: 'minEffectiveRepeatCount', label: 'Min effective repeats', kind: 'number' },
     ],
     empty: 'The two logins share no IP in this range',
   },
@@ -182,16 +180,15 @@ const TABS = [
     columns: SHARED_CID_COLUMNS,
     controls: [
       {
-        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'EffectiveRepeatCount',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'RelatedLogCount',
         options: [
-          ['EffectiveRepeatCount', 'Effective repeats'], ['Value', 'CID'], ['LogCount', 'Logs'],
-          ['RelatedLogCount', 'Compared logs'], ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
+          ['RelatedLogCount', 'Compared logs'], ['Value', 'CID'], ['LogCount', 'Logs'],
+          ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
           ['OccurrenceDays', 'Occurrence days'], ['CoOccurrenceDays', 'Co-occurrence days'],
         ],
       },
       direction('Desc'),
       { name: 'value', label: 'CID (exact)', kind: 'text' },
-      { name: 'minEffectiveRepeatCount', label: 'Min effective repeats', kind: 'number' },
     ],
     empty: 'The two logins share no CID in this range',
   },
