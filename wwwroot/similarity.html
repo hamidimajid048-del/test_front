@@ -40,8 +40,8 @@
       <label>Sort by
         <select name="sortItem">
           <option value="SharedValueCount">Shared values</option>
-          <option value="LogCount">Logs</option>
-          <option value="RelatedLogCount">Related logs</option>
+          <option value="LoginCount">Logins</option>
+          <option value="RelatedLoginCount">Related logins</option>
           <option value="RelatedLogin">Related login</option>
           <option value="Type">Type</option>
         </select>
@@ -68,7 +68,7 @@
       <div id="summary"></div>
       <div id="summary-pager"></div>
       <ul class="help">
-        <li><strong>Logs / Related logs:</strong> the recorded logins of this login and of the related login on all shared values, over the whole recorded range.</li>
+        <li><strong>Logins / Related logins:</strong> the recorded logins of this login and of the related login on all shared values, over the whole recorded range.</li>
         <li>Click a row to see its shared values.</li>
       </ul>
     </section>
@@ -82,13 +82,13 @@
       <p class="message" id="details-export-message"></p>
       <form class="filters" id="details-filters">
         <label>Value (IP or CID) <input name="value"></label>
-        <label>Min logs <input name="minLogCount" type="number" min="0" step="1"></label>
-        <label>Min related logs <input name="minRelatedLogCount" type="number" min="0" step="1"></label>
+        <label>Min logins <input name="minLoginCount" type="number" min="0" step="1"></label>
+        <label>Min related logins <input name="minRelatedLoginCount" type="number" min="0" step="1"></label>
         <label>Sort by
           <select name="sortItem">
-            <option value="RelatedLogCount">Related log count</option>
+            <option value="RelatedLoginCount">Related login count</option>
             <option value="Value">Value</option>
-            <option value="LogCount">Log count</option>
+            <option value="LoginCount">Login count</option>
             <option value="FirstSeenUtc">First seen</option>
             <option value="LastSeenUtc">Last seen</option>
             <option value="RelatedFirstSeenUtc">Related first seen</option>

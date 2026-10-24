@@ -123,8 +123,8 @@ const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'sharedValueCount', title: 'Shared values', sortKey: 'SharedValueCount' },
-  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
-  { key: 'relatedLogCount', title: 'Related logs', sortKey: 'RelatedLogCount' },
+  { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
+  { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -143,8 +143,8 @@ const SUMMARY_COLUMNS = [
 
 const DETAILS_COLUMNS = [
   { key: 'value', title: 'Value', sortKey: 'Value' },
-  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
-  { key: 'relatedLogCount', title: 'Related logs', sortKey: 'RelatedLogCount' },
+  { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
+  { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
   { ...utcColumn('relatedFirstSeenUtc', 'Related first seen'), sortKey: 'RelatedFirstSeenUtc' },

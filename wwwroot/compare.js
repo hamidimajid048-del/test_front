@@ -47,8 +47,8 @@ function topList(counts, limit = 4) {
 // ---- columns ----
 
 const SHARED_VALUE_COLUMNS = [
-  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
-  { key: 'otherLogCount', title: 'Compared logs', sortKey: 'RelatedLogCount' },
+  { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
+  { key: 'otherLoginCount', title: 'Compared logins', sortKey: 'RelatedLoginCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
   { ...utcColumn('otherFirstSeenUtc', 'Compared first seen'), sortKey: 'RelatedFirstSeenUtc' },
@@ -159,9 +159,9 @@ const TABS = [
     columns: SHARED_IP_COLUMNS,
     controls: [
       {
-        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'RelatedLogCount',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'RelatedLoginCount',
         options: [
-          ['RelatedLogCount', 'Compared logs'], ['Value', 'IP'], ['LogCount', 'Logs'],
+          ['RelatedLoginCount', 'Compared logins'], ['Value', 'IP'], ['LoginCount', 'Logins'],
           ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
           ['OccurrenceDays', 'Occurrence days'], ['CoOccurrenceDays', 'Co-occurrence days'],
         ],
@@ -180,9 +180,9 @@ const TABS = [
     columns: SHARED_CID_COLUMNS,
     controls: [
       {
-        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'RelatedLogCount',
+        name: 'sortItem', label: 'Sort by', kind: 'select', value: 'RelatedLoginCount',
         options: [
-          ['RelatedLogCount', 'Compared logs'], ['Value', 'CID'], ['LogCount', 'Logs'],
+          ['RelatedLoginCount', 'Compared logins'], ['Value', 'CID'], ['LoginCount', 'Logins'],
           ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
           ['OccurrenceDays', 'Occurrence days'], ['CoOccurrenceDays', 'Co-occurrence days'],
         ],

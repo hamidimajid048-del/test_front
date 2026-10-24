@@ -71,7 +71,7 @@ function renderMetadata(metadata) {
 
 const SUMMARY_COLUMNS = [
   { key: 'login', title: 'Login', format: loginLink, sortKey: 'Login' },
-  { key: 'logCount', title: 'Logs', sortKey: 'LogCount' },
+  { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
   {
