@@ -185,6 +185,7 @@ async function openDetails(column, value) {
 }
 
 const formatTime = value => value ? formatUtc(value) : '—';
+const ofLogins = (count, side) => `${count} of ${side.loginCount}`;
 const percent = value => `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
 
 function renderOverview(overview) {
@@ -198,7 +199,8 @@ function renderOverview(overview) {
   document.getElementById('verdict-reason').textContent = evidence.text;
 
   const rows = [
-    { metric: 'Logins (with sessions / all)', main: `${main.activeLoginCount} / ${main.loginCount}`, other: `${other.activeLoginCount} / ${other.loginCount}` },
+    { metric: 'Logins with a shared IP', main: ofLogins(main.loginsWithSharedIpCount, main), other: ofLogins(other.loginsWithSharedIpCount, other) },
+    { metric: 'Logins with a shared CID', main: ofLogins(main.loginsWithSharedCidCount, main), other: ofLogins(other.loginsWithSharedCidCount, other) },
     { metric: 'Sessions', main: main.sessionCount.toLocaleString('en-US'), other: other.sessionCount.toLocaleString('en-US') },
     { metric: 'Distinct IPs', main: main.distinctIpCount, other: other.distinctIpCount },
     { metric: 'Distinct CIDs', main: main.distinctCidCount, other: other.distinctCidCount },
