@@ -12,10 +12,10 @@ public sealed class PanelAuthOptions
     public int LockoutMinutes { get; init; } = 15;
 
     /// <summary>A session without a request for this long ends.</summary>
-    public int IdleTimeoutMinutes { get; init; } = 30;
+    public int IdleTimeoutMinutes { get; init; } = 10080;
 
     /// <summary>A session ends this long after the sign-in, whatever its activity.</summary>
-    public int SessionLifetimeHours { get; init; } = 8;
+    public int SessionLifetimeHours { get; init; } = 168;
 
     public TimeSpan Lockout => TimeSpan.FromMinutes(LockoutMinutes);
     public TimeSpan IdleTimeout => TimeSpan.FromMinutes(IdleTimeoutMinutes);

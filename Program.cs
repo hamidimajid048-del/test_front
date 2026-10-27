@@ -271,7 +271,10 @@ app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn
             claims.Add(new Claim(AccessTokenClaim, accessToken));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        await context.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity),
+            new AuthenticationProperties { IsPersistent = true });
         return Results.Redirect("/");
     })
     .AllowAnonymous()

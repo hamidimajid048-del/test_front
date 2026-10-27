@@ -10,7 +10,7 @@ const DETAILS_QUERY_PREFIX = 'd_';
 
 const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'deviceType', 'cid'];
 const SUMMARY_KEYS = [
-  ...COMMON_KEYS, 'relatedLogin', 'minSharedValueCount',
+  ...COMMON_KEYS, 'relatedLogin',
   'sortItem', 'sortDirection',
 ];
 
@@ -122,8 +122,6 @@ function compareHref(row) {
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
-  { key: 'sharedValueCount', title: 'Shared values', sortKey: 'SharedValueCount' },
-  { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
   {
     key: 'relatedLogin',
