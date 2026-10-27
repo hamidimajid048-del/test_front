@@ -5,6 +5,8 @@ const ERROR_MESSAGES = {
   AdminRequired: ACCESS_MESSAGE,
   InvalidLogin: 'The login number is not valid',
   InvalidLogins: 'Send 1 to 100 valid login numbers',
+  InvalidOtherLogins: 'Send 1 to 100 valid login numbers for the second email',
+  OverlappingLogins: 'A login belongs to both emails, so they cannot be compared',
   InvalidRelatedLogin: 'The related login is not valid or is the same as the login',
   InvalidKind: 'The report kind is not valid',
   InvalidWindow: 'The time window is outside the allowed range',

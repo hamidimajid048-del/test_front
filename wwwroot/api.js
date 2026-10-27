@@ -18,6 +18,7 @@ const MENU_ITEMS = [
   { href: '/value-search.html', title: 'CID / IP search' },
   { href: '/copy-trade.html', title: 'Copy trade & hedge' },
   { href: '/compare.html', title: 'Compare accounts' },
+  { href: '/compare-emails.html', title: 'Compare emails' },
 ];
 
 class ApiError extends Error {

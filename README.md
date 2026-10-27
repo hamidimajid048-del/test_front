@@ -49,6 +49,15 @@ and asks the service for the reports of all those logins together (`login-report
 with first/last sign-in and session count, the details list every session with its location and warnings. Sorting,
 column filters and paging are done by the service.
 
+The **Compare emails** page (`compare-emails.html`) takes two emails and an optional UTC day range, finds the logins of
+each email as above, and compares the two groups through `group-compare-reports/*` of the service (at most 100 logins per
+email): `get-overview` (per-email totals, the shared IPs and CIDs with their share of each side, and the evidence rating),
+`get-login-pairs` (which login of one email shares how many IPs and CIDs with which login of the other),
+`get-shared-ips`, `get-shared-cids` and `get-sessions` (every session that used a shared value). Evidence is *Strong* for
+a valid shared CID or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter, *Medium* for a shared IP that is not,
+*Weak* when only such IPs or invalid CIDs are shared, and *None* otherwise. A row of the shared tables opens its
+sessions in the Details tab.
+
 ## Run
 
 ```powershell

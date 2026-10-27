@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Compare emails — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Email A <input name="email" type="email" maxlength="320" required autocomplete="off"></label>
+      <label>Email B <input name="otherEmail" type="email" maxlength="320" required autocomplete="off"></label>
+      <label>Date range
+        <select name="range">
+          <option value="">All time</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <button type="submit">Compare</button>
+    </form>
+    <p class="message" id="message"></p>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="summary">Summary</button>
+      <button type="button" data-tab="details">Details</button>
+    </div>
+
+    <section data-panel="summary">
+      <div class="summary" id="verdict"></div>
+      <p class="hint" id="verdict-reason"></p>
+      <h3 id="sides-title">Comparison</h3>
+      <div id="sides"></div>
+      <div class="summary" id="shared-facts"></div>
+
+      <h3 id="pairs-title">Linked login pairs</h3>
+      <div id="pairs"></div>
+      <div id="pairs-pager"></div>
+
+      <h3 id="ips-title">Shared IPs</h3>
+      <div id="ips"></div>
+      <div id="ips-pager"></div>
+
+      <h3 id="cids-title">Shared CIDs</h3>
+      <div id="cids"></div>
+      <div id="cids-pager"></div>
+
+      <div class="summary-columns">
+        <div>
+          <h3 id="accounts-main-title">Logins of A</h3>
+          <div id="accounts-main"></div>
+        </div>
+        <div>
+          <h3 id="accounts-other-title">Logins of B</h3>
+          <div id="accounts-other"></div>
+        </div>
+      </div>
+      <ul class="help">
+        <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
+        <li><strong>Shared IPs and CIDs:</strong> values used by at least one login of each email within the date range. Click a row to see its sessions in the Details tab.</li>
+        <li><strong>Linked login pairs:</strong> which login of A shares how many IPs and CIDs with which login of B.</li>
+        <li><strong>Details:</strong> every session of any login of both emails that used a shared IP or CID. Sorting, filters and paging apply to all rows.</li>
+      </ul>
+    </section>
+    <section data-panel="details" hidden>
+      <div id="sessions"></div>
+      <div id="sessions-pager"></div>
+      <div id="geo-details"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/range.js"></script>
+  <script src="/sessions-table.js"></script>
+  <script src="/report-grid.js"></script>
+  <script src="/compare-emails.js"></script>
+</body>
+</html>

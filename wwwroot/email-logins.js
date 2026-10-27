@@ -1,10 +1,9 @@
 // Email logins page: every login of one email (MetaTrader Manager and archive), then the service's reports for all of
 // those logins together. The summary lists the IPs and CIDs per login; the details list every session with its location.
-// Sorting, column filters and paging of the three tables are done by the service.
+// Sorting, column filters and paging of the three tables are done by the service (report-grid.js).
 
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
-const DEFAULT_PAGE_SIZE = 100;
 const MAX_LOGINS = 100;
 const SOURCE_LABELS = { Manager: 'Active', Archive: 'Deleted' };
 
@@ -37,61 +36,6 @@ const accountColumns = [
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
 ];
-
-// A table whose sort, column filters and page are read from one service endpoint for all the logins of the search.
-function createGrid({ path, columns, sort, titleId, title, containerId, pagerId, onRowClick, onRendered }) {
-  const container = document.getElementById(containerId);
-  const pagerContainer = document.getElementById(pagerId);
-  const titleElement = titleId ? document.getElementById(titleId) : null;
-  let params = null;
-  let sortState = { ...sort };
-  let filters = {};
-  let pageSize = DEFAULT_PAGE_SIZE;
-
-  async function load(page = 1, size = pageSize) {
-    pageSize = size;
-    const report = await apiGet(path, {
-      ...params, sortItem: sortState.item, sortDirection: sortState.direction,
-      ...columnFilterParams(filters), currentPage: page, pageSize,
-    });
-    const paging = pagingOf(report.paging);
-    renderTable(container, columns, report.items, onRowClick, {
-      sort: {
-        item: sortState.item,
-        direction: sortState.direction,
-        onChange: (item, direction) => {
-          sortState = { item, direction };
-          return load(1);
-        },
-      },
-      filter: {
-        values: filters,
-        onChange: values => {
-          filters = values;
-          return load(1);
-        },
-      },
-    });
-    renderPager(pagerContainer, paging, load);
-    if (titleElement) titleElement.textContent = `${title} (${(paging?.totalRecords ?? report.items.length).toLocaleString('en-US')})`;
-    onRendered?.(report);
-    return report;
-  }
-
-  return {
-    start(searchParams) {
-      params = searchParams;
-      sortState = { ...sort };
-      filters = {};
-      return load(1, DEFAULT_PAGE_SIZE);
-    },
-    clear() {
-      clearPager(pagerContainer);
-      container.replaceChildren();
-      if (titleElement) titleElement.textContent = title;
-    },
-  };
-}
 
 function showTab(tab) {
   currentTab = tab === 'details' ? 'details' : 'summary';
@@ -168,7 +112,7 @@ async function submit() {
 }
 
 grids = [
-  createGrid({
+  createReportGrid({
     path: 'login-reports/get-logins-sessions',
     columns: [loginColumn, ...SESSION_COLUMNS],
     sort: { item: 'LoginAt', direction: 'Desc' },
@@ -177,7 +121,7 @@ grids = [
     onRowClick: session => renderGeoDetails(document.getElementById('geo-details'), session),
     onRendered: () => document.getElementById('geo-details').replaceChildren(),
   }),
-  createGrid({
+  createReportGrid({
     path: 'login-reports/get-logins-ip-mappings',
     columns: mappingColumns('ip', 'IP'),
     sort: { item: 'SessionCount', direction: 'Desc' },
@@ -186,7 +130,7 @@ grids = [
     containerId: 'ips',
     pagerId: 'ips-pager',
   }),
-  createGrid({
+  createReportGrid({
     path: 'login-reports/get-logins-cid-mappings',
     columns: mappingColumns('cid', 'CID'),
     sort: { item: 'SessionCount', direction: 'Desc' },
