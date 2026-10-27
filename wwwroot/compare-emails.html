@@ -32,29 +32,25 @@
     <p class="message" id="message"></p>
 
     <div class="tabs" id="tabs">
-      <button type="button" data-tab="summary">Summary</button>
+      <button type="button" data-tab="overview">Overview</button>
+      <button type="button" data-tab="logins">Logins</button>
+      <button type="button" data-tab="pairs">Linked pairs</button>
+      <button type="button" data-tab="ips">Shared IPs</button>
+      <button type="button" data-tab="cids">Shared CIDs</button>
       <button type="button" data-tab="details">Details</button>
     </div>
 
-    <section data-panel="summary">
+    <section data-panel="overview">
       <div class="summary" id="verdict"></div>
       <p class="hint" id="verdict-reason"></p>
-      <h3 id="sides-title">Comparison</h3>
       <div id="sides"></div>
       <div class="summary" id="shared-facts"></div>
-
-      <h3 id="pairs-title">Linked login pairs</h3>
-      <div id="pairs"></div>
-      <div id="pairs-pager"></div>
-
-      <h3 id="ips-title">Shared IPs</h3>
-      <div id="ips"></div>
-      <div id="ips-pager"></div>
-
-      <h3 id="cids-title">Shared CIDs</h3>
-      <div id="cids"></div>
-      <div id="cids-pager"></div>
-
+      <ul class="help">
+        <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
+        <li>Shared values are those used by at least one login of each email within the date range.</li>
+      </ul>
+    </section>
+    <section data-panel="logins" hidden>
       <div class="summary-columns">
         <div>
           <h3 id="accounts-main-title">Logins of A</h3>
@@ -65,14 +61,28 @@
           <div id="accounts-other"></div>
         </div>
       </div>
-      <ul class="help">
-        <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
-        <li><strong>Shared IPs and CIDs:</strong> values used by at least one login of each email within the date range. Click a row to see its sessions in the Details tab.</li>
-        <li><strong>Linked login pairs:</strong> which login of A shares how many IPs and CIDs with which login of B.</li>
-        <li><strong>Details:</strong> every session of any login of both emails that used a shared IP or CID. Sorting, filters and paging apply to all rows.</li>
-      </ul>
+      <p class="hint">The buttons open that login's own report in a new browser tab.</p>
+    </section>
+    <section data-panel="pairs" hidden>
+      <h3 id="pairs-title">Linked login pairs</h3>
+      <div id="pairs"></div>
+      <div id="pairs-pager"></div>
+      <p class="hint">Which login of A shares how many IPs and CIDs with which login of B.</p>
+    </section>
+    <section data-panel="ips" hidden>
+      <h3 id="ips-title">Shared IPs</h3>
+      <div id="ips"></div>
+      <div id="ips-pager"></div>
+      <p class="hint">Click a row to see its sessions in the Details tab.</p>
+    </section>
+    <section data-panel="cids" hidden>
+      <h3 id="cids-title">Shared CIDs</h3>
+      <div id="cids"></div>
+      <div id="cids-pager"></div>
+      <p class="hint">Click a row to see its sessions in the Details tab.</p>
     </section>
     <section data-panel="details" hidden>
+      <p class="hint">Every session of any login of both emails that used a shared IP or CID.</p>
       <div id="sessions"></div>
       <div id="sessions-pager"></div>
       <div id="geo-details"></div>

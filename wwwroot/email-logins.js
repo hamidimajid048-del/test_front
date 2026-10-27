@@ -9,11 +9,25 @@ const SOURCE_LABELS = { Manager: 'Active', Archive: 'Deleted' };
 
 const rangeControls = initRangeControls(form);
 
-let currentTab = 'summary';
+let currentTab = 'logins';
 let grids = [];
 let request = 0;
 
-const loginColumn = { key: 'login', title: 'Login', format: loginLink, sortKey: 'Login' };
+const inNewTab = link => {
+  link.target = '_blank';
+  link.rel = 'noopener';
+  return link;
+};
+
+const loginTabLink = login => inNewTab(loginLink(login));
+
+const loginActions = login => inline(
+  inNewTab(actionLink('Login history', `/logins.html?login=${encodeURIComponent(login)}`)),
+  inNewTab(actionLink('Similarity', `/similarity.html?login=${encodeURIComponent(login)}`)));
+
+const actionsColumn = { key: 'login', title: 'Actions', format: loginActions, sortable: false, filterable: false };
+
+const loginColumn = { key: 'login', title: 'Login', format: loginTabLink, sortKey: 'Login' };
 
 const mappingColumns = (key, title) => [
   { key, title, sortKey: title },
@@ -21,10 +35,11 @@ const mappingColumns = (key, title) => [
   { ...utcColumn('firstSeen', 'First seen'), sortKey: 'FirstSeen' },
   { ...utcColumn('lastSeen', 'Last seen'), sortKey: 'LastSeen' },
   { key: 'sessionCount', title: 'Sessions', sortKey: 'SessionCount' },
+  actionsColumn,
 ];
 
 const accountColumns = [
-  { key: 'login', title: 'Login', format: loginLink },
+  { key: 'login', title: 'Login', format: loginTabLink },
   { key: 'source', title: 'Status', format: source => SOURCE_LABELS[source] ?? source },
   { key: 'name', title: 'Name' },
   { key: 'group', title: 'Group' },
@@ -35,10 +50,11 @@ const accountColumns = [
       ? '—'
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
+  actionsColumn,
 ];
 
 function showTab(tab) {
-  currentTab = tab === 'details' ? 'details' : 'summary';
+  currentTab = ['summary', 'details'].includes(tab) ? tab : 'logins';
   for (const button of document.querySelectorAll('#tabs button'))
     button.classList.toggle('active', button.dataset.tab === currentTab);
   for (const panel of document.querySelectorAll('[data-panel]'))

@@ -15,9 +15,11 @@ const EVIDENCE = {
   None: { kind: 'ok', text: 'No IP or CID is shared.' },
 };
 
+const TABS = ['overview', 'logins', 'pairs', 'ips', 'cids', 'details'];
+
 const rangeControls = initRangeControls(form);
 
-let currentTab = 'summary';
+let currentTab = 'overview';
 let emails = { main: 'A', other: 'B' };
 let sideOf = new Map();
 let request = 0;
@@ -28,8 +30,18 @@ const loginsCell = logins => {
   return inline(...shown, ...(rest > 0 ? [`+${rest}`] : []));
 };
 
+const inNewTab = link => {
+  link.target = '_blank';
+  link.rel = 'noopener';
+  return link;
+};
+
+const loginActions = login => inline(
+  inNewTab(actionLink('Login history', `/logins.html?login=${encodeURIComponent(login)}`)),
+  inNewTab(actionLink('Similarity', `/similarity.html?login=${encodeURIComponent(login)}`)));
+
 const accountColumns = [
-  { key: 'login', title: 'Login', format: loginLink },
+  { key: 'login', title: 'Login', format: login => inNewTab(loginLink(login)) },
   { key: 'source', title: 'Status', format: source => SOURCE_LABELS[source] ?? source },
   { key: 'name', title: 'Name' },
   { key: 'group', title: 'Group' },
@@ -40,6 +52,7 @@ const accountColumns = [
       ? '—'
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
+  { key: 'login', title: 'Actions', format: loginActions, sortable: false, filterable: false },
 ];
 
 const sideColumns = () => [
@@ -94,11 +107,23 @@ const detailColumns = () => [
 ];
 
 function showTab(tab) {
-  currentTab = tab === 'details' ? 'details' : 'summary';
+  currentTab = TABS.includes(tab) ? tab : 'overview';
   for (const button of document.querySelectorAll('#tabs button'))
     button.classList.toggle('active', button.dataset.tab === currentTab);
   for (const panel of document.querySelectorAll('[data-panel]'))
     panel.hidden = panel.dataset.panel !== currentTab;
+}
+
+const TAB_TITLES = { pairs: 'Linked pairs', ips: 'Shared IPs', cids: 'Shared CIDs' };
+
+function showCount(tab, report) {
+  const total = pagingOf(report.paging)?.totalRecords ?? report.items.length;
+  document.querySelector(`#tabs [data-tab="${tab}"]`).textContent = `${TAB_TITLES[tab]} (${total.toLocaleString('en-US')})`;
+}
+
+function resetCounts() {
+  for (const [tab, title] of Object.entries(TAB_TITLES))
+    document.querySelector(`#tabs [data-tab="${tab}"]`).textContent = title;
 }
 
 function writeState(values) {
@@ -123,6 +148,7 @@ const grids = {
     title: 'Linked login pairs',
     containerId: 'pairs',
     pagerId: 'pairs-pager',
+    onRendered: report => showCount('pairs', report),
   }),
   ips: createReportGrid({
     path: 'group-compare-reports/get-shared-ips',
@@ -132,6 +158,7 @@ const grids = {
     title: 'Shared IPs',
     containerId: 'ips',
     pagerId: 'ips-pager',
+    onRendered: report => showCount('ips', report),
     onRowClick: row => openDetails('Ip', row.value),
   }),
   cids: createReportGrid({
@@ -142,6 +169,7 @@ const grids = {
     title: 'Shared CIDs',
     containerId: 'cids',
     pagerId: 'cids-pager',
+    onRendered: report => showCount('cids', report),
     onRowClick: row => openDetails('Cid', row.value),
   }),
 };
@@ -194,6 +222,7 @@ function renderOverview(overview) {
 }
 
 function clearResults() {
+  resetCounts();
   for (const grid of Object.values(grids)) grid.clear();
   for (const id of ['verdict', 'sides', 'shared-facts', 'accounts-main', 'accounts-other', 'geo-details'])
     document.getElementById(id).replaceChildren();

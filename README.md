@@ -48,6 +48,7 @@ and asks the service for the reports of all those logins together (`login-report
 `get-logins-cid-mappings` and `get-logins-sessions`, at most 100 logins): the summary lists the IPs and CIDs per login
 with first/last sign-in and session count, the details list every session with its location and warnings. Sorting,
 column filters and paging are done by the service.
+The page has three tabs: **Logins** (the accounts of the email, each with buttons that open its login history or similarity report in a new browser tab), **Summary** (IPs and CIDs per login) and **Details** (every session).
 
 The **Compare emails** page (`compare-emails.html`) takes two emails and an optional UTC day range, finds the logins of
 each email as above, and compares the two groups through `group-compare-reports/*` of the service (at most 100 logins per
@@ -57,6 +58,7 @@ email): `get-overview` (per-email totals, the shared IPs and CIDs with their sha
 a valid shared CID or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter, *Medium* for a shared IP that is not,
 *Weak* when only such IPs or invalid CIDs are shared, and *None* otherwise. A row of the shared tables opens its
 sessions in the Details tab.
+The page has six tabs: **Overview** (evidence and the side-by-side totals), **Logins** (the accounts of both emails, with buttons that open a login's history or similarity report in a new browser tab), **Linked pairs**, **Shared IPs**, **Shared CIDs** and **Details**; the last three tabs show their row counts.
 
 ## Run
 

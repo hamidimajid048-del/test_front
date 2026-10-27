@@ -32,13 +32,20 @@
     <div class="summary" id="metadata"></div>
 
     <div class="tabs" id="tabs">
+      <button type="button" data-tab="logins">Logins</button>
       <button type="button" data-tab="summary">Summary</button>
       <button type="button" data-tab="details">Details</button>
     </div>
 
-    <section data-panel="summary">
+    <section data-panel="logins">
       <h3 id="accounts-title">Logins</h3>
       <div id="accounts"></div>
+      <ul class="help">
+        <li>Every MetaTrader account with this email: active ones from the Manager and deleted ones, marked "Deleted", from the Administrator archive. At most 100 logins are reported together.</li>
+        <li>The buttons open that login's own report in a new browser tab.</li>
+      </ul>
+    </section>
+    <section data-panel="summary" hidden>
       <div class="summary-columns">
         <div>
           <h3 id="ips-title">IP</h3>
@@ -52,7 +59,6 @@
         </div>
       </div>
       <ul class="help">
-        <li><strong>Logins:</strong> every MetaTrader account with this email: active ones from the Manager and deleted ones, marked "Deleted", from the Administrator archive. At most 100 logins are reported together.</li>
         <li><strong>IP and CID:</strong> for each login, the IPs and computer IDs it signed in from within the date range, with the first and last sign-in and the number of sessions. Sorting, filters and paging apply to all rows.</li>
       </ul>
     </section>
