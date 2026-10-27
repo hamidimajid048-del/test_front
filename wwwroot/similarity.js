@@ -1,12 +1,15 @@
-// Similarity page: logins sharing IP/CID evidence (summary), the shared values with one related login (details),
-// and CSV/XLSX exports of both.
+// Similarity page: logins sharing IP/CID evidence (summary), the shared values with one related login (details, one
+// tab per related login and evidence type), and CSV/XLSX exports of both.
 
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
-const detailsForm = document.getElementById('details-filters');
-const detailsMessage = document.getElementById('details-message');
+const summarySection = document.getElementById('summary-section');
+const tabsBar = document.getElementById('tabs');
+const detailsTemplate = document.getElementById('details-template');
 const DEFAULT_PAGE_SIZE = 100;
-const DETAILS_QUERY_PREFIX = 'd_';
+// Older links carried the details of one account under this prefix.
+const LEGACY_DETAILS_PREFIX = 'd_';
+const SUMMARY_TAB = 'summary';
 
 const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'deviceType', 'cid'];
 const SUMMARY_KEYS = [
@@ -19,12 +22,11 @@ const TYPE_LABELS = { Ip: 'IP', Cid: 'CID' };
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
 let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
-let selected = null;
-let detailsValues = {};
 // Column filters typed under the table headers; the server applies them to every page.
 let summaryColumnFilters = {};
-let detailsColumnFilters = {};
-let detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
+// The details tabs opened from the summary, by "Type:login"; an account already open is selected, not opened twice.
+const detailsTabs = new Map();
+let activeTab = SUMMARY_TAB;
 
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]));
 
@@ -81,23 +83,11 @@ function summaryParams() {
   };
 }
 
-function detailsParams() {
-  return {
-    ...commonParams(),
-    ...detailsValues,
-    ...columnFilterParams(detailsColumnFilters),
-    type: selected.type,
-    relatedLogin: selected.relatedLogin,
-    currentPage: detailsPaging.currentPage,
-    pageSize: detailsPaging.pageSize,
-  };
-}
-
 function writeState() {
   const state = { ...filters, ...columnFilterState(summaryColumnFilters), currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
-  if (selected) {
-    const prefixed = { ...detailsValues, ...columnFilterState(detailsColumnFilters), relatedLogin: selected.relatedLogin, type: selected.type, ...detailsPaging };
-    for (const [key, value] of Object.entries(prefixed)) state[DETAILS_QUERY_PREFIX + key] = value;
+  if (detailsTabs.size) {
+    state.tabs = [...detailsTabs.keys()].join(',');
+    if (activeTab !== SUMMARY_TAB) state.tab = activeTab;
   }
   writeQuery(state);
 }
@@ -119,70 +109,54 @@ function compareHref(row) {
   return `/compare.html?${query}`;
 }
 
-// Name, group, email and balance of the related logins come from MetaTrader in a second request, after the summary is
-// shown; the cells show a placeholder until it answers.
-const NO_VALUE = '—';
-let accounts = new Map();
-let accountCells = [];
-let accountsRequest = 0;
-let accountsFailed = false;
+const accountsDirectory = createAccountDirectory(document.getElementById('accounts-message'));
+let hideSameEmail = false;
+const differentEmailButton = document.getElementById('different-email');
 
-function accountText(account, field) {
-  if (account.source === 'NotFound') return field === 'name' ? 'Not found' : NO_VALUE;
-  const value = account[field];
-  if (value === null || value === undefined || value === '') return NO_VALUE;
-  if (field === 'balance') return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return field === 'name' && account.source === 'Archive' ? `${value} (deleted)` : value;
-}
+const normalizedEmail = account => (account?.email ?? '').trim().toLowerCase();
 
-function accountCell(row, field) {
-  const cell = document.createElement('span');
-  const account = accounts.get(row.relatedLogin);
-  if (account) {
-    cell.textContent = accountText(account, field);
-  } else {
-    cell.textContent = accountsFailed ? NO_VALUE : '…';
-    accountCells.push({ cell, login: row.relatedLogin, field });
+function applyEmailFilter() {
+  const mainEmail = normalizedEmail(accountsDirectory.get(Number(filters.login)));
+  for (const { cell, login } of accountsDirectory.emailCells()) {
+    const row = cell.closest('tr');
+    if (row) row.hidden = hideSameEmail && mainEmail !== '' && normalizedEmail(accountsDirectory.get(login)) === mainEmail;
   }
-  return cell;
 }
 
-function accountColumn(title, field) {
-  return { key: 'relatedLogin', title, sortable: false, filterable: false, format: (_, row) => accountCell(row, field) };
-}
+differentEmailButton.addEventListener('click', () => {
+  hideSameEmail = !hideSameEmail;
+  differentEmailButton.setAttribute('aria-pressed', String(hideSameEmail));
+  applyEmailFilter();
+});
 
 async function loadAccounts(items) {
-  const request = ++accountsRequest;
-  const logins = [...new Set(items.map(item => item.relatedLogin))];
-  const accountsMessage = document.getElementById('accounts-message');
-  accountsMessage.textContent = '';
-  if (!logins.length) return;
-  try {
-    const found = await panelRequest('GET', `mt5/accounts?logins=${logins.join(',')}`);
-    if (request !== accountsRequest) return;
-    accounts = new Map(found.map(account => [account.login, account]));
-    if (found.some(account => account.source === 'Unavailable'))
-      accountsMessage.textContent = 'Deleted accounts could not be read from the MetaTrader archive.';
-  } catch (error) {
-    if (request !== accountsRequest) return;
-    accountsFailed = true;
-    accountsMessage.textContent = `Account details are unavailable: ${error.message || UNAVAILABLE_MESSAGE}`;
+  if (!items.length) return;
+  await accountsDirectory.load([Number(filters.login), ...items.map(item => item.relatedLogin)]);
+  const mainKnown = normalizedEmail(accountsDirectory.get(Number(filters.login))) !== '';
+  differentEmailButton.disabled = !mainKnown;
+  if (!mainKnown) {
+    const accountsMessage = document.getElementById('accounts-message');
+    accountsMessage.textContent ||= `The email of login ${filters.login} is unknown, so rows cannot be compared.`;
   }
-  for (const { cell, login, field } of accountCells) {
-    const account = accounts.get(login);
-    cell.textContent = account ? accountText(account, field) : NO_VALUE;
-  }
-  accountCells = [];
+  applyEmailFilter();
+}
+
+function detailsButton(row) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = 'Details';
+  button.addEventListener('click', () => openDetails(row));
+  return button;
 }
 
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
-  accountColumn('Name', 'name'),
-  accountColumn('Group', 'group'),
-  accountColumn('Email', 'email'),
-  accountColumn('Balance', 'balance'),
+  accountsDirectory.column('Name', 'name', 'relatedLogin'),
+  accountsDirectory.column('Group', 'group', 'relatedLogin'),
+  accountsDirectory.column('Email', 'email', 'relatedLogin'),
+  accountsDirectory.column('Balance', 'balance', 'relatedLogin'),
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -192,6 +166,7 @@ const SUMMARY_COLUMNS = [
       const actions = document.createElement('div');
       actions.className = 'actions';
       actions.append(
+        detailsButton(row),
         actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`),
         actionLink('Compare', compareHref(row)));
       return actions;
@@ -214,10 +189,9 @@ async function loadSummary() {
   const paging = pagingOf(report.paging);
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
-  accounts = new Map();
-  accountCells = [];
-  accountsFailed = false;
-  renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails, {
+  accountsDirectory.reset();
+  differentEmailButton.disabled = true;
+  renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, undefined, {
     sort: {
       item: filters.sortItem,
       direction: filters.sortDirection,
@@ -241,76 +215,161 @@ async function loadSummary() {
     summaryPaging = { currentPage: page, pageSize };
     return withLoading(form, message, loadSummary);
   });
-  document.getElementById('summary-section').hidden = false;
+  summarySection.hidden = activeTab !== SUMMARY_TAB;
   writeState();
   loadAccounts(report.items);
 }
 
-async function loadDetails() {
-  const report = await apiGet('similarity-reports/get-details', detailsParams());
-  const paging = pagingOf(report.paging);
-  detailsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? detailsPaging.pageSize };
-  renderTable(document.getElementById('details'), DETAILS_COLUMNS, report.items, undefined, {
-    sort: {
-      item: detailsValues.sortItem,
-      direction: detailsValues.sortDirection,
-      onChange: (item, direction) => {
-        setSortFields(detailsForm, item, direction);
-        detailsValues = { ...detailsValues, sortItem: item, sortDirection: direction };
-        detailsPaging = { currentPage: 1, pageSize: detailsPaging.pageSize };
-        return withLoading(detailsForm, detailsMessage, loadDetails);
-      },
-    },
-    filter: {
-      values: detailsColumnFilters,
-      onChange: values => {
-        detailsColumnFilters = values;
-        detailsPaging = { currentPage: 1, pageSize: detailsPaging.pageSize };
-        return withLoading(detailsForm, detailsMessage, loadDetails);
-      },
-    },
-  });
-  renderPager(document.getElementById('details-pager'), paging, (page, pageSize) => {
-    detailsPaging = { currentPage: page, pageSize };
-    return withLoading(detailsForm, detailsMessage, loadDetails);
-  });
+function makeTab(label, { onSelect, onClose }) {
+  const tab = document.createElement('span');
+  tab.className = 'tab';
+  const select = document.createElement('button');
+  select.type = 'button';
+  select.textContent = label;
+  select.addEventListener('click', onSelect);
+  tab.append(select);
+  if (onClose) {
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'tab-close';
+    close.textContent = '×';
+    close.title = 'Close';
+    close.setAttribute('aria-label', `Close ${label}`);
+    close.addEventListener('click', onClose);
+    tab.append(close);
+  }
+  return tab;
+}
+
+const summaryTab = makeTab('Summary', { onSelect: () => activateTab(SUMMARY_TAB) });
+summaryTab.classList.add('active');
+tabsBar.append(summaryTab);
+
+function activateTab(key) {
+  activeTab = key;
+  summarySection.hidden = key !== SUMMARY_TAB;
+  summaryTab.classList.toggle('active', key === SUMMARY_TAB);
+  for (const [tabKey, { section, tab }] of detailsTabs) {
+    section.hidden = tabKey !== key;
+    tab.classList.toggle('active', tabKey === key);
+  }
   writeState();
 }
 
-function showDetailsSection() {
-  document.getElementById('details-title').textContent =
-    `Details: ${filters.login} and ${selected.relatedLogin} (${TYPE_LABELS[selected.type] ?? selected.type})`;
-  const section = document.getElementById('details-section');
-  section.hidden = false;
-  return section;
+function closeDetails(key) {
+  const opened = detailsTabs.get(key);
+  if (!opened) return;
+  opened.section.remove();
+  opened.tab.remove();
+  detailsTabs.delete(key);
+  tabsBar.hidden = detailsTabs.size === 0;
+  if (activeTab === key) activateTab(SUMMARY_TAB);
+  else writeState();
+}
+
+function closeAllDetails() {
+  for (const { section, tab } of detailsTabs.values()) {
+    section.remove();
+    tab.remove();
+  }
+  detailsTabs.clear();
+  activeTab = SUMMARY_TAB;
+  summaryTab.classList.add('active');
+  tabsBar.hidden = true;
+}
+
+function addDetailsTab(relatedLogin, type) {
+  const key = `${type}:${relatedLogin}`;
+  const section = detailsTemplate.content.firstElementChild.cloneNode(true);
+  const part = name => section.querySelector(`.details-${name}`);
+  const detailsForm = part('filters');
+  const detailsMessage = part('message');
+  let values = {};
+  let columnFilters = {};
+  let paging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
+
+  const params = () => ({
+    ...commonParams(),
+    ...values,
+    ...columnFilterParams(columnFilters),
+    type,
+    relatedLogin,
+    currentPage: paging.currentPage,
+    pageSize: paging.pageSize,
+  });
+
+  async function load() {
+    const report = await apiGet('similarity-reports/get-details', params());
+    const reportPaging = pagingOf(report.paging);
+    paging = { currentPage: reportPaging?.currentPage ?? 1, pageSize: reportPaging?.pageSize ?? paging.pageSize };
+    renderTable(part('table'), DETAILS_COLUMNS, report.items, undefined, {
+      sort: {
+        item: values.sortItem,
+        direction: values.sortDirection,
+        onChange: (item, direction) => {
+          setSortFields(detailsForm, item, direction);
+          values = { ...values, sortItem: item, sortDirection: direction };
+          paging = { currentPage: 1, pageSize: paging.pageSize };
+          return reload();
+        },
+      },
+      filter: {
+        values: columnFilters,
+        onChange: next => {
+          columnFilters = next;
+          paging = { currentPage: 1, pageSize: paging.pageSize };
+          return reload();
+        },
+      },
+    });
+    renderPager(part('pager'), reportPaging, (page, pageSize) => {
+      paging = { currentPage: page, pageSize };
+      return reload();
+    });
+  }
+
+  const reload = () => withLoading(detailsForm, detailsMessage, load);
+
+  part('title').textContent = `Details: ${filters.login} and ${relatedLogin} (${TYPE_LABELS[type] ?? type})`;
+  detailsForm.addEventListener('submit', event => {
+    event.preventDefault();
+    values = formValues(detailsForm);
+    paging = { currentPage: 1, pageSize: paging.pageSize };
+    reload();
+  });
+  section.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
+    const { currentPage, pageSize, ...exportParams } = params();
+    downloadExport(
+      'similarity-reports/export-details',
+      { ...exportParams, format: button.dataset.format },
+      button,
+      part('export-message'));
+  }));
+
+  const tab = makeTab(`${relatedLogin} · ${TYPE_LABELS[type] ?? type}`, {
+    onSelect: () => activateTab(key),
+    onClose: () => closeDetails(key),
+  });
+  tabsBar.append(tab);
+  tabsBar.hidden = false;
+  document.querySelector('main').append(section);
+  detailsTabs.set(key, { section, tab });
+  reload();
+  return key;
 }
 
 function openDetails(row) {
-  selected = { relatedLogin: row.relatedLogin, type: row.type };
-  detailsForm.reset();
-  detailsValues = {};
-  detailsColumnFilters = {};
-  detailsPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
-  document.getElementById('details').replaceChildren();
-  clearPager(document.getElementById('details-pager'));
-  document.getElementById('details-export-message').textContent = '';
-  showDetailsSection().scrollIntoView({ behavior: 'smooth', block: 'start' });
-  withLoading(detailsForm, detailsMessage, loadDetails);
+  const key = `${row.type}:${row.relatedLogin}`;
+  activateTab(detailsTabs.has(key) ? key : addDetailsTab(row.relatedLogin, row.type));
 }
 
-function hideDetails() {
-  selected = null;
-  document.getElementById('details-section').hidden = true;
-}
-
-document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
-  const kind = button.dataset.export;
-  const { currentPage, pageSize, ...params } = kind === 'summary' ? summaryParams() : detailsParams();
+document.querySelectorAll('[data-export="summary"]').forEach(button => button.addEventListener('click', () => {
+  const { currentPage, pageSize, ...params } = summaryParams();
   downloadExport(
-    `similarity-reports/export-${kind}`,
+    'similarity-reports/export-summary',
     { ...params, format: button.dataset.format },
     button,
-    document.getElementById(`${kind}-export-message`));
+    document.getElementById('summary-export-message'));
 }));
 
 form.addEventListener('submit', event => {
@@ -322,16 +381,9 @@ form.addEventListener('submit', event => {
     filters = values;
     summaryColumnFilters = {};
     summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
-    hideDetails();
+    closeAllDetails();
     await loadSummary();
   });
-});
-
-detailsForm.addEventListener('submit', event => {
-  event.preventDefault();
-  detailsValues = formValues(detailsForm);
-  detailsPaging = { currentPage: 1, pageSize: detailsPaging.pageSize };
-  withLoading(detailsForm, detailsMessage, loadDetails);
 });
 
 // Restores a shared or refreshed report link.
@@ -351,22 +403,20 @@ async function restoreFromQuery() {
     await loadSummary();
   });
 
-  const relatedLogin = query.get(`${DETAILS_QUERY_PREFIX}relatedLogin`);
-  const type = query.get(`${DETAILS_QUERY_PREFIX}type`);
-  if (!relatedLogin || !type || document.getElementById('summary-section').hidden) return;
-  selected = { relatedLogin, type };
-  for (const element of detailsForm.elements) {
-    const value = element.name && queryValue(query, DETAILS_QUERY_PREFIX + element.name);
-    if (value) element.value = value;
+  if (summarySection.hidden) return;
+  const requested = (query.get('tabs') ?? '').split(',').map(entry => entry.split(':'));
+  const legacyLogin = query.get(`${LEGACY_DETAILS_PREFIX}relatedLogin`);
+  const legacyType = query.get(`${LEGACY_DETAILS_PREFIX}type`);
+  if (legacyLogin && legacyType) requested.push([legacyType, legacyLogin]);
+  let restored = null;
+  for (const [type, relatedLogin] of requested) {
+    if (!(type in TYPE_LABELS) || !/^\d+$/.test(relatedLogin ?? '') || detailsTabs.has(`${type}:${relatedLogin}`)) continue;
+    restored = addDetailsTab(relatedLogin, type);
   }
-  detailsValues = formValues(detailsForm);
-  detailsColumnFilters = readColumnFilters(query, DETAILS_QUERY_PREFIX);
-  detailsPaging = {
-    currentPage: Number(query.get(`${DETAILS_QUERY_PREFIX}currentPage`)) || 1,
-    pageSize: Number(query.get(`${DETAILS_QUERY_PREFIX}pageSize`)) || DEFAULT_PAGE_SIZE,
-  };
-  showDetailsSection();
-  await withLoading(detailsForm, detailsMessage, loadDetails);
+  const wanted = query.get('tab');
+  if (detailsTabs.has(wanted)) activateTab(wanted);
+  else if (legacyLogin && restored) activateTab(restored);
+  else writeState();
 }
 
 renderMenu();

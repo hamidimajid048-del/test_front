@@ -403,7 +403,7 @@ thead tr.filter-row input { width: 100%; min-width: 72px; height: 30px; font-siz
 .grid-meta:empty { display: none; }
 .grid-meta button { height: 28px; padding: 0 10px; font-size: 12.5px; }
 
-.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
 .tabs button {
   height: 40px;
   padding: 0 16px;
@@ -417,6 +417,11 @@ thead tr.filter-row input { width: 100%; min-width: 72px; height: 30px; font-siz
 .tabs button:hover:not(:disabled) { color: var(--text); background: none; }
 .tabs button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 .tabs + section { margin-top: 0; }
+.tabs .tab { display: flex; }
+.tabs .tab-close { padding: 0 8px; font-size: 18px; line-height: 1; }
+.tabs .tab.active button { color: var(--primary); border-bottom-color: var(--primary); }
+.tabs .tab.active button:first-child { font-weight: 600; }
+.tabs ~ section.details-tab { margin-top: 0; }
 
 /* ---------- Home ---------- */
 
@@ -609,3 +614,6 @@ table td[hidden], table th[hidden] { display: none; }
 .page-size-top > .column-picker, .page-size-top > .column-pickers { margin-bottom: 0; }
 .page-size-top .page-counts { margin-inline-start: auto; font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .page-size-top:empty { display: none; }
+
+table tbody tr[hidden] { display: none; }
+button[aria-pressed="true"] { font-weight: 600; outline: 2px solid currentColor; }

@@ -64,10 +64,12 @@
       </div>
       <p class="message" id="summary-export-message"></p>
       <div class="summary" id="summary-metadata"></div>
+      <p class="message" id="accounts-message"></p>
       <div id="summary"></div>
       <div id="summary-pager"></div>
       <ul class="help">
         <li><strong>Logins:</strong> the recorded logins of that login on the searched value, over the applied range.</li>
+        <li><strong>Name, Group, Email, Balance:</strong> read from MetaTrader after the table loads. Active accounts come from the Manager; deleted accounts, marked "(deleted)", from the Administrator archive.</li>
         <li>Click a row to see that login's own sessions, or open the <strong>Details</strong> tab for every session of every login at once.</li>
       </ul>
     </section>
@@ -89,6 +91,7 @@
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
   <script src="/range.js"></script>
+  <script src="/accounts.js"></script>
   <script src="/sessions-table.js"></script>
   <script src="/value-search.js"></script>
 </body>

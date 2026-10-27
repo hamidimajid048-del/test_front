@@ -83,8 +83,14 @@ function renderMetadata(metadata) {
   ]);
 }
 
+const accountsDirectory = createAccountDirectory(document.getElementById('accounts-message'));
+
 const SUMMARY_COLUMNS = [
   { key: 'login', title: 'Login', format: loginLink, sortKey: 'Login' },
+  accountsDirectory.column('Name', 'name', 'login'),
+  accountsDirectory.column('Group', 'group', 'login'),
+  accountsDirectory.column('Email', 'email', 'login'),
+  accountsDirectory.column('Balance', 'balance', 'login'),
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
   { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
@@ -125,6 +131,7 @@ async function loadSummary() {
   const paging = pagingOf(report.paging);
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
+  accountsDirectory.reset();
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails, {
     sort: {
       item: filters.sortItem,
@@ -151,6 +158,7 @@ async function loadSummary() {
   });
   summaryLoaded = true;
   writeState();
+  accountsDirectory.load(report.items.map(item => item.login));
 }
 
 async function loadDetails() {

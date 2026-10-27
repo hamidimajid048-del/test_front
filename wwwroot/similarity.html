@@ -54,9 +54,12 @@
     <p class="hint" id="account-range"></p>
     <p class="message" id="message"></p>
 
+    <div class="tabs" id="tabs" hidden></div>
+
     <section id="summary-section" hidden>
       <div class="section-head">
         <h2>Summary</h2>
+        <button type="button" id="different-email" aria-pressed="false" disabled>Different email only</button>
         <button type="button" data-export="summary" data-format="Csv">CSV</button>
         <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
       </div>
@@ -68,18 +71,20 @@
       <ul class="help">
         <li><strong>Related logins:</strong> how many times the related login signed in from the shared IPs or CIDs (as the filters select), over the whole recorded range.</li>
         <li><strong>Name, Group, Email, Balance:</strong> read from MetaTrader after the table loads. Active accounts come from the Manager; deleted accounts, marked "(deleted)", from the Administrator archive.</li>
-        <li>Click a row to see its shared values.</li>
+        <li><strong>Different email only</strong> hides the rows on this page whose email equals the searched login's email. Rows whose email is unknown stay visible.</li>
+        <li><strong>Details</strong> opens the shared values of that account in its own tab; an account that is already open is selected instead of opened again. Close a tab with ×.</li>
       </ul>
     </section>
 
-    <section id="details-section" hidden>
+  <template id="details-template">
+    <section class="details-tab" hidden>
       <div class="section-head">
-        <h2 id="details-title">Details</h2>
+        <h2 class="details-title">Details</h2>
         <button type="button" data-export="details" data-format="Csv">CSV</button>
         <button type="button" data-export="details" data-format="Xlsx">Excel</button>
       </div>
-      <p class="message" id="details-export-message"></p>
-      <form class="filters" id="details-filters">
+      <p class="message details-export-message"></p>
+      <form class="filters details-filters">
         <label>Value (IP or CID) <input name="value"></label>
         <label>Min logins <input name="minLoginCount" type="number" min="0" step="1"></label>
         <label>Min related logins <input name="minRelatedLoginCount" type="number" min="0" step="1"></label>
@@ -102,14 +107,16 @@
         </label>
         <button type="submit">Apply</button>
       </form>
-      <p class="message" id="details-message"></p>
-      <div id="details"></div>
-      <div id="details-pager"></div>
+      <p class="message details-message"></p>
+      <div class="details-table"></div>
+      <div class="details-pager"></div>
     </section>
+  </template>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
   <script src="/range.js"></script>
+  <script src="/accounts.js"></script>
   <script src="/similarity.js"></script>
 </body>
 </html>
