@@ -43,7 +43,17 @@ the related logins after the summary table has loaded and fills the Name, Group,
 `GET /panel-api/mt5/logins-by-email?email=` returns `{ accounts, archiveAvailable }`: every account whose email equals
 the given one (case-insensitive), active ones from the Manager (`UserRequestArray`) and deleted ones from the
 Administrator archive (`UserArchiveRequestArray`), each with name, group and balance. `archiveAvailable` is `false` when
-the archive could not be read. The **Email logins** page (`email-logins.html`) takes an email and an optional UTC day range, finds the logins as above,
+the archive could not be read. `GET /panel-api/mt5/account-data?login=` and its sub-paths `/open`, `/transfers`, `/positions`, `/orders` and `/deals` read
+one account from the Manager connection (404 when the login is unknown, 503 like the others). The overview has the
+active and trade-enabled flags (from the user rights), the start balance, balance, equity, net profit, growth and the
+balance curve; `/open` has the open positions and active orders; `/transfers` the balance, credit, charge, correction and
+bonus deals; `/positions` the position history built from the deals; `/orders` the order history; `/deals` every deal.
+The start balance comes from the account comment: a number, or the part after the last colon (`Prop:...:...:50000`).
+Net profit is profit + commission + swap + fee of all deals that are not deposits, withdrawals or credit operations. The
+**Account data** page (`account-data.html`) shows them in six tabs, each read when first opened, with a growth chart in
+money or percent.
+
+The **Email logins** page (`email-logins.html`) takes an email and an optional UTC day range, finds the logins as above,
 and asks the service for the reports of all those logins together (`login-reports/get-logins-ip-mappings`,
 `get-logins-cid-mappings` and `get-logins-sessions`, at most 100 logins): the summary lists the IPs and CIDs per login
 with first/last sign-in and session count, the details list every session with its location and warnings. Sorting,

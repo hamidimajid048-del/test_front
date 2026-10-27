@@ -617,3 +617,20 @@ table td[hidden], table th[hidden] { display: none; }
 
 table tbody tr[hidden] { display: none; }
 button[aria-pressed="true"] { font-weight: 600; outline: 2px solid currentColor; }
+
+/* ---------- Account data: amounts and balance chart ---------- */
+.pos { color: var(--success); }
+.neg { color: var(--danger); }
+.toggle { display: inline-flex; gap: 0; }
+.toggle button { height: 30px; padding: 0 14px; font-size: 12.5px; border-radius: 0; }
+.toggle button:first-child { border-radius: 8px 0 0 8px; }
+.toggle button:last-child { border-radius: 0 8px 8px 0; margin-inline-start: -1px; }
+.toggle button[aria-pressed="true"] { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+.balance-chart { width: 100%; height: auto; max-height: 360px; display: block; touch-action: none; }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-zero { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 4 3; }
+.chart-label { fill: var(--text-muted); font-size: 11px; }
+.chart-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; }
+.chart-cursor { stroke: var(--border-strong); stroke-width: 1; }
+.chart-dot { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
+.chart-tip { fill: var(--text); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }

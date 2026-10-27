@@ -15,6 +15,8 @@ public static class Mt5Extensions
         builder.Services.AddSingleton<Mt5ConnectionService>();
         builder.Services.AddHostedService(services => services.GetRequiredService<Mt5ConnectionService>());
         builder.Services.AddSingleton<Mt5AccountReader>();
+        builder.Services.AddSingleton<Mt5AccountDataReader>();
+        builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     }
 
     public static void MapMt5Endpoints(this WebApplication app)
@@ -29,6 +31,7 @@ public static class Mt5Extensions
         mt5.MapGet("/status", (Mt5ConnectionService connection) => Results.Ok(connection.Status));
         mt5.MapGet("/accounts", ReadAccounts);
         mt5.MapGet("/logins-by-email", FindLoginsByEmail);
+        mt5.MapMt5AccountDataEndpoints();
     }
 
     private static IResult ReadAccounts(string? logins, Mt5AccountReader reader)
@@ -66,5 +69,5 @@ public static class Mt5Extensions
         }
     }
 
-    private static IResult Error(int statusCode, string message) => Results.Json(new { error = message }, statusCode: statusCode);
+    internal static IResult Error(int statusCode, string message) => Results.Json(new { error = message }, statusCode: statusCode);
 }

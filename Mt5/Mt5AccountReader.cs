@@ -25,13 +25,13 @@ public sealed class Mt5AccountReader(Mt5ConnectionService mt5, ILogger<Mt5Accoun
     private static Mt5AccountDto[] FindActive(CIMTManagerAPI manager, string email)
     {
         using var users = manager.UserCreateArray();
-        EnsureRead(manager.UserRequestArray("*", users));
+        Mt5Reads.EnsureRead(manager.UserRequestArray("*", users));
         var matched = users.ToArray().Where(user => EmailMatches(user, email)).ToArray();
         if (matched.Length == 0)
             return [];
 
         using var accounts = manager.UserCreateAccountArray();
-        EnsureRead(manager.UserAccountRequestByLogins([.. matched.Select(user => user.Login())], accounts));
+        Mt5Reads.EnsureRead(manager.UserAccountRequestByLogins([.. matched.Select(user => user.Login())], accounts));
         var balances = accounts.ToArray().ToDictionary(account => account.Login(), account => account.Balance());
         return [.. matched.Select(user => ToDto(user, Mt5AccountSourceEnum.Manager, balances.GetValueOrDefault(user.Login(), user.Balance())))];
     }
@@ -43,7 +43,7 @@ public sealed class Mt5AccountReader(Mt5ConnectionService mt5, ILogger<Mt5Accoun
             return mt5.RunAdmin(admin =>
             {
                 using var users = admin.UserCreateArray();
-                EnsureRead(admin.UserArchiveRequestArray("*", users));
+                Mt5Reads.EnsureRead(admin.UserArchiveRequestArray("*", users));
                 return users.ToArray().Where(user => EmailMatches(user, email))
                     .Select(user => ToDto(user, Mt5AccountSourceEnum.Archive, user.Balance())).ToArray();
             });
@@ -62,8 +62,8 @@ public sealed class Mt5AccountReader(Mt5ConnectionService mt5, ILogger<Mt5Accoun
     {
         using var users = manager.UserCreateArray();
         using var accounts = manager.UserCreateAccountArray();
-        EnsureRead(manager.UserRequestByLogins([.. logins], users));
-        EnsureRead(manager.UserAccountRequestByLogins([.. logins], accounts));
+        Mt5Reads.EnsureRead(manager.UserRequestByLogins([.. logins], users));
+        Mt5Reads.EnsureRead(manager.UserAccountRequestByLogins([.. logins], accounts));
 
         var balances = accounts.ToArray().ToDictionary(account => account.Login(), account => account.Balance());
         return users.ToArray().ToDictionary(
@@ -78,7 +78,7 @@ public sealed class Mt5AccountReader(Mt5ConnectionService mt5, ILogger<Mt5Accoun
             return mt5.RunAdmin(admin =>
             {
                 using var users = admin.UserCreateArray();
-                EnsureRead(admin.UserArchiveRequestByLogins(logins, users));
+                Mt5Reads.EnsureRead(admin.UserArchiveRequestByLogins(logins, users));
                 return users.ToArray().ToDictionary(user => user.Login(), user => ToDto(user, Mt5AccountSourceEnum.Archive, user.Balance()));
             });
         }
@@ -94,11 +94,5 @@ public sealed class Mt5AccountReader(Mt5ConnectionService mt5, ILogger<Mt5Accoun
         var name = $"{user.FirstName()} {user.LastName()}".Trim();
         return new Mt5AccountDto(
             user.Login(), source, name.Length > 0 ? name : user.Name(), user.Group(), user.EMail(), Math.Round(balance, 2));
-    }
-
-    private static void EnsureRead(MTRetCode result)
-    {
-        if (result is not (MTRetCode.MT_RET_OK or MTRetCode.MT_RET_OK_NONE or MTRetCode.MT_RET_ERR_NOTFOUND))
-            throw new Mt5UnavailableException($"MetaTrader returned {result}.");
     }
 }

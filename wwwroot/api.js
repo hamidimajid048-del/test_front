@@ -12,6 +12,7 @@ const PAGE_SIZES = [50, 100, 250, 500];
 const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
 const MENU_ITEMS = [
+  { href: '/account-data.html', title: 'Account data' },
   { href: '/logins.html', title: 'Login history' },
   { href: '/email-logins.html', title: 'Email logins' },
   { href: '/similarity.html', title: 'IP/CID similarity' },

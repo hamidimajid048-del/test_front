@@ -11,6 +11,7 @@ global using QRCoder;
 global using Sgb.Trading.Violation.Panel.Auth;
 global using Sgb.Trading.Violation.Panel.Mt5;
 global using System.Buffers.Binary;
+global using System.Globalization;
 global using System.Net;
 global using System.Security.Claims;
 global using System.Security.Cryptography;

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Account data — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Account <input name="login" type="number" min="1" step="1" required></label>
+      <button type="submit">Search</button>
+    </form>
+    <p class="message" id="message"></p>
+    <div class="summary" id="identity"></div>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="overview">Overview</button>
+      <button type="button" data-tab="open">Open positions &amp; orders</button>
+      <button type="button" data-tab="transfers">Deposits &amp; withdrawals</button>
+      <button type="button" data-tab="positions">Positions</button>
+      <button type="button" data-tab="orders">Orders</button>
+      <button type="button" data-tab="deals">Deals</button>
+    </div>
+
+    <section data-panel="overview">
+      <div class="summary" id="status"></div>
+      <div class="summary" id="figures"></div>
+      <p class="hint" id="comment"></p>
+      <div class="section-head">
+        <h3 id="chart-title">Balance growth</h3>
+        <div class="toggle" id="chart-mode">
+          <button type="button" data-mode="amount" aria-pressed="true">Amount</button>
+          <button type="button" data-mode="percent" aria-pressed="false">Percent</button>
+        </div>
+      </div>
+      <div id="chart"></div>
+      <ul class="help">
+        <li><strong>Start balance:</strong> read from the account comment: the whole comment when it is a number, otherwise the part after its last colon (<code>Prop:...:...:StartBalance</code>).</li>
+        <li><strong>Net profit:</strong> profit, commission, swap and fee of all trading deals; deposits, withdrawals, credit and bonus are not included.</li>
+        <li><strong>Growth chart:</strong> the balance after each deal that changed it, in money or as the percent change against the start balance.</li>
+      </ul>
+    </section>
+    <section data-panel="open" hidden>
+      <h3 id="open-positions-title">Open positions</h3>
+      <div id="open-positions"></div>
+      <div id="open-positions-pager"></div>
+      <h3 id="open-orders-title">Active orders</h3>
+      <div id="open-orders"></div>
+      <div id="open-orders-pager"></div>
+    </section>
+    <section data-panel="transfers" hidden>
+      <div class="summary" id="transfer-totals"></div>
+      <div id="transfers"></div>
+      <div id="transfers-pager"></div>
+    </section>
+    <section data-panel="positions" hidden>
+      <div id="positions"></div>
+      <div id="positions-pager"></div>
+    </section>
+    <section data-panel="orders" hidden>
+      <div id="orders"></div>
+      <div id="orders-pager"></div>
+    </section>
+    <section data-panel="deals" hidden>
+      <div id="deals"></div>
+      <div id="deals-pager"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/local-grid.js"></script>
+  <script src="/balance-chart.js"></script>
+  <script src="/account-data.js"></script>
+</body>
+</html>
