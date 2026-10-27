@@ -40,6 +40,15 @@ archive (deleted accounts). `source` is `Manager`, `Archive`, `NotFound`, or `Un
 read. It answers 503 when the Manager is not connected or `Mt5:Enabled` is `false`. The Similarity page calls it for
 the related logins after the summary table has loaded and fills the Name, Group, Email and Balance columns.
 
+`GET /panel-api/mt5/logins-by-email?email=` returns `{ accounts, archiveAvailable }`: every account whose email equals
+the given one (case-insensitive), active ones from the Manager (`UserRequestArray`) and deleted ones from the
+Administrator archive (`UserArchiveRequestArray`), each with name, group and balance. `archiveAvailable` is `false` when
+the archive could not be read. The **Email logins** page (`email-logins.html`) takes an email and an optional UTC day range, finds the logins as above,
+and asks the service for the reports of all those logins together (`login-reports/get-logins-ip-mappings`,
+`get-logins-cid-mappings` and `get-logins-sessions`, at most 100 logins): the summary lists the IPs and CIDs per login
+with first/last sign-in and session count, the details list every session with its location and warnings. Sorting,
+column filters and paging are done by the service.
+
 ## Run
 
 ```powershell

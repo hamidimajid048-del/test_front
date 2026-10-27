@@ -13,6 +13,7 @@ const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
 const MENU_ITEMS = [
   { href: '/logins.html', title: 'Login history' },
+  { href: '/email-logins.html', title: 'Email logins' },
   { href: '/similarity.html', title: 'IP/CID similarity' },
   { href: '/value-search.html', title: 'CID / IP search' },
   { href: '/copy-trade.html', title: 'Copy trade & hedge' },
@@ -44,11 +45,15 @@ function fieldErrorsOf(errors) {
   return fields;
 }
 
-// Builds a query string from the non-empty values of params.
+// Builds a query string from the non-empty values of params; an array value repeats its key (logins=1&logins=2).
 function toQueryString(params) {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params ?? {})) {
-    if (value !== undefined && value !== null && String(value).trim() !== '') query.set(key, String(value).trim());
+    if (Array.isArray(value)) {
+      for (const item of value) query.append(key, String(item));
+    } else if (value !== undefined && value !== null && String(value).trim() !== '') {
+      query.set(key, String(value).trim());
+    }
   }
   const text = query.toString();
   return text ? `?${text}` : '';

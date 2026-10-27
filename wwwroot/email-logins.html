@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Email logins — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Email <input name="email" type="email" maxlength="320" required autocomplete="off"></label>
+      <label>Date range
+        <select name="range">
+          <option value="">All time</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <button type="submit">Search</button>
+    </form>
+    <p class="message" id="message"></p>
+    <div class="summary" id="metadata"></div>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="summary">Summary</button>
+      <button type="button" data-tab="details">Details</button>
+    </div>
+
+    <section data-panel="summary">
+      <h3 id="accounts-title">Logins</h3>
+      <div id="accounts"></div>
+      <div class="summary-columns">
+        <div>
+          <h3 id="ips-title">IP</h3>
+          <div id="ips"></div>
+          <div id="ips-pager"></div>
+        </div>
+        <div>
+          <h3 id="cids-title">CID</h3>
+          <div id="cids"></div>
+          <div id="cids-pager"></div>
+        </div>
+      </div>
+      <ul class="help">
+        <li><strong>Logins:</strong> every MetaTrader account with this email: active ones from the Manager and deleted ones, marked "Deleted", from the Administrator archive. At most 100 logins are reported together.</li>
+        <li><strong>IP and CID:</strong> for each login, the IPs and computer IDs it signed in from within the date range, with the first and last sign-in and the number of sessions. Sorting, filters and paging apply to all rows.</li>
+      </ul>
+    </section>
+    <section data-panel="details" hidden>
+      <div id="sessions"></div>
+      <div id="sessions-pager"></div>
+      <div id="geo-details"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/range.js"></script>
+  <script src="/sessions-table.js"></script>
+  <script src="/email-logins.js"></script>
+</body>
+</html>

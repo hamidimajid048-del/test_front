@@ -3,6 +3,7 @@ namespace Sgb.Trading.Violation.Panel.Mt5;
 public static class Mt5Extensions
 {
     public const int MaxAccountLogins = 500;
+    private const int MaxEmailLength = 320;
 
     public static void AddMt5Connection(this WebApplicationBuilder builder)
     {
@@ -27,6 +28,7 @@ public static class Mt5Extensions
 
         mt5.MapGet("/status", (Mt5ConnectionService connection) => Results.Ok(connection.Status));
         mt5.MapGet("/accounts", ReadAccounts);
+        mt5.MapGet("/logins-by-email", FindLoginsByEmail);
     }
 
     private static IResult ReadAccounts(string? logins, Mt5AccountReader reader)
@@ -41,6 +43,22 @@ public static class Mt5Extensions
         try
         {
             return Results.Ok(reader.Read([.. parsed.Select(login => login!.Value).Distinct()]));
+        }
+        catch (Mt5UnavailableException exception)
+        {
+            return Error(StatusCodes.Status503ServiceUnavailable, exception.Message);
+        }
+    }
+
+    private static IResult FindLoginsByEmail(string? email, Mt5AccountReader reader)
+    {
+        var trimmed = (email ?? string.Empty).Trim();
+        if (trimmed.Length is 0 or > MaxEmailLength || !trimmed.Contains('@'))
+            return Error(StatusCodes.Status400BadRequest, "Enter a valid email address.");
+
+        try
+        {
+            return Results.Ok(reader.FindByEmail(trimmed));
         }
         catch (Mt5UnavailableException exception)
         {

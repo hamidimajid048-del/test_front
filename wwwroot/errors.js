@@ -4,6 +4,7 @@ const ACCESS_MESSAGE = 'These reports are available to admins only';
 const ERROR_MESSAGES = {
   AdminRequired: ACCESS_MESSAGE,
   InvalidLogin: 'The login number is not valid',
+  InvalidLogins: 'Send 1 to 100 valid login numbers',
   InvalidRelatedLogin: 'The related login is not valid or is the same as the login',
   InvalidKind: 'The report kind is not valid',
   InvalidWindow: 'The time window is outside the allowed range',
