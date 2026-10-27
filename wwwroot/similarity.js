@@ -119,10 +119,70 @@ function compareHref(row) {
   return `/compare.html?${query}`;
 }
 
+// Name, group, email and balance of the related logins come from MetaTrader in a second request, after the summary is
+// shown; the cells show a placeholder until it answers.
+const NO_VALUE = '—';
+let accounts = new Map();
+let accountCells = [];
+let accountsRequest = 0;
+let accountsFailed = false;
+
+function accountText(account, field) {
+  if (account.source === 'NotFound') return field === 'name' ? 'Not found' : NO_VALUE;
+  const value = account[field];
+  if (value === null || value === undefined || value === '') return NO_VALUE;
+  if (field === 'balance') return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return field === 'name' && account.source === 'Archive' ? `${value} (deleted)` : value;
+}
+
+function accountCell(row, field) {
+  const cell = document.createElement('span');
+  const account = accounts.get(row.relatedLogin);
+  if (account) {
+    cell.textContent = accountText(account, field);
+  } else {
+    cell.textContent = accountsFailed ? NO_VALUE : '…';
+    accountCells.push({ cell, login: row.relatedLogin, field });
+  }
+  return cell;
+}
+
+function accountColumn(title, field) {
+  return { key: 'relatedLogin', title, sortable: false, filterable: false, format: (_, row) => accountCell(row, field) };
+}
+
+async function loadAccounts(items) {
+  const request = ++accountsRequest;
+  const logins = [...new Set(items.map(item => item.relatedLogin))];
+  const accountsMessage = document.getElementById('accounts-message');
+  accountsMessage.textContent = '';
+  if (!logins.length) return;
+  try {
+    const found = await panelRequest('GET', `mt5/accounts?logins=${logins.join(',')}`);
+    if (request !== accountsRequest) return;
+    accounts = new Map(found.map(account => [account.login, account]));
+    if (found.some(account => account.source === 'Unavailable'))
+      accountsMessage.textContent = 'Deleted accounts could not be read from the MetaTrader archive.';
+  } catch (error) {
+    if (request !== accountsRequest) return;
+    accountsFailed = true;
+    accountsMessage.textContent = `Account details are unavailable: ${error.message || UNAVAILABLE_MESSAGE}`;
+  }
+  for (const { cell, login, field } of accountCells) {
+    const account = accounts.get(login);
+    cell.textContent = account ? accountText(account, field) : NO_VALUE;
+  }
+  accountCells = [];
+}
+
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
+  accountColumn('Name', 'name'),
+  accountColumn('Group', 'group'),
+  accountColumn('Email', 'email'),
+  accountColumn('Balance', 'balance'),
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -154,6 +214,9 @@ async function loadSummary() {
   const paging = pagingOf(report.paging);
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
+  accounts = new Map();
+  accountCells = [];
+  accountsFailed = false;
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails, {
     sort: {
       item: filters.sortItem,
@@ -180,6 +243,7 @@ async function loadSummary() {
   });
   document.getElementById('summary-section').hidden = false;
   writeState();
+  loadAccounts(report.items);
 }
 
 async function loadDetails() {

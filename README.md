@@ -17,7 +17,7 @@ forwards `/api/*` to the Violation API through a reverse proxy (YARP). The brows
 
 ## MetaTrader connection
 
-Like Sgb.Mt5Panel, the panel can keep a Manager API and an Administrator API connection to the MetaTrader 5 server.
+Like Sgb.Mt5Panel, the panel can keep a Manager API and an Administrator API connection to the MetaTrader 5 server, both with the same account.
 Both stay connected in the background, are checked every `HealthCheckSeconds` and reconnect after a failure. The
 connection is off unless `Mt5:Enabled` is `true`; then the panel refuses to start with a missing or invalid setting.
 
@@ -25,8 +25,7 @@ connection is off unless `Mt5:Enabled` is `true`; then the panel refuses to star
 |---|---|---|
 | `Mt5:Enabled` | no | `false` by default; turns the connection on |
 | `Mt5:Server` | when enabled | `host:port` entries separated by `;`, tried in order |
-| `Mt5:Login`, `Mt5:Password` | when enabled | The manager account |
-| `Mt5:AdminServer`, `Mt5:AdminLogin`, `Mt5:AdminPassword` | no | Administrator API account; each falls back to the manager value when empty |
+| `Mt5:Login`, `Mt5:Password` | when enabled | The one account used for both the Manager and the Administrator connection |
 | `Mt5:ConnectTimeoutSeconds` | no | 1-300, default 30 |
 | `Mt5:HealthCheckSeconds` | no | 5-600, default 15 |
 
@@ -34,6 +33,12 @@ Keep the account and password in `appsettings.local.json`, user secrets or envir
 never in `appsettings.json`. `GET /panel-api/mt5/status` (signed-in users) reports each link: connected, server,
 last check and last error. Code that needs the server uses `Mt5ConnectionService.RunManager` or `RunAdmin`, which
 serialise the native calls. The panel is built for x64; the MetaQuotes libraries are in `Mt5Native/`.
+
+`GET /panel-api/mt5/accounts?logins=1,2,3` (1 to 500 logins) returns each account's name, group, email and balance.
+Active accounts are read from the Manager; a login the Manager does not have is looked up in the Administrator
+archive (deleted accounts). `source` is `Manager`, `Archive`, `NotFound`, or `Unavailable` when the archive cannot be
+read. It answers 503 when the Manager is not connected or `Mt5:Enabled` is `false`. The Similarity page calls it for
+the related logins after the summary table has loaded and fills the Name, Group, Email and Balance columns.
 
 ## Run
 

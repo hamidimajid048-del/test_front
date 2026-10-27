@@ -12,12 +12,6 @@ public sealed class Mt5Options
 
     public string Password { get; init; } = string.Empty;
 
-    public string AdminServer { get; init; } = string.Empty;
-
-    public ulong AdminLogin { get; init; }
-
-    public string AdminPassword { get; init; } = string.Empty;
-
     public int ConnectTimeoutSeconds { get; init; } = 30;
 
     public int HealthCheckSeconds { get; init; } = 15;

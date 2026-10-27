@@ -16,9 +16,6 @@ public sealed class Mt5ConnectionService : BackgroundService
         _logger = logger;
 
         var timeout = checked((uint)TimeSpan.FromSeconds(options.ConnectTimeoutSeconds).TotalMilliseconds);
-        var adminServer = options.AdminServer.Length > 0 ? options.AdminServer : options.Server;
-        var adminLogin = options.AdminLogin != 0 ? options.AdminLogin : options.Login;
-        var adminPassword = options.AdminPassword.Length > 0 ? options.AdminPassword : options.Password;
 
         _manager = new Mt5Link<CIMTManagerAPI>(
             "manager", Servers(options.Server), logger,
@@ -28,9 +25,9 @@ public sealed class Mt5ConnectionService : BackgroundService
             api => api.Disconnect());
 
         _admin = new Mt5Link<CIMTAdminAPI>(
-            "admin", Servers(adminServer), logger,
+            "admin", Servers(options.Server), logger,
             () => (SMTManagerAPIFactory.CreateAdmin(SMTManagerAPIFactory.ManagerAPIVersion, out var result), result),
-            (api, server) => api.Connect(server, adminLogin, adminPassword, null, 0, timeout),
+            (api, server) => api.Connect(server, options.Login, options.Password, null, 0, timeout),
             api => api.TimeServerRequest(out _),
             api => api.Disconnect());
     }
