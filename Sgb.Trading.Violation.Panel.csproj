@@ -5,12 +5,26 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>sgb-trading-violation-panel</UserSecretsId>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MetaQuotes.MT5CommonAPI64">
+      <HintPath>Mt5Native\MetaQuotes.MT5CommonAPI64.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="MetaQuotes.MT5ManagerAPI64">
+      <HintPath>Mt5Native\MetaQuotes.MT5ManagerAPI64.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Content Include="Mt5Native\MT5APIGateway64.dll" Link="MT5APIGateway64.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Mt5Native\MT5APIManager64.dll" Link="MT5APIManager64.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

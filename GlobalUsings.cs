@@ -1,3 +1,5 @@
+global using MetaQuotes.MT5CommonAPI;
+global using MetaQuotes.MT5ManagerAPI;
 global using Microsoft.AspNetCore.Authentication.Cookies;
 global using Microsoft.AspNetCore.Authentication;
 global using Microsoft.AspNetCore.Authorization;
@@ -7,6 +9,7 @@ global using Microsoft.Extensions.FileProviders;
 global using Npgsql;
 global using QRCoder;
 global using Sgb.Trading.Violation.Panel.Auth;
+global using Sgb.Trading.Violation.Panel.Mt5;
 global using System.Buffers.Binary;
 global using System.Net;
 global using System.Security.Claims;
