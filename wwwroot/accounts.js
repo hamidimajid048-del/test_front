@@ -71,3 +71,39 @@ function createAccountDirectory(messageElement) {
     },
   };
 }
+
+// A button that hides the rows whose email equals the email of the main login, keeping the rows with an unknown email.
+// The main login is read together with the table's logins, so one request fills the columns and the comparison.
+function createSameEmailToggle(directory, button, messageElement, mainLogin) {
+  let hideSame = false;
+  const emailOf = login => (directory.get(login)?.email ?? '').trim().toLowerCase();
+
+  function apply() {
+    const mainEmail = emailOf(mainLogin());
+    for (const { cell, login } of directory.emailCells()) {
+      const row = cell.closest('tr');
+      if (row) row.hidden = hideSame && mainEmail !== '' && emailOf(login) === mainEmail;
+    }
+  }
+
+  button.addEventListener('click', () => {
+    hideSame = !hideSame;
+    button.setAttribute('aria-pressed', String(hideSame));
+    apply();
+  });
+
+  return {
+    reset() {
+      button.disabled = true;
+    },
+
+    async load(logins) {
+      if (!logins.length) return;
+      await directory.load([mainLogin(), ...logins]);
+      const known = emailOf(mainLogin()) !== '';
+      button.disabled = !known;
+      if (!known) messageElement.textContent ||= `The email of login ${mainLogin()} is unknown, so rows cannot be compared.`;
+      apply();
+    },
+  };
+}

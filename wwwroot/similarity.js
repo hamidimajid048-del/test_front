@@ -110,36 +110,9 @@ function compareHref(row) {
 }
 
 const accountsDirectory = createAccountDirectory(document.getElementById('accounts-message'));
-let hideSameEmail = false;
-const differentEmailButton = document.getElementById('different-email');
-
-const normalizedEmail = account => (account?.email ?? '').trim().toLowerCase();
-
-function applyEmailFilter() {
-  const mainEmail = normalizedEmail(accountsDirectory.get(Number(filters.login)));
-  for (const { cell, login } of accountsDirectory.emailCells()) {
-    const row = cell.closest('tr');
-    if (row) row.hidden = hideSameEmail && mainEmail !== '' && normalizedEmail(accountsDirectory.get(login)) === mainEmail;
-  }
-}
-
-differentEmailButton.addEventListener('click', () => {
-  hideSameEmail = !hideSameEmail;
-  differentEmailButton.setAttribute('aria-pressed', String(hideSameEmail));
-  applyEmailFilter();
-});
-
-async function loadAccounts(items) {
-  if (!items.length) return;
-  await accountsDirectory.load([Number(filters.login), ...items.map(item => item.relatedLogin)]);
-  const mainKnown = normalizedEmail(accountsDirectory.get(Number(filters.login))) !== '';
-  differentEmailButton.disabled = !mainKnown;
-  if (!mainKnown) {
-    const accountsMessage = document.getElementById('accounts-message');
-    accountsMessage.textContent ||= `The email of login ${filters.login} is unknown, so rows cannot be compared.`;
-  }
-  applyEmailFilter();
-}
+const sameEmail = createSameEmailToggle(
+  accountsDirectory, document.getElementById('different-email'), document.getElementById('accounts-message'),
+  () => Number(filters.login));
 
 function detailsButton(row) {
   const button = document.createElement('button');
@@ -190,7 +163,7 @@ async function loadSummary() {
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
   accountsDirectory.reset();
-  differentEmailButton.disabled = true;
+  sameEmail.reset();
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, undefined, {
     sort: {
       item: filters.sortItem,
@@ -217,7 +190,7 @@ async function loadSummary() {
   });
   summarySection.hidden = activeTab !== SUMMARY_TAB;
   writeState();
-  loadAccounts(report.items);
+  sameEmail.load(report.items.map(item => item.relatedLogin));
 }
 
 function makeTab(label, { onSelect, onClose }) {

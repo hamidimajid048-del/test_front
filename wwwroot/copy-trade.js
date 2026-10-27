@@ -117,8 +117,17 @@ function compareHref(login) {
   return `/compare.html?${query}`;
 }
 
+const accountsDirectory = createAccountDirectory(document.getElementById('accounts-message'));
+const sameEmail = createSameEmailToggle(
+  accountsDirectory, document.getElementById('different-email'), document.getElementById('accounts-message'),
+  () => Number(search.login));
+
 const LIST_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
+  accountsDirectory.column('Name', 'name', 'relatedLogin'),
+  accountsDirectory.column('Group', 'group', 'relatedLogin'),
+  accountsDirectory.column('Email', 'email', 'relatedLogin'),
+  accountsDirectory.column('Balance', 'balance', 'relatedLogin'),
   { key: 'countShare', title: 'Share count', sortKey: 'CountShare' },
   { key: 'percentShare', title: 'Share (%)', format: value => `${value}%`, sortKey: 'PercentShare' },
   { key: 'profitLoss', title: 'Profit/loss', sortKey: 'ProfitLoss' },
@@ -166,6 +175,8 @@ async function loadList() {
     ['Positions', report.metadata.positionCount],
     ['Profit/loss', report.metadata.profitLoss],
   ]);
+  accountsDirectory.reset();
+  sameEmail.reset();
   renderTable(document.getElementById('list'), LIST_COLUMNS, report.items, row => openPositions(row.relatedLogin), {
     sort: {
       item: search.sortItem,
@@ -192,6 +203,7 @@ async function loadList() {
   });
   document.getElementById('list-section').hidden = false;
   writeState();
+  sameEmail.load(report.items.map(item => item.relatedLogin));
 }
 
 // ---- position comparison ----

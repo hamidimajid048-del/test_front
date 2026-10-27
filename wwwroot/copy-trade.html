@@ -56,13 +56,19 @@
     <p class="message" id="message"></p>
 
     <section id="list-section" hidden>
-      <div class="section-head"><h2 id="list-title"></h2></div>
+      <div class="section-head">
+        <h2 id="list-title"></h2>
+        <button type="button" id="different-email" aria-pressed="false" disabled>Different email only</button>
+      </div>
       <div class="summary" id="list-metadata"></div>
+      <p class="message" id="accounts-message"></p>
       <div id="list"></div>
       <div id="list-pager"></div>
       <ul class="help">
         <li><strong>Share count:</strong> the number of this login's positions matched with a position of the related login (each position is matched at most once).</li>
         <li><strong>Share (%):</strong> the share count divided by all positions of this login.</li>
+        <li><strong>Name, Group, Email, Balance:</strong> read from MetaTrader after the table loads. Active accounts come from the Manager; deleted accounts, marked "(deleted)", from the Administrator archive.</li>
+        <li><strong>Different email only</strong> hides the rows on this page whose email equals the searched login's email. Rows whose email is unknown stay visible.</li>
         <li><strong>Compare logins</strong> opens the sessions comparison of the two accounts (shared IPs and CIDs, near logins). <strong>Positions</strong> opens the position comparison below.</li>
       </ul>
     </section>
@@ -154,6 +160,7 @@
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
   <script src="/range.js"></script>
+  <script src="/accounts.js"></script>
   <script src="/positions-tree.js"></script>
   <script src="/copy-trade.js"></script>
 </body>
