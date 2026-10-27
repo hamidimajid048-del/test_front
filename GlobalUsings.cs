@@ -8,6 +8,7 @@ global using Microsoft.AspNetCore.Identity;
 global using Microsoft.Extensions.FileProviders;
 global using Npgsql;
 global using QRCoder;
+global using Sgb.Trading.Violation.Panel.AccountActivation;
 global using Sgb.Trading.Violation.Panel.Auth;
 global using Sgb.Trading.Violation.Panel.Mt5;
 global using System.Buffers.Binary;

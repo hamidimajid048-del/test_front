@@ -4,6 +4,7 @@
 
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
+const activateButton = document.getElementById('activate');
 const TABS = ['overview', 'open', 'transfers', 'positions', 'orders', 'deals'];
 
 let currentTab = 'overview';
@@ -210,6 +211,9 @@ function renderOverview(data) {
   ];
   if (data.source === 'Archive') badges.push(badge('Deleted account (archive)', 'warn'));
   status.replaceChildren(inline(...badges));
+  activateButton.hidden = false;
+  activateButton.disabled = data.source === 'Archive';
+  activateButton.title = data.source === 'Archive' ? 'A deleted account cannot be activated' : '';
 
   renderSummary(document.getElementById('figures'), [
     ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance)],
@@ -229,6 +233,7 @@ function renderOverview(data) {
 }
 
 function clearResults() {
+  activateButton.hidden = true;
   for (const id of ['identity', 'status', 'figures', 'chart', 'transfer-totals'])
     document.getElementById(id).replaceChildren();
   document.getElementById('comment').textContent = '';
@@ -265,6 +270,25 @@ async function submit() {
     submitButton.disabled = false;
   }
 }
+
+async function activate() {
+  if (!currentLogin || !confirm(`Activate account ${currentLogin}?`)) return;
+  const login = currentLogin;
+  clearMessages(form, message);
+  activateButton.disabled = true;
+  message.textContent = 'Activating...';
+  try {
+    const result = await panelRequest('POST', 'account-activation/enable', { login: Number(login) });
+    await search(login);
+    message.textContent = `Activation request accepted (HTTP ${result.statusCode}).`;
+  } catch (error) {
+    showError(form, message, error instanceof ApiError ? error : new ApiError(UNAVAILABLE_MESSAGE));
+  } finally {
+    activateButton.disabled = overview?.source === 'Archive';
+  }
+}
+
+activateButton.addEventListener('click', activate);
 
 document.getElementById('tabs').addEventListener('click', event => {
   const tab = event.target.closest('button')?.dataset.tab;

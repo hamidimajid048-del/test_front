@@ -266,6 +266,7 @@ section[hidden] { display: none; }
 section form.filters { padding: 0; border: 0; box-shadow: none; background: none; }
 
 .section-head { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.section-head .summary { margin: 0; margin-inline-end: auto; }
 .section-head h2 { margin: 0; margin-inline-end: auto; font-size: 17px; font-weight: 700; }
 
 .summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }

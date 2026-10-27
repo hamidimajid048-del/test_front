@@ -53,6 +53,12 @@ Net profit is profit + commission + swap + fee of all deals that are not deposit
 **Account data** page (`account-data.html`) shows them in six tabs, each read when first opened, with a growth chart in
 money or percent.
 
+The Overview tab also has an **Activate account** button. It asks the panel to call the account-enable API
+(`POST {AccountActivation:Url}` with the header `APIKey` and the body `{ "Logins": [login] }`, from the server so the key
+never reaches the browser) through `POST /panel-api/account-activation/enable`; every use is recorded in the audit log
+(`mt5_account_enable`) with the signed-in user. Keep `AccountActivation:ApiKey` in `appsettings.local.json`, user
+secrets or the environment variable `AccountActivation__ApiKey`; without it the endpoint answers 503.
+
 The **Email logins** page (`email-logins.html`) takes an email and an optional UTC day range, finds the logins as above,
 and asks the service for the reports of all those logins together (`login-reports/get-logins-ip-mappings`,
 `get-logins-cid-mappings` and `get-logins-sessions`, at most 100 logins): the summary lists the IPs and CIDs per login
