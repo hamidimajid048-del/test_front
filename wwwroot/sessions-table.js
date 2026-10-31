@@ -47,6 +47,8 @@ const SESSION_COLUMNS = [
   { key: 'isSessionValid', title: 'Session valid', hiddenByDefault: true, format: yesNo, sortKey: 'IsSessionValid' },
   { key: 'isCidValid', title: 'CID valid', hiddenByDefault: true, format: yesNo, sortKey: 'IsCidValid' },
   { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
+  { key: 'geo', title: 'ISP', format: geo => geo?.isp || '—' },
+  { key: 'geo', title: 'ASN', format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
   { key: 'geo', title: 'Warnings', format: warningBadges },
 ];
 
