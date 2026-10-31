@@ -49,10 +49,8 @@ function topList(counts, limit = 4) {
 const SHARED_VALUE_COLUMNS = [
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { key: 'otherLoginCount', title: 'Compared logins', sortKey: 'RelatedLoginCount' },
-  { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
-  { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
-  { ...utcColumn('otherFirstSeenUtc', 'Compared first seen'), sortKey: 'RelatedFirstSeenUtc' },
-  { ...utcColumn('otherLastSeenUtc', 'Compared last seen'), sortKey: 'RelatedLastSeenUtc' },
+  seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
+  seenColumn('otherFirstSeenUtc', 'otherLastSeenUtc', 'Compared first / last seen', { sortKey: 'RelatedFirstSeenUtc' }),
   { key: 'occurrenceDays', title: 'Occurrence days', sortKey: 'OccurrenceDays' },
   { key: 'coOccurrenceDays', title: 'Co-occurrence days', sortKey: 'CoOccurrenceDays' },
 ];

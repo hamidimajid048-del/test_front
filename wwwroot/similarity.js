@@ -151,10 +151,8 @@ const DETAILS_COLUMNS = [
   { key: 'value', title: 'Value', sortKey: 'Value' },
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
-  { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
-  { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
-  { ...utcColumn('relatedFirstSeenUtc', 'Related first seen'), sortKey: 'RelatedFirstSeenUtc' },
-  { ...utcColumn('relatedLastSeenUtc', 'Related last seen'), sortKey: 'RelatedLastSeenUtc' },
+  seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
+  seenColumn('relatedFirstSeenUtc', 'relatedLastSeenUtc', 'Related first / last seen', { sortKey: 'RelatedFirstSeenUtc' }),
 ];
 
 async function loadSummary() {

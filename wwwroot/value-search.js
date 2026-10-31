@@ -92,8 +92,7 @@ const SUMMARY_COLUMNS = [
   accountsDirectory.column('Email', 'email', 'login'),
   accountsDirectory.column('Balance', 'balance', 'login'),
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
-  { ...utcColumn('firstSeenUtc', 'First seen'), sortKey: 'FirstSeenUtc' },
-  { ...utcColumn('lastSeenUtc', 'Last seen'), sortKey: 'LastSeenUtc' },
+  seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
   {
     key: 'login',
     title: 'Actions',

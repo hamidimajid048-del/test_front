@@ -29,11 +29,11 @@ const actionsColumn = { key: 'login', title: 'Actions', format: loginActions, so
 
 const loginColumn = { key: 'login', title: 'Login', format: loginTabLink, sortKey: 'Login' };
 
-const mappingColumns = (key, title) => [
+const mappingColumns = (key, title, extra = []) => [
   { key, title, sortKey: title },
+  ...extra,
   loginColumn,
-  { ...utcColumn('firstSeen', 'First seen'), sortKey: 'FirstSeen' },
-  { ...utcColumn('lastSeen', 'Last seen'), sortKey: 'LastSeen' },
+  seenColumn('firstSeen', 'lastSeen', 'First / last seen', { sortKey: 'FirstSeen' }),
   { key: 'sessionCount', title: 'Sessions', sortKey: 'SessionCount' },
   actionsColumn,
 ];
@@ -148,7 +148,7 @@ grids = [
   }),
   createReportGrid({
     path: 'login-reports/get-logins-cid-mappings',
-    columns: mappingColumns('cid', 'CID'),
+    columns: mappingColumns('cid', 'CID', [{ key: 'deviceType', title: 'Device type', sortKey: 'DeviceType' }]),
     sort: { item: 'SessionCount', direction: 'Desc' },
     titleId: 'cids-title',
     title: 'CID summary',

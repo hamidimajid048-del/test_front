@@ -16,10 +16,10 @@ let currentTab = 'summary';
 let sessionSort = { item: 'LoginAt', direction: 'Desc' };
 let sessionFilters = {};
 
-const mappingColumns = (key, title) => [
+const mappingColumns = (key, title, extra = []) => [
   { key, title },
-  utcColumn('firstSeen', 'First seen'),
-  utcColumn('lastSeen', 'Last seen'),
+  ...extra,
+  seenColumn('firstSeen', 'lastSeen', 'First / last seen'),
   { key: 'sessionCount', title: 'Sessions' },
 ];
 
@@ -102,7 +102,7 @@ function renderMapping(containerId, tab, label, key, outcome) {
   const container = document.getElementById(containerId);
   const title = document.getElementById(`${containerId}-title`);
   if (outcome.status === 'fulfilled') {
-    renderTable(container, mappingColumns(key, label), outcome.value);
+    renderTable(container, mappingColumns(key, label, key === 'cid' ? [{ key: 'deviceType', title: 'Device type' }] : []), outcome.value);
     title.textContent = `${label} summary (${outcome.value?.length ?? 0})`;
   } else {
     const error = document.createElement('p');

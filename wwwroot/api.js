@@ -268,6 +268,25 @@ function utcColumn(key, title) {
   return { key, title: `${title} (UTC)`, format: formatUtc };
 }
 
+// Column that merges a first/last timestamp pair into one cell (first on top, last below). Sorting and filtering use the
+// first timestamp; pass { sortKey } for a server-sorted grid.
+function seenColumn(firstKey, lastKey, title, options = {}) {
+  return {
+    key: firstKey,
+    title: `${title} (UTC)`,
+    format: (_, row) => {
+      const cell = document.createElement('div');
+      for (const key of [firstKey, lastKey]) {
+        const line = document.createElement('div');
+        line.textContent = formatUtc(row[key]);
+        cell.append(line);
+      }
+      return cell;
+    },
+    ...options,
+  };
+}
+
 // Renders "label: value" pairs, e.g. a report's metadata above its table.
 function renderSummary(container, items) {
   container.replaceChildren(...items.map(([label, value]) => {
