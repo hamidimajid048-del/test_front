@@ -2,6 +2,7 @@
 // cells show a placeholder until it answers.
 
 const NO_VALUE = '—';
+const ACCOUNT_BATCH_SIZE = 200;
 
 function createAccountDirectory(messageElement) {
   let accounts = new Map();
@@ -31,6 +32,16 @@ function createAccountDirectory(messageElement) {
     return element;
   }
 
+  function fillPending() {
+    const waiting = [];
+    for (const item of pending) {
+      const account = accounts.get(item.login);
+      if (account) item.cell.textContent = text(account, item.field);
+      else waiting.push(item);
+    }
+    pending = waiting;
+  }
+
   return {
     reset() {
       request++;
@@ -52,21 +63,24 @@ function createAccountDirectory(messageElement) {
       const current = ++request;
       const unique = [...new Set(logins)];
       if (!unique.length) return;
+      let archiveUnavailable = false;
       try {
-        const found = await panelRequest('GET', `mt5/accounts?logins=${unique.join(',')}`);
-        if (current !== request) return;
-        accounts = new Map(found.map(account => [account.login, account]));
-        if (found.some(account => account.source === 'Unavailable'))
+        for (let start = 0; start < unique.length; start += ACCOUNT_BATCH_SIZE) {
+          const batch = unique.slice(start, start + ACCOUNT_BATCH_SIZE);
+          const found = await panelRequest('GET', `mt5/accounts?logins=${batch.join(',')}`);
+          if (current !== request) return;
+          for (const account of found) accounts.set(account.login, account);
+          archiveUnavailable ||= found.some(account => account.source === 'Unavailable');
+          fillPending();
+        }
+        if (archiveUnavailable)
           messageElement.textContent = 'Deleted accounts could not be read from the MetaTrader archive.';
       } catch (error) {
         if (current !== request) return;
         failed = true;
         messageElement.textContent = `Account details are unavailable: ${error.message || UNAVAILABLE_MESSAGE}`;
       }
-      for (const { cell: element, login, field } of pending) {
-        const account = accounts.get(login);
-        element.textContent = account ? text(account, field) : NO_VALUE;
-      }
+      for (const { cell: element } of pending) element.textContent = NO_VALUE;
       pending = [];
     },
   };
