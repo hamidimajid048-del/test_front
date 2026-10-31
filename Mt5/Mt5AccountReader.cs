@@ -1,98 +1,55 @@
 namespace Sgb.Trading.Violation.Panel.Mt5;
 
-public sealed class Mt5AccountReader(Mt5ConnectionService mt5, ILogger<Mt5AccountReader> logger)
+public sealed class Mt5AccountReader(
+    [FromKeyedServices(Mt5Extensions.UsersDataSourceKey)] NpgsqlDataSource dataSource,
+    ILogger<Mt5AccountReader> logger)
 {
-    public IReadOnlyList<Mt5AccountDto> Read(IReadOnlyList<ulong> logins)
-    {
-        var active = mt5.RunManager(manager => ReadActive(manager, logins));
-        var missing = logins.Where(login => !active.ContainsKey(login)).ToArray();
-        var archived = missing.Length == 0 ? [] : ReadArchived(missing);
+    private const string Select = """
+        SELECT login, source, COALESCE(NULLIF(btrim(concat_ws(' ', first_name, last_name)), ''), name), group_name, email, balance
+        FROM mt5.users
+        """;
 
-        return [.. logins.Select(login => active.GetValueOrDefault(login)
-            ?? archived?.GetValueOrDefault(login)
-            ?? new Mt5AccountDto(login, archived is null ? Mt5AccountSourceEnum.Unavailable : Mt5AccountSourceEnum.NotFound, null, null, null, null))];
+    public async Task<IReadOnlyList<Mt5AccountDto>> ReadAsync(IReadOnlyList<ulong> logins, CancellationToken cancellationToken)
+    {
+        var found = await QueryAsync($"{Select} WHERE login = ANY($1)", logins.Select(login => unchecked((long)login)).ToArray(), cancellationToken);
+        var byLogin = found.ToDictionary(account => account.Login);
+        return [.. logins.Select(login => byLogin.GetValueOrDefault(login)
+            ?? new Mt5AccountDto(login, Mt5AccountSourceEnum.NotFound, null, null, null, null))];
     }
 
-    public Mt5EmailSearchDto FindByEmail(string email)
+    public async Task<Mt5EmailSearchDto> FindByEmailAsync(string email, CancellationToken cancellationToken)
     {
-        var active = mt5.RunManager(manager => FindActive(manager, email));
-        var archived = FindArchived(email);
-
-        var accounts = active.Concat(archived ?? []).DistinctBy(account => account.Login).OrderBy(account => account.Login).ToArray();
-        return new Mt5EmailSearchDto(accounts, archived is not null);
+        var found = await QueryAsync($"{Select} WHERE lower(email) = lower($1) ORDER BY login", email, cancellationToken);
+        return new Mt5EmailSearchDto(found);
     }
 
-    private static Mt5AccountDto[] FindActive(CIMTManagerAPI manager, string email)
-    {
-        using var users = manager.UserCreateArray();
-        Mt5Reads.EnsureRead(manager.UserRequestArray("*", users));
-        var matched = users.ToArray().Where(user => EmailMatches(user, email)).ToArray();
-        if (matched.Length == 0)
-            return [];
-
-        using var accounts = manager.UserCreateAccountArray();
-        Mt5Reads.EnsureRead(manager.UserAccountRequestByLogins([.. matched.Select(user => user.Login())], accounts));
-        var balances = accounts.ToArray().ToDictionary(account => account.Login(), account => account.Balance());
-        return [.. matched.Select(user => ToDto(user, Mt5AccountSourceEnum.Manager, balances.GetValueOrDefault(user.Login(), user.Balance())))];
-    }
-
-    private Mt5AccountDto[]? FindArchived(string email)
+    private async Task<IReadOnlyList<Mt5AccountDto>> QueryAsync(string sql, object parameter, CancellationToken cancellationToken)
     {
         try
         {
-            return mt5.RunAdmin(admin =>
+            await using var command = dataSource.CreateCommand(sql);
+            command.Parameters.AddWithValue(parameter);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            List<Mt5AccountDto> accounts = [];
+            while (await reader.ReadAsync(cancellationToken))
             {
-                using var users = admin.UserCreateArray();
-                Mt5Reads.EnsureRead(admin.UserArchiveRequestArray("*", users));
-                return users.ToArray().Where(user => EmailMatches(user, email))
-                    .Select(user => ToDto(user, Mt5AccountSourceEnum.Archive, user.Balance())).ToArray();
-            });
+                accounts.Add(new Mt5AccountDto(
+                    unchecked((ulong)reader.GetInt64(0)),
+                    reader.GetString(1) == "Active"
+                        ? Mt5AccountSourceEnum.Manager
+                        : Mt5AccountSourceEnum.Archive,
+                    reader.IsDBNull(2) ? null : reader.GetString(2),
+                    reader.IsDBNull(3) ? null : reader.GetString(3),
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                    reader.IsDBNull(5) ? null : Math.Round(reader.GetDouble(5), 2)));
+            }
+
+            return accounts;
         }
-        catch (Mt5UnavailableException exception)
+        catch (NpgsqlException exception)
         {
-            logger.LogWarning("The MetaTrader archive could not be read: {Error}", exception.Message);
-            return null;
+            logger.LogWarning("The MetaTrader user database could not be read: {Error}", exception.Message);
+            throw new Mt5UnavailableException("The MetaTrader user database is unavailable.");
         }
-    }
-
-    private static bool EmailMatches(CIMTUser user, string email) =>
-        string.Equals(user.EMail()?.Trim(), email, StringComparison.OrdinalIgnoreCase);
-
-    private static Dictionary<ulong, Mt5AccountDto> ReadActive(CIMTManagerAPI manager, IReadOnlyList<ulong> logins)
-    {
-        using var users = manager.UserCreateArray();
-        using var accounts = manager.UserCreateAccountArray();
-        Mt5Reads.EnsureRead(manager.UserRequestByLogins([.. logins], users));
-        Mt5Reads.EnsureRead(manager.UserAccountRequestByLogins([.. logins], accounts));
-
-        var balances = accounts.ToArray().ToDictionary(account => account.Login(), account => account.Balance());
-        return users.ToArray().ToDictionary(
-            user => user.Login(),
-            user => ToDto(user, Mt5AccountSourceEnum.Manager, balances.GetValueOrDefault(user.Login(), user.Balance())));
-    }
-
-    private Dictionary<ulong, Mt5AccountDto>? ReadArchived(ulong[] logins)
-    {
-        try
-        {
-            return mt5.RunAdmin(admin =>
-            {
-                using var users = admin.UserCreateArray();
-                Mt5Reads.EnsureRead(admin.UserArchiveRequestByLogins(logins, users));
-                return users.ToArray().ToDictionary(user => user.Login(), user => ToDto(user, Mt5AccountSourceEnum.Archive, user.Balance()));
-            });
-        }
-        catch (Mt5UnavailableException exception)
-        {
-            logger.LogWarning("The MetaTrader archive could not be read: {Error}", exception.Message);
-            return null;
-        }
-    }
-
-    private static Mt5AccountDto ToDto(CIMTUser user, Mt5AccountSourceEnum source, double balance)
-    {
-        var name = $"{user.FirstName()} {user.LastName()}".Trim();
-        return new Mt5AccountDto(
-            user.Login(), source, name.Length > 0 ? name : user.Name(), user.Group(), user.EMail(), Math.Round(balance, 2));
     }
 }

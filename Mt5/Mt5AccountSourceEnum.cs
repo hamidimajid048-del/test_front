@@ -5,6 +5,5 @@ public enum Mt5AccountSourceEnum
 {
     Manager,
     Archive,
-    NotFound,
-    Unavailable
+    NotFound
 }

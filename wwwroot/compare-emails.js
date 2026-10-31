@@ -255,10 +255,8 @@ async function search(values) {
 
   showAccounts('main', values.email, main.accounts);
   showAccounts('other', values.otherEmail, other.accounts);
-  const notes = [];
-  if (!main.archiveAvailable || !other.archiveAvailable) notes.push('Deleted accounts could not be read from the MetaTrader archive.');
   for (const [email, found] of [[values.email, main], [values.otherEmail, other]]) {
-    if (!found.accounts.length) throw new ApiError([`No login was found for ${email}.`, ...notes].join(' '));
+    if (!found.accounts.length) throw new ApiError(`No login was found for ${email}.`);
     if (found.accounts.length > MAX_LOGINS)
       throw new ApiError(`${email} has ${found.accounts.length} logins; the comparison takes at most ${MAX_LOGINS} per email.`);
   }
@@ -279,8 +277,7 @@ async function search(values) {
   ]);
   if (current !== request) return;
   renderOverview(overview);
-  message.textContent = notes.join(' ');
-  if (notes.length) message.className = 'message error';
+  message.textContent = '';
 }
 
 async function submit() {

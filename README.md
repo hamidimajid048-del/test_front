@@ -15,6 +15,12 @@ forwards `/api/*` to the Violation API through a reverse proxy (YARP). The brows
 | `Panel:PanelAccessKey` | temporary | See below |
 | `Mt5:*` | no | MetaTrader connection; see below |
 
+## MetaTrader user directory
+
+Name, group, email and balance of logins, and the login search by email, are read from the `Mt5Users` PostgreSQL database
+(table `mt5.users`, filled every 30 minutes by Sgb.Trading.Violation.Mt5UserSync), not from MetaTrader. Set
+`ConnectionStrings:Mt5Users`; without it those endpoints answer 503. The data is as fresh as the last sync run.
+
 ## MetaTrader connection
 
 Like Sgb.Mt5Panel, the panel can keep a Manager API and an Administrator API connection to the MetaTrader 5 server, both with the same account.

@@ -63,18 +63,14 @@ function createAccountDirectory(messageElement) {
       const current = ++request;
       const unique = [...new Set(logins)];
       if (!unique.length) return;
-      let archiveUnavailable = false;
       try {
         for (let start = 0; start < unique.length; start += ACCOUNT_BATCH_SIZE) {
           const batch = unique.slice(start, start + ACCOUNT_BATCH_SIZE);
           const found = await panelRequest('GET', `mt5/accounts?logins=${batch.join(',')}`);
           if (current !== request) return;
           for (const account of found) accounts.set(account.login, account);
-          archiveUnavailable ||= found.some(account => account.source === 'Unavailable');
           fillPending();
         }
-        if (archiveUnavailable)
-          messageElement.textContent = 'Deleted accounts could not be read from the MetaTrader archive.';
       } catch (error) {
         if (current !== request) return;
         failed = true;
