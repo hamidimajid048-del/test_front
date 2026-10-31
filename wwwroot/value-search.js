@@ -4,7 +4,7 @@
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const detailsMessage = document.getElementById('details-message');
-const DEFAULT_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 1000;
 const DETAILS_QUERY_PREFIX = 'd_';
 
 const COMMON_KEYS = ['type', 'value', 'fromUtc', 'toUtc'];

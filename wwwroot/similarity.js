@@ -6,7 +6,7 @@ const message = document.getElementById('message');
 const summarySection = document.getElementById('summary-section');
 const tabsBar = document.getElementById('tabs');
 const detailsTemplate = document.getElementById('details-template');
-const DEFAULT_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 1000;
 // Older links carried the details of one account under this prefix.
 const LEGACY_DETAILS_PREFIX = 'd_';
 const SUMMARY_TAB = 'summary';

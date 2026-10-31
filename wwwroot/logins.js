@@ -2,7 +2,7 @@
 
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
-const DEFAULT_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 1000;
 
 // The account report cannot answer when the evaluator has no usable data range for the login; the sessions
 // themselves are still known to the login tracker, so the page falls back to them.

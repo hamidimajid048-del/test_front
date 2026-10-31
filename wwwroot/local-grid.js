@@ -1,7 +1,7 @@
 // A table over rows already in the browser: sort, column filters and paging are done here with the grid helpers of api.js
 // (the panel's own MetaTrader lists, which the service does not page).
 
-const LOCAL_PAGE_SIZE = 100;
+const LOCAL_PAGE_SIZE = 1000;
 
 // options: { containerId, pagerId, columns, sort?: { item, direction }, onRowClick? }
 // Every column is sortable and filterable; its title is its sort key.

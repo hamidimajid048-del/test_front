@@ -5,7 +5,7 @@ const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const rangeControls = initRangeControls(form);
 
-const DEFAULT_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 1000;
 const MAX_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 
 const MATCH_LABELS = { Ip: 'Same IP', Subnet: 'Same network', Asn: 'Same ASN' };

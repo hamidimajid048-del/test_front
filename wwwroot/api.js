@@ -7,7 +7,7 @@ const INVALID_PARAMETER_PREFIX = 'InvalidParameter:';
 const UNAVAILABLE_MESSAGE = 'Service unavailable';
 const INVALID_INPUT_MESSAGE = 'Check the highlighted inputs';
 const INVALID_VALUE_MESSAGE = 'This value is not valid';
-const PAGE_SIZES = [50, 100, 250, 500];
+const PAGE_SIZES = [50, 100, 250, 500, 1000, 2000];
 // A 401 means the panel session or the admin's Identity token ended; the panel signs out and asks for a new sign-in.
 const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
@@ -433,7 +433,8 @@ function nextSort(current, item, natural) {
   return { item, direction: natural };
 }
 
-// columns: [{ key, title, format?(value, row) => string | Node, group?, sortKey?, sortValue?(row), sortable?, filterable? }]
+// columns: [{ key, title, format?(value, row) => string | Node, group?, sortKey?, sortValue?(row), sortable?, filterable?,
+// hiddenByDefault? }]
 // Consecutive columns with the same group get a shared header cell above their titles.
 //
 // options.sort = { item, direction, onChange(item, direction) } sorts on the server (the report is paged, so the
@@ -455,7 +456,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   if (!state || state.signature !== signature) {
     state = {
       signature, sortIndex: -1, direction: 'Asc', filters: allColumns.map(() => ''), focusKey: null, filterSeq: 0,
-      hidden: loadHiddenColumns(container, signature), pickerOpen: false,
+      hidden: loadHiddenColumns(container, signature, allColumns), pickerOpen: false,
     };
     gridStates.set(container, state);
   }
@@ -671,11 +672,14 @@ function mountTools(container, tools) {
 const columnId = column => `${column.group ?? ''}|${column.title}`;
 const hiddenColumnsKey = (container, signature) => `grid-columns:${location.pathname}:${container.id}:${signature}`;
 
-function loadHiddenColumns(container, signature) {
+// The columns hidden for this table: the user's saved choice, or, before one was made, the columns marked hiddenByDefault.
+function loadHiddenColumns(container, signature, columns) {
+  const byDefault = () => new Set(columns.filter(column => column.hiddenByDefault).map(columnId));
   try {
-    return new Set(JSON.parse(localStorage.getItem(hiddenColumnsKey(container, signature)) ?? '[]'));
+    const saved = localStorage.getItem(hiddenColumnsKey(container, signature));
+    return saved === null ? byDefault() : new Set(JSON.parse(saved));
   } catch {
-    return new Set();
+    return byDefault();
   }
 }
 
@@ -746,7 +750,7 @@ function pageWindow(current, total) {
 function renderPager(container, paging, onPage) {
   const totalPages = Math.max(paging?.totalPages ?? 1, 1);
   const currentPage = Math.min(Math.max(paging?.currentPage ?? 1, 1), totalPages);
-  const pageSize = paging?.pageSize ?? 100;
+  const pageSize = paging?.pageSize ?? 1000;
 
   const go = (page, size = pageSize) => guarded(container, async () => onPage(page, size));
   const button = (text, label, page, disabled, current) => {

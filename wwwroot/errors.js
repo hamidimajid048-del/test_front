@@ -24,7 +24,7 @@ const ERROR_MESSAGES = {
   TimeRangeNotUtc: 'The range must be in UTC',
   TimeRangeReversed: 'The start of the range must not be after its end',
   InvalidPage: 'The page number is not valid',
-  InvalidPageSize: 'The page size must be between 1 and 500',
+  InvalidPageSize: 'The page size must be between 1 and 2000',
   InvalidSortBy: 'The sort column is not valid',
   InvalidSortDirection: 'The sort direction is not valid',
   RelatedAccountNotFound: 'No account was found for the related login',

@@ -1,7 +1,7 @@
 // A table whose sort, column filters and page are read from one service endpoint, shared by the pages that report on
 // several logins at once (email logins, compare emails).
 
-const DEFAULT_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 1000;
 
 // options: { path, columns (array, or a function returning it), sort: { item, direction }, containerId, pagerId,
 // titleId?, title?, onRowClick?, onRendered?(report) }
