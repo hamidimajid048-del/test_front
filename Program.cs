@@ -270,7 +270,7 @@ app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn
         if (user.TotpSecret is null)
         {
             await signIn.RegisterSignInWithoutCodeAsync(user, client);
-            return await CompleteSignInAsync(context, signIn, user, accessToken);
+            return await CompleteSignInAsync(context, signIn, user, accessToken, "/account.html");
         }
 
         pending.Issue(context, user.Id, accessToken);
@@ -351,7 +351,7 @@ static string RequiredSetting(IConfiguration configuration, string key) =>
         : throw new InvalidOperationException($"Configuration value '{key}' is required.");
 
 // A new session on every sign-in, so a session from before the sign-in is never reused.
-static async Task<IResult> CompleteSignInAsync(HttpContext context, PanelSignInService signIn, PanelUser user, string? accessToken)
+static async Task<IResult> CompleteSignInAsync(HttpContext context, PanelSignInService signIn, PanelUser user, string? accessToken, string redirect = "/")
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     var sessionToken = await signIn.CreateSessionAsync(user, ClientInfo.From(context), context.RequestAborted);
@@ -369,7 +369,7 @@ static async Task<IResult> CompleteSignInAsync(HttpContext context, PanelSignInS
         CookieAuthenticationDefaults.AuthenticationScheme,
         new ClaimsPrincipal(identity),
         new AuthenticationProperties { IsPersistent = true });
-    return Results.Redirect("/");
+    return Results.Redirect(redirect);
 }
 
 // Revokes the signed-in session in the database, records why, and removes the cookie.

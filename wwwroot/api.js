@@ -233,6 +233,13 @@ function renderMenu() {
     }
     applyPermissions(me);
     guardPage(me);
+    if (!me.twoFactor && location.pathname !== '/account.html') {
+      const banner = document.createElement('a');
+      banner.className = 'banner warn';
+      banner.href = '/account.html';
+      banner.textContent = 'Two-factor is not set up. Set it up';
+      nav.after(banner);
+    }
   });
 }
 

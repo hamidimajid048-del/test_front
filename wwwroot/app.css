@@ -653,3 +653,6 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .access-editor label.access-item .access-note { grid-column: 2; color: var(--text-muted); font-size: 12px; font-weight: 400; }
 .access-editor label.access-item.locked { opacity: .55; cursor: not-allowed; }
 .login-box[hidden] { display: none; }
+
+.banner { display: block; padding: 10px 24px; color: var(--warning); background: var(--warning-soft); font-size: 13.5px; font-weight: 600; text-align: center; }
+.banner:hover { text-decoration: underline; }
