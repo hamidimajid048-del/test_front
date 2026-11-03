@@ -18,12 +18,12 @@
           <option value="hedge">Hedge</option>
         </select>
       </label>
-      <label>Login <input name="login" type="number" min="1" step="1" required></label>
-      <label>Seconds before <input name="secondsBefore" type="number" min="0" max="120" step="1" required></label>
-      <label>Seconds after <input name="secondsAfter" type="number" min="0" max="120" step="1" required></label>
-      <label>Min share (%) <input name="minPercentShare" type="number" min="0" max="100" step="0.01"></label>
-      <label>Min share (count) <input name="minCountShare" type="number" min="1" step="1"></label>
-      <label id="volume-tolerance" hidden>Volume tolerance (%) <input name="volumeTolerancePercent" type="number" min="0" max="100" step="0.01"></label>
+      <label>Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+      <label>Seconds before <input name="secondsBefore" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" max="120" step="1" required></label>
+      <label>Seconds after <input name="secondsAfter" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" max="120" step="1" required></label>
+      <label>Min share (%) <input name="minPercentShare" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" max="100" step="0.01"></label>
+      <label>Min share (count) <input name="minCountShare" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"></label>
+      <label id="volume-tolerance" hidden>Volume tolerance (%) <input name="volumeTolerancePercent" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" max="100" step="0.01"></label>
       <label>Date range
         <select name="range">
           <option value="">Whole account history</option>

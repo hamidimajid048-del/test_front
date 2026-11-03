@@ -75,6 +75,27 @@ function toast(title, kind = 'success', detail = '') {
   setTimeout(dismiss, (TOAST_SECONDS[kind] ?? 4) * 1000);
 }
 
+// Number fields are plain text boxes (no spinner arrows) that accept digits only (and one dot when data-numeric="decimal"),
+// and keep the value within the min and max attributes when left.
+document.addEventListener('input', event => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || !input.dataset.numeric) return;
+  const decimal = input.dataset.numeric === 'decimal';
+  let cleaned = input.value.replace(decimal ? /[^0-9.]/g : /\D/g, '');
+  if (decimal) {
+    const dot = cleaned.indexOf('.');
+    if (dot >= 0) cleaned = cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replaceAll('.', '');
+  }
+  if (cleaned !== input.value) input.value = cleaned;
+});
+document.addEventListener('change', event => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || !input.dataset.numeric || input.value === '' || input.value === '.') return;
+  const value = Number(input.value);
+  if (input.min !== '' && value < Number(input.min)) input.value = input.min;
+  if (input.max !== '' && value > Number(input.max)) input.value = input.max;
+}, true);
+
 class ApiError extends Error {
   // fieldErrors: { fieldName: [messages] } for request values the service could not read (a ValidationError response).
   // reason: the service's failure reason (status.description), such as "AccountNotFound", when there is one.

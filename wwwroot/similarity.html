@@ -12,7 +12,7 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <form class="filters" id="filters">
-      <label>Login <input name="login" type="number" min="1" step="1" required></label>
+      <label>Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
       <label>Type
         <select name="type">
           <option value="">All</option>
@@ -35,7 +35,7 @@
       <label>To day (UTC) <input name="toUtc" type="date"></label>
       <label>Device type <input name="deviceType" maxlength="200"></label>
       <label>CID <input name="cid" maxlength="200"></label>
-      <label>Related login <input name="relatedLogin" type="number" min="1" step="1"></label>
+      <label>Related login <input name="relatedLogin" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"></label>
       <label>Sort by
         <select name="sortItem">
           <option value="RelatedLoginCount">Related logins</option>
@@ -86,8 +86,8 @@
       <p class="message details-export-message"></p>
       <form class="filters details-filters">
         <label>Value (IP or CID) <input name="value"></label>
-        <label>Min logins <input name="minLoginCount" type="number" min="0" step="1"></label>
-        <label>Min related logins <input name="minRelatedLoginCount" type="number" min="0" step="1"></label>
+        <label>Min logins <input name="minLoginCount" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" step="1"></label>
+        <label>Min related logins <input name="minRelatedLoginCount" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" step="1"></label>
         <label>Sort by
           <select name="sortItem">
             <option value="RelatedLoginCount">Related login count</option>

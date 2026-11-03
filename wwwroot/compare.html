@@ -12,8 +12,8 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <form class="filters" id="filters">
-      <label>Main login <input name="login" type="number" min="1" step="1" required></label>
-      <label>Compared login <input name="other" type="number" min="1" step="1" required></label>
+      <label>Main login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+      <label>Compared login <input name="other" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
       <label>Date range
         <select name="range">
           <option value="">All time</option>
@@ -38,7 +38,7 @@
           <option value="custom">Custom</option>
         </select>
       </label>
-      <label id="window-custom" hidden>Window (seconds) <input name="windowSeconds" type="number" min="1" max="604800" step="1"></label>
+      <label id="window-custom" hidden>Window (seconds) <input name="windowSeconds" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" max="604800" step="1"></label>
       <label>Proximity match
         <select name="match">
           <option value="Ip">Same IP</option>

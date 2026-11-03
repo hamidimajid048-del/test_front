@@ -315,10 +315,12 @@ function controlElement(tab, control, state, onChange) {
     input.checked = state.controls[control.name] === true;
   } else {
     input = document.createElement('input');
-    input.type = control.kind === 'number' ? 'number' : 'text';
+    input.type = 'text';
     if (control.kind === 'number') {
+      input.inputMode = 'numeric';
+      input.dataset.numeric = 'integer';
       input.min = '0';
-      input.step = '1';
+      input.autocomplete = 'off';
     }
     input.value = state.controls[control.name];
   }
