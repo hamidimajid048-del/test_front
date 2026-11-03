@@ -15,6 +15,7 @@
 
     <div class="tabs" id="tabs">
       <button type="button" data-tab="accounts">Accounts</button>
+      <button type="button" data-tab="roles" id="roles-tab" hidden>Roles</button>
       <button type="button" data-tab="audit" data-permission="audit.view">Audit log</button>
     </div>
 
@@ -58,6 +59,15 @@
       <div id="users"></div>
     </section>
 
+    <section data-panel="roles" hidden>
+      <div class="section-head">
+        <h2>Roles</h2>
+        <button type="button" id="role-add">New role</button>
+      </div>
+      <p>A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it.</p>
+      <div id="roles"></div>
+    </section>
+
     <section data-panel="audit" hidden>
       <form class="filters" id="audit-form">
         <label>Username <input name="username" maxlength="64" placeholder="All accounts"></label>
@@ -96,6 +106,20 @@
       <div class="dialog-buttons">
         <button type="button" id="access-cancel">Cancel</button>
         <button type="submit">Save access</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="panel-dialog access-dialog" id="role-dialog">
+    <form method="dialog" id="role-form">
+      <h3 id="role-dialog-title">Role</h3>
+      <label>Name <input name="title" maxlength="40" required autocomplete="off"></label>
+      <label>Description <input name="description" maxlength="200" autocomplete="off"></label>
+      <div class="access-host" id="role-editor"></div>
+      <p class="message error" id="role-dialog-error"></p>
+      <div class="dialog-buttons">
+        <button type="button" id="role-cancel">Cancel</button>
+        <button type="submit">Save role</button>
       </div>
     </form>
   </dialog>

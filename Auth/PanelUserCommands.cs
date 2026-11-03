@@ -19,7 +19,7 @@ public static class PanelUserCommands
                                         active super admin, otherwise admin (with the 'viewer' permissions)
           set-role <username> <role>    Change the role ('superadmin' has every permission, 'admin' only the granted ones)
           set-permissions <username> <preset|key,key,...>
-                                        Set what an admin may do: a preset (viewer, analyst, full) or permission keys
+                                        Set what an admin may do: a role (viewer, analyst, full or a custom one) or permission keys
           reset-password <username>     Set a new password and end the account's sessions
           reset-2fa <username>          Issue a new authenticator key and end the account's sessions
           disable-2fa <username>        Remove the authenticator key; the account signs in with the password only
@@ -37,7 +37,7 @@ public static class PanelUserCommands
         var command = args.ElementAtOrDefault(0);
         var username = args.ElementAtOrDefault(1)?.Trim();
         var role = args.ElementAtOrDefault(2)?.Trim().ToLowerInvariant();
-        var permissions = command == "set-permissions" ? PanelPermissions.Parse(args.ElementAtOrDefault(2)) : null;
+        var permissions = command == "set-permissions" ? PanelPermissions.Parse(args.ElementAtOrDefault(2), await store.ListPresetsAsync()) : null;
 
         if (command == "list" && args.Length == 1)
             return await ListAsync(store);
@@ -68,7 +68,7 @@ public static class PanelUserCommands
             case "set-role":
                 await store.SetRoleAsync(user.Id, role!);
                 if (role == PanelRoles.Admin && user.Permissions.Length == 0)
-                    await store.SetPermissionsAsync(user.Id, [.. PanelPermissions.DefaultPreset.Permissions]);
+                    await store.SetPermissionsAsync(user.Id, await store.DefaultPermissionsAsync());
                 await store.RevokeUserSessionsAsync(user.Id);
                 detail = role;
                 break;
@@ -145,7 +145,7 @@ public static class PanelUserCommands
         role ??= await store.CountActiveSuperAdminsAsync() == 0 ? PanelRoles.SuperAdmin : PanelRoles.Admin;
         var id = Guid.CreateVersion7();
         var secret = Totp.GenerateSecret();
-        string[] permissions = role == PanelRoles.Admin ? [.. PanelPermissions.DefaultPreset.Permissions] : [];
+        var permissions = role == PanelRoles.Admin ? await store.DefaultPermissionsAsync() : [];
         await store.CreateUserAsync(id, username, PanelSignInService.HashPassword(password), secret, role, permissions);
         await AuditAsync(store, "add", username, id, role);
         Console.WriteLine($"Account '{username}' created with the role '{role}'.");

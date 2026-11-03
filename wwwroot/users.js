@@ -28,12 +28,13 @@ function showMessage(text, kind = 'success') {
 }
 
 function showTab(tab) {
-  const current = tab === 'audit' ? 'audit' : 'accounts';
+  const current = ['audit', 'roles'].includes(tab) ? tab : 'accounts';
   for (const button of document.querySelectorAll('#tabs button'))
     button.classList.toggle('active', button.dataset.tab === current);
   for (const panel of document.querySelectorAll('[data-panel]'))
     panel.hidden = panel.dataset.panel !== current;
   if (current === 'audit') loadAudit();
+  if (current === 'roles') renderRoles();
 }
 
 function showTwoFactorSetup(username, twoFactor) {
@@ -74,7 +75,7 @@ async function runAction(confirmText, action, doneText) {
 
 // A preset picker and the permissions as grouped checkboxes. Permissions the signed-in account does not have itself are
 // shown but locked, because nobody can hand out more than they hold. Choosing a permission also chooses what it needs.
-function createAccessEditor(host) {
+function createAccessEditor(host, withPresets = true) {
   const boxes = new Map();
   const root = document.createElement('div');
   root.className = 'access-editor';
@@ -82,7 +83,7 @@ function createAccessEditor(host) {
   const presetLabel = document.createElement('label');
   presetLabel.className = 'access-preset';
   const presetSelect = document.createElement('select');
-  presetLabel.append('Start from', presetSelect);
+  presetLabel.append('Role', presetSelect);
   presetSelect.append(new Option('Custom', ''));
   for (const preset of catalog.presets) presetSelect.append(new Option(`${preset.title} — ${preset.description}`, preset.key));
 
@@ -144,7 +145,8 @@ function createAccessEditor(host) {
     if (preset) apply(preset.permissions);
   });
 
-  root.append(presetLabel, groups);
+  if (withPresets) root.append(presetLabel);
+  root.append(groups);
   host.replaceChildren(root);
   return {
     get: selected,
@@ -308,6 +310,82 @@ passwordForm.addEventListener('submit', async event => {
 document.getElementById('password-cancel').addEventListener('click', () => passwordDialog.close());
 passwordDialog.addEventListener('close', () => passwordForm.reset());
 
+const roleDialog = document.getElementById('role-dialog');
+const roleForm = document.getElementById('role-form');
+const roleError = document.getElementById('role-dialog-error');
+let roleTarget = null;
+let roleEditor = null;
+
+async function loadCatalog() {
+  catalog = await panelRequest('GET', 'permissions');
+  createAccess = createAccessEditor(document.getElementById('create-access'));
+  createAccess.apply(catalog.presets[0].permissions);
+  renderRoles();
+}
+
+function renderRoles() {
+  const columns = [
+    { key: 'title', title: 'Role', format: (value, role) => role.isBuiltIn ? inline(value, badge('Built in', 'muted')) : value },
+    { key: 'description', title: 'Description' },
+    { key: 'permissions', title: 'Permissions', sortable: false, filterable: false, format: value => `${value.length} of ${catalog.permissions.length}` },
+    {
+      key: 'key', title: 'Actions', sortable: false, filterable: false, format: (_, role) => {
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        actions.append(actionButton('Edit', () => openRoleDialog(role)));
+        if (!role.isBuiltIn)
+          actions.append(actionButton('Delete', () => runRoleAction(
+            `Delete the role ${role.title}?`, () => panelRequest('DELETE', `roles/${role.key}`), `${role.title} is deleted.`), true));
+        return actions;
+      },
+    },
+  ];
+  renderTable(document.getElementById('roles'), columns, catalog.presets);
+}
+
+async function runRoleAction(confirmText, action, doneText) {
+  if (!await confirmAction({ title: confirmText, confirmText: 'Confirm', danger: true })) return;
+  try {
+    await action();
+    showMessage(doneText, 'success');
+    await loadCatalog();
+  } catch (error) {
+    if (error.message) showMessage(error.message, 'error');
+  }
+}
+
+function openRoleDialog(role) {
+  roleTarget = role;
+  roleError.textContent = '';
+  document.getElementById('role-dialog-title').textContent = role ? `Edit role ${role.title}` : 'New role';
+  roleForm.elements.title.value = role?.title ?? '';
+  roleForm.elements.description.value = role?.description ?? '';
+  roleEditor = createAccessEditor(document.getElementById('role-editor'), false);
+  roleEditor.set(role?.permissions ?? []);
+  roleDialog.showModal();
+}
+
+roleForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const body = {
+    title: roleForm.elements.title.value.trim(),
+    description: roleForm.elements.description.value.trim(),
+    permissions: roleEditor.get(),
+  };
+  try {
+    if (roleTarget) await panelRequest('PUT', `roles/${roleTarget.key}`, body);
+    else await panelRequest('POST', 'roles', body);
+    roleDialog.close();
+    showMessage(`The role ${body.title} is saved.`, 'success');
+    await loadCatalog();
+  } catch (error) {
+    roleError.textContent = error.message;
+  }
+});
+
+document.getElementById('role-add').addEventListener('click', () => openRoleDialog(null));
+document.getElementById('role-cancel').addEventListener('click', () => roleDialog.close());
+
 accessForm.addEventListener('submit', async event => {
   event.preventDefault();
   try {
@@ -381,10 +459,9 @@ currentAccount().then(async account => {
   me = account;
   if (!can(me, 'users.view')) return;
   try {
-    catalog = await panelRequest('GET', 'permissions');
     if (me.role !== 'superadmin') document.querySelector('#create-role option[value="superadmin"]').remove();
-    createAccess = createAccessEditor(document.getElementById('create-access'));
-    createAccess.apply(catalog.presets[0].permissions);
+    else document.getElementById('roles-tab').hidden = false;
+    await loadCatalog();
     showTab('accounts');
     await loadUsers();
   } catch (error) {

@@ -154,11 +154,60 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
             ALTER TABLE violation_panel.users ALTER COLUMN permissions SET NOT NULL;
             ALTER TABLE violation_panel.users ALTER COLUMN permissions SET DEFAULT '{}';
 
+            CREATE TABLE IF NOT EXISTS violation_panel.access_roles (
+                key text PRIMARY KEY,
+                title text NOT NULL,
+                description text NOT NULL,
+                permissions text[] NOT NULL,
+                is_built_in boolean NOT NULL DEFAULT false,
+                created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+
             -- Ended sessions are kept for a month for investigations, then removed.
             DELETE FROM violation_panel.sessions WHERE expires_at < now() - interval '30 days';
             """);
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        foreach (var preset in PanelPermissions.BuiltInPresets)
+            await ExecuteAsync(
+                "INSERT INTO violation_panel.access_roles (key, title, description, permissions, is_built_in) VALUES ($1, $2, $3, $4, true) ON CONFLICT DO NOTHING",
+                cancellationToken, preset.Key, preset.Title, preset.Description, preset.Permissions.ToArray());
     }
+
+    public async Task<IReadOnlyList<PanelPermissionPreset>> ListPresetsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var command = dataSource.CreateCommand(
+            "SELECT key, title, description, permissions, is_built_in FROM violation_panel.access_roles ORDER BY is_built_in DESC, created_at");
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var presets = new List<PanelPermissionPreset>();
+        while (await reader.ReadAsync(cancellationToken))
+            presets.Add(new PanelPermissionPreset(
+                reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetFieldValue<string[]>(3), reader.GetBoolean(4)));
+        return presets;
+    }
+
+    public async Task<PanelPermissionPreset?> GetPresetAsync(string key, CancellationToken cancellationToken = default) =>
+        (await ListPresetsAsync(cancellationToken)).FirstOrDefault(preset => preset.Key == key);
+
+    public async Task<string[]> DefaultPermissionsAsync(CancellationToken cancellationToken = default) =>
+        [.. (await GetPresetAsync(PanelPermissions.DefaultPresetKey, cancellationToken))!.Permissions];
+
+    public async Task<bool> CreatePresetAsync(PanelPermissionPreset preset, CancellationToken cancellationToken = default)
+    {
+        await using var command = dataSource.CreateCommand(
+            "INSERT INTO violation_panel.access_roles (key, title, description, permissions) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING");
+        command.Parameters.AddWithValue(preset.Key);
+        command.Parameters.AddWithValue(preset.Title);
+        command.Parameters.AddWithValue(preset.Description);
+        command.Parameters.AddWithValue(preset.Permissions.ToArray());
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+    }
+
+    public Task UpdatePresetAsync(PanelPermissionPreset preset, CancellationToken cancellationToken = default) =>
+        ExecuteAsync("UPDATE violation_panel.access_roles SET title = $2, description = $3, permissions = $4 WHERE key = $1",
+            cancellationToken, preset.Key, preset.Title, preset.Description, preset.Permissions.ToArray());
+
+    public Task DeletePresetAsync(string key, CancellationToken cancellationToken = default) =>
+        ExecuteAsync("DELETE FROM violation_panel.access_roles WHERE key = $1 AND NOT is_built_in", cancellationToken, key);
 
     public async Task<PanelUser?> FindUserAsync(string username, CancellationToken cancellationToken = default)
     {

@@ -34,8 +34,14 @@ public static class PanelUserEndpoints
 
         api.MapPost("/account/password", ChangeOwnPasswordAsync).RequirePermission(PanelPermissions.AccountChangePassword);
 
-        api.MapGet("/permissions", () => Results.Ok(new { permissions = PanelPermissions.All, presets = PanelPermissions.Presets }))
+        api.MapGet("/permissions", async (PanelAuthStore store, HttpContext context) =>
+                Results.Ok(new { permissions = PanelPermissions.All, presets = await store.ListPresetsAsync(context.RequestAborted) }))
             .RequirePermission(PanelPermissions.UsersView);
+
+        var roles = api.MapGroup("/roles").AddEndpointFilter(RequireSuperAdmin);
+        roles.MapPost("", CreatePresetAsync);
+        roles.MapPut("/{key}", UpdatePresetAsync);
+        roles.MapDelete("/{key}", DeletePresetAsync);
 
         var users = api.MapGroup("/users");
         users.MapGet("", async (HttpContext context, PanelAuthStore store) =>
@@ -104,7 +110,7 @@ public static class PanelUserEndpoints
     private static async ValueTask<object?> RequireSuperAdmin(EndpointFilterInvocationContext invocation, EndpointFilterDelegate next) =>
         CurrentUser(invocation.HttpContext).IsSuperAdmin
             ? await next(invocation)
-            : Error(StatusCodes.Status403Forbidden, "Only a super admin can change roles.");
+            : Error(StatusCodes.Status403Forbidden, "Only a super admin can do this.");
 
     private static PanelUser CurrentUser(HttpContext context) => (PanelUser)context.Items[CurrentUserItem]!;
 
@@ -246,7 +252,7 @@ public static class PanelUserEndpoints
 
             await store.SetRoleAsync(user.Id, request.Role!, token);
             if (request.Role == PanelRoles.Admin && user.Permissions.Length == 0)
-                await store.SetPermissionsAsync(user.Id, [.. PanelPermissions.DefaultPreset.Permissions], token);
+                await store.SetPermissionsAsync(user.Id, await store.DefaultPermissionsAsync(token), token);
             await store.RevokeUserSessionsAsync(user.Id, token);
             return null;
         }, describe: () => request.Role);
@@ -271,6 +277,66 @@ public static class PanelUserEndpoints
             return null;
         }, describe: () => change);
     }
+
+    private static async Task<IResult> CreatePresetAsync(PresetRequest request, HttpContext context, PanelAuthStore store)
+    {
+        var title = request.Title?.Trim() ?? string.Empty;
+        var key = PresetKey(title);
+        if (ValidatePreset(request, title) is { } problem)
+            return Error(StatusCodes.Status400BadRequest, problem);
+        if (key.Length == 0)
+            return Error(StatusCodes.Status400BadRequest, "The name needs letters or digits.");
+
+        var permissions = PanelPermissions.Normalize(request.Permissions!);
+        var preset = new PanelPermissionPreset(key, title, request.Description?.Trim() ?? string.Empty, permissions);
+        if (!await store.CreatePresetAsync(preset, context.RequestAborted))
+            return Error(StatusCodes.Status409Conflict, $"A role named '{title}' already exists.");
+
+        var actor = CurrentUser(context);
+        await AuditAsync(context, store, "access_role_created", actor.Username, actor.Id, $"{title}: {permissions.Length} permissions");
+        return Results.Ok(preset);
+    }
+
+    private static async Task<IResult> UpdatePresetAsync(string key, PresetRequest request, HttpContext context, PanelAuthStore store)
+    {
+        var title = request.Title?.Trim() ?? string.Empty;
+        if (ValidatePreset(request, title) is { } problem)
+            return Error(StatusCodes.Status400BadRequest, problem);
+        if (await store.GetPresetAsync(key, context.RequestAborted) is not { } before)
+            return Error(StatusCodes.Status404NotFound, "The role no longer exists.");
+
+        var permissions = PanelPermissions.Normalize(request.Permissions!);
+        await store.UpdatePresetAsync(before with { Title = title, Description = request.Description?.Trim() ?? string.Empty, Permissions = permissions },
+            context.RequestAborted);
+
+        var actor = CurrentUser(context);
+        var change = string.Join(' ', permissions.Except(before.Permissions).Select(permission => $"+{permission}")
+            .Concat(before.Permissions.Except(permissions).Select(permission => $"-{permission}")));
+        await AuditAsync(context, store, "access_role_changed", actor.Username, actor.Id, $"{title}: {change}");
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> DeletePresetAsync(string key, HttpContext context, PanelAuthStore store)
+    {
+        if (await store.GetPresetAsync(key, context.RequestAborted) is not { } preset)
+            return Error(StatusCodes.Status404NotFound, "The role no longer exists.");
+        if (preset.IsBuiltIn)
+            return Error(StatusCodes.Status400BadRequest, "A built-in role can be edited but not deleted.");
+
+        await store.DeletePresetAsync(key, context.RequestAborted);
+        var actor = CurrentUser(context);
+        await AuditAsync(context, store, "access_role_deleted", actor.Username, actor.Id, preset.Title);
+        return Results.NoContent();
+    }
+
+    private static string? ValidatePreset(PresetRequest request, string title) =>
+        title.Length is 0 or > 40 ? "A role name has 1 to 40 characters."
+        : request.Description?.Trim().Length > 200 ? "The description has at most 200 characters."
+        : ValidatePermissions(request.Permissions);
+
+    private static string PresetKey(string title) =>
+        string.Join('-', title.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(word => new string([.. word.Where(char.IsAsciiLetterOrDigit)])).Where(word => word.Length > 0));
 
     private static string? ValidatePermissions(string[]? permissions) =>
         permissions is null ? "Choose the permissions."
@@ -353,4 +419,5 @@ public static class PanelUserEndpoints
     private sealed record ChangeRoleRequest(string? Role);
     private sealed record ConfirmTwoFactorRequest(string? SetupToken, string? Code);
     private sealed record ChangePermissionsRequest(string[]? Permissions);
+    private sealed record PresetRequest(string? Title, string? Description, string[]? Permissions);
 }

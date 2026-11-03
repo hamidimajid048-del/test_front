@@ -62,15 +62,15 @@ public static class PanelPermissions
     public static readonly IReadOnlyList<string> ForExistingAdmins =
         [.. All.Where(permission => permission.Group != AdministrationGroup).Select(permission => permission.Key)];
 
-    public static readonly IReadOnlyList<PanelPermissionPreset> Presets =
-    [
-        new("viewer", "Viewer", "Reads every report; no export, no changes.",
-            [.. All.Where(permission => permission.Group == ReportsGroup && permission.Key != ReportsExport).Select(permission => permission.Key), AccountChangePassword]),
-        new("analyst", "Analyst", "Viewer, plus export and the account switches.", ForExistingAdmins),
-        new("full", "Full access", "Everything, including managing the other accounts.", AllKeys)
-    ];
+    public const string DefaultPresetKey = "viewer";
 
-    public static PanelPermissionPreset DefaultPreset => Presets[0];
+    public static readonly IReadOnlyList<PanelPermissionPreset> BuiltInPresets =
+    [
+        new(DefaultPresetKey, "Viewer", "Reads every report; no export, no changes.",
+            [.. All.Where(permission => permission.Group == ReportsGroup && permission.Key != ReportsExport).Select(permission => permission.Key), AccountChangePassword], true),
+        new("analyst", "Analyst", "Viewer, plus export and the account switches.", ForExistingAdmins, true),
+        new("full", "Full access", "Everything, including managing the other accounts.", AllKeys, true)
+    ];
 
     public static bool IsKnown(string key) => All.Any(permission => permission.Key == key);
 
@@ -88,12 +88,12 @@ public static class PanelPermissions
     public static IReadOnlyList<string> Effective(string role, IEnumerable<string> granted) =>
         role == PanelRoles.SuperAdmin ? AllKeys : Normalize(granted);
 
-    public static string[]? Parse(string? specification)
+    public static string[]? Parse(string? specification, IEnumerable<PanelPermissionPreset> presets)
     {
         if (string.IsNullOrWhiteSpace(specification))
             return null;
 
-        var preset = Presets.FirstOrDefault(candidate => string.Equals(candidate.Key, specification.Trim(), StringComparison.OrdinalIgnoreCase));
+        var preset = presets.FirstOrDefault(candidate => string.Equals(candidate.Key, specification.Trim(), StringComparison.OrdinalIgnoreCase));
         if (preset is not null)
             return [.. preset.Permissions];
 
