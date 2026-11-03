@@ -36,7 +36,8 @@ const SWITCHES = [
   {
     key: 'stop_out', api: 'StopOut', title: 'Stop-out plugin', permission: 'account-data.switch-stop-out',
     description: 'The stop-out plugin watches the account.',
-    effect: ['The stop-out plugin will stop watching this account.', 'The stop-out plugin will watch this account.'],
+    effect: ['', 'The stop-out plugin will watch this account.'],
+    enableOnly: true,
     state: (data, last, status) => ({ Enabled: true, Disabled: false })[status?.pluginState] ?? last?.enabled ?? null,
   },
 ];
@@ -248,7 +249,8 @@ function writeState() {
 
 function switchRow(data, last, status, definition) {
   const enabled = definition.state(data, last, status);
-  const allowed = can(me, definition.permission) && data.source !== 'Archive';
+  const locked = definition.enableOnly && enabled === true;
+  const allowed = can(me, definition.permission) && data.source !== 'Archive' && !locked;
 
   const row = document.createElement('div');
   row.className = 'control';
@@ -267,7 +269,9 @@ function switchRow(data, last, status, definition) {
   toggle.setAttribute('aria-checked', String(enabled === true));
   toggle.setAttribute('aria-label', definition.title);
   toggle.disabled = !allowed;
-  toggle.title = data.source === 'Archive' ? 'A deleted account cannot be changed' : allowed ? '' : 'You do not have permission to change this';
+  toggle.title = data.source === 'Archive' ? 'A deleted account cannot be changed'
+    : locked ? 'This can only be enabled, not disabled'
+    : allowed ? '' : 'You do not have permission to change this';
   toggle.append(document.createElement('span'));
   toggle.addEventListener('click', () => changeSwitch(definition, enabled !== true, toggle));
 
@@ -335,6 +339,30 @@ function renderStopOutStatus(status) {
     status.stateConflict && `Conflict: ${typeof status.stateConflict === 'string' ? status.stateConflict : JSON.stringify(status.stateConflict)}`,
     liquidation?.lastError && `Liquidation error: ${liquidation.lastError}`,
   ].filter(Boolean).join(' ');
+}
+
+async function changeSwitch(definition, enabled, toggle) {
+  if (!currentLogin) return;
+  const verb = enabled ? 'Enable' : 'Disable';
+  const confirmed = await confirmAction({
+    title: `${verb} ${definition.title.toLowerCase()}?`,
+    message: `Account ${currentLogin}. ${definition.effect[enabled ? 1 : 0]}`,
+    confirmText: verb,
+    danger: !enabled,
+  });
+  if (!confirmed) return;
+
+  const login = currentLogin;
+  clearMessages(form, message);
+  toggle.disabled = true;
+  try {
+    await panelRequest('POST', 'mt5/account-switch', { login: Number(login), switch: definition.api, enabled });
+    await search(login);
+    toast(`${definition.title} ${enabled ? 'enabled' : 'disabled'}`, 'success', `Account ${login}`);
+  } catch (error) {
+    toast(`${definition.title} was not changed`, 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
+    toggle.disabled = false;
+  }
 }
 
 function renderOverview(data, switches, status) {

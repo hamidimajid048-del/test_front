@@ -15,9 +15,9 @@ public sealed class AccountActivationClient(HttpClient http, AccountActivationOp
             response.IsSuccessStatusCode, (int)response.StatusCode, await response.Content.ReadAsStringAsync(cancellationToken));
     }
 
-    public async Task<AccountActivationResultDto> SetAsync(ulong login, bool enabled, CancellationToken cancellationToken)
+    public async Task<AccountActivationResultDto> EnableAsync(ulong login, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, enabled ? options.Url : options.DisableUrl)
+        using var request = new HttpRequestMessage(HttpMethod.Post, options.Url)
         {
             Content = JsonContent.Create(new Dictionary<string, ulong[]> { ["Logins"] = [login] })
         };

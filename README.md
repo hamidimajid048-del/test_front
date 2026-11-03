@@ -66,14 +66,14 @@ through `POST /panel-api/mt5/account-switch` (`{ login, switch, enabled }`), eac
 |---|---|---|
 | Account (`account-data.switch-account`) | MetaTrader `USER_RIGHT_ENABLED` | the Manager API, directly on the user |
 | Trading (`account-data.switch-trading`) | MetaTrader `USER_RIGHT_TRADE_DISABLED` (inverted) | the Manager API, directly on the user |
-| Stop-out plugin (`account-data.switch-stop-out`) | the status service (`pluginState`); if it cannot be read, the last change made from the panel (grey "Unknown" before the first) | the company API: `POST {AccountActivation:Url}` to enable, `POST {AccountActivation:DisableUrl}` to disable, header `APIKey`, body `{ "Logins": [login] }` |
+| Stop-out plugin (`account-data.switch-stop-out`) | the status service (`pluginState`); if it cannot be read, the last change made from the panel (grey "Unknown" before the first) | the company API: `POST {AccountActivation:Url}` (header `APIKey`, body `{ "Logins": [login] }`); it can only be enabled, so the switch is locked while it is on |
 
 The status service is `GET {AccountActivation:StatusUrl}` (`{login}` in the address, header `APIKey`), passed through at
 `GET /panel-api/mt5/account-status?login=`. Under the switches the page shows its status (for example Monitored), the
 total and daily limits with the distance to them, the last trigger and liquidation flags, and the status reason.
 
 The Manager account (`Mt5:Login`) needs the right to change users, otherwise MetaTrader answers with a permission error
-and the change is logged as failed. Without `AccountActivation:DisableUrl` the plugin can only be enabled. Keep
+and the change is logged as failed. Keep
 `AccountActivation:ApiKey` in `appsettings.local.json`, user secrets or the environment variable
 `AccountActivation__ApiKey`. Under each switch the panel shows who made the last change from the panel; changes made
 elsewhere (the MetaTrader terminal) are not recorded.

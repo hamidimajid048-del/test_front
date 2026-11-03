@@ -48,6 +48,8 @@ public static class Mt5AccountSwitchEndpoints
             return Mt5Extensions.Error(StatusCodes.Status403Forbidden, "The request did not come from the panel.");
         if (request.Login == 0 || request.Enabled is not { } enabled || !Enum.TryParse<Mt5AccountSwitchEnum>(request.Switch, true, out var target))
             return Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Enter a valid account number and switch.");
+        if (target == Mt5AccountSwitchEnum.StopOut && !enabled)
+            return Mt5Extensions.Error(StatusCodes.Status400BadRequest, "The stop-out plugin can only be enabled.");
         if (!context.User.HasAnyPermission(Mt5AccountSwitches.Permission(target)))
             return Mt5Extensions.Error(StatusCodes.Status403Forbidden, PanelAuthorizationExtensions.ForbiddenMessage);
 
@@ -55,7 +57,7 @@ public static class Mt5AccountSwitchEndpoints
         try
         {
             var (succeeded, detail, failure) = target == Mt5AccountSwitchEnum.StopOut
-                ? await SetStopOutAsync(request.Login, enabled, options, client, context.RequestAborted)
+                ? await SetStopOutAsync(request.Login, options, client, context.RequestAborted)
                 : SetRights(request.Login, target, enabled, context);
             await changeLog.RecordAsync(request.Login, action, succeeded, detail, context);
             return succeeded ? Results.Ok(new { enabled }) : failure!;
@@ -82,12 +84,12 @@ public static class Mt5AccountSwitchEndpoints
     }
 
     private static async Task<(bool Succeeded, string Detail, IResult? Failure)> SetStopOutAsync(
-        ulong login, bool enabled, AccountActivationOptions options, AccountActivationClient client, CancellationToken cancellationToken)
+        ulong login, AccountActivationOptions options, AccountActivationClient client, CancellationToken cancellationToken)
     {
-        if (!options.IsConfigured || (!enabled && !options.IsDisableConfigured))
+        if (!options.IsConfigured)
             return (false, "not configured", Mt5Extensions.Error(StatusCodes.Status503ServiceUnavailable, "This switch is not configured."));
 
-        var result = await client.SetAsync(login, enabled, cancellationToken);
+        var result = await client.EnableAsync(login, cancellationToken);
         return (result.Succeeded, $"answered {result.StatusCode}", result.Succeeded ? null : Mt5Extensions.Error(
             StatusCodes.Status502BadGateway,
             $"The service answered {result.StatusCode}{(result.Detail.Length > 0 ? $": {result.Detail}" : string.Empty)}"));

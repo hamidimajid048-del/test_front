@@ -6,8 +6,6 @@ public sealed class AccountActivationOptions
 
     public string Url { get; init; } = string.Empty;
 
-    public string DisableUrl { get; init; } = string.Empty;
-
     public string StatusUrl { get; init; } = string.Empty;
 
     public string ApiKey { get; init; } = string.Empty;
@@ -18,8 +16,6 @@ public sealed class AccountActivationOptions
 
     public bool IsStatusConfigured => IsConfigured && StatusUrl.Contains("{login}", StringComparison.Ordinal);
 
-    public bool IsDisableConfigured => IsConfigured && DisableUrl.Length > 0;
-
     public AccountActivationOptions Validate()
     {
         if (Url.Length == 0 && ApiKey.Length == 0)
@@ -28,8 +24,6 @@ public sealed class AccountActivationOptions
         List<string> failures = [];
         if (!Uri.TryCreate(Url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
             failures.Add($"{SectionName}:Url must be an absolute http(s) address.");
-        if (DisableUrl.Length > 0 && (!Uri.TryCreate(DisableUrl, UriKind.Absolute, out var disableUri) || disableUri.Scheme is not ("http" or "https")))
-            failures.Add($"{SectionName}:DisableUrl must be an absolute http(s) address.");
         if (StatusUrl.Length > 0 && !StatusUrl.Contains("{login}", StringComparison.Ordinal))
             failures.Add($"{SectionName}:StatusUrl must contain {{login}}.");
         if (ApiKey.Length == 0)

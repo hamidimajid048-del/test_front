@@ -439,6 +439,10 @@ function seenColumn(firstKey, lastKey, title, options = {}) {
 function renderSummary(container, items) {
   container.replaceChildren(...items.map(([label, value]) => {
     const item = document.createElement('span');
+    if (value instanceof Node) {
+      item.append(`${label}: `, value);
+      return item;
+    }
     const strong = document.createElement('strong');
     strong.textContent = value ?? '—';
     item.append(`${label}: `, strong);
