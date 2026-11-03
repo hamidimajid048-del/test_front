@@ -22,6 +22,8 @@ public static class PanelUserCommands
                                         Set what an admin may do: a preset (viewer, analyst, full) or permission keys
           reset-password <username>     Set a new password and end the account's sessions
           reset-2fa <username>          Issue a new authenticator key and end the account's sessions
+          disable-2fa <username>        Remove the authenticator key; the account signs in with the password only
+                                        and can set up two-factor again on its Account page
           unlock <username>             Clear the failed sign-ins and the lockout
           disable <username>            Block the account and end its sessions
           enable <username>             Allow a disabled account again
@@ -92,6 +94,10 @@ public static class PanelUserCommands
                 await store.SetTotpSecretAsync(user.Id, secret);
                 await store.RevokeUserSessionsAsync(user.Id);
                 PrintAuthenticatorKey(user.Username, secret);
+                break;
+            case "disable-2fa":
+                await store.DisableTwoFactorAsync(user.Id);
+                await store.RevokeUserSessionsAsync(user.Id);
                 break;
             case "unlock":
                 await store.UnlockAsync(user.Id);

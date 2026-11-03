@@ -290,6 +290,23 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
     public Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default) =>
         ExecuteAsync("UPDATE violation_panel.users SET password_hash = $2 WHERE id = $1", cancellationToken, userId, passwordHash);
 
+    public async Task<bool> EnableTwoFactorAsync(Guid userId, string totpSecret, long step, CancellationToken cancellationToken = default)
+    {
+        await using var command = dataSource.CreateCommand(
+            "UPDATE violation_panel.users SET totp_secret = $2, totp_last_step = $3 WHERE id = $1 AND totp_secret IS NULL");
+        command.Parameters.AddWithValue(userId);
+        command.Parameters.AddWithValue(totpSecret);
+        command.Parameters.AddWithValue(step);
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+    }
+
+    public Task DisableTwoFactorAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        ExecuteAsync("UPDATE violation_panel.users SET totp_secret = NULL, totp_last_step = 0 WHERE id = $1", cancellationToken, userId);
+
+    public Task RegisterSignInAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        ExecuteAsync("UPDATE violation_panel.users SET failed_attempts = 0, locked_until = NULL, last_sign_in_at = now() WHERE id = $1",
+            cancellationToken, userId);
+
     public Task SetTotpSecretAsync(Guid userId, string totpSecret, CancellationToken cancellationToken = default) =>
         ExecuteAsync("UPDATE violation_panel.users SET totp_secret = $2, totp_last_step = 0 WHERE id = $1",
             cancellationToken, userId, totpSecret);

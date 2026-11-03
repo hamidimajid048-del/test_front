@@ -89,6 +89,13 @@ public sealed class PanelSignInService(
         return null;
     }
 
+    public async Task RegisterSignInWithoutCodeAsync(PanelUser user, ClientInfo client)
+    {
+        await store.RegisterSignInAsync(user.Id, CancellationToken.None);
+        await store.AuditAsync("sign_in_succeeded", user.Username, user.Id, client.IpAddress, client.UserAgent,
+            "no two-factor set up", CancellationToken.None);
+    }
+
     private async Task RegisterFailureAsync(PanelUser user, ClientInfo client, string reason)
     {
         var locked = await store.RegisterFailureAsync(user.Id, options.MaxFailedAttempts, options.Lockout, CancellationToken.None);

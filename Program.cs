@@ -267,6 +267,12 @@ app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn
         if (user is null)
             return Results.Redirect($"{LoginPage}?error=invalid");
 
+        if (user.TotpSecret is null)
+        {
+            await signIn.RegisterSignInWithoutCodeAsync(user, client);
+            return await CompleteSignInAsync(context, signIn, user, accessToken);
+        }
+
         pending.Issue(context, user.Id, accessToken);
         return Results.Redirect($"{LoginPage}?step=code");
     })
@@ -290,26 +296,7 @@ app.MapPost("/auth/verify-code", async (HttpContext context, PanelSignInService 
         }
 
         pending.Clear(context);
-        var accessToken = ticket.AccessToken;
-
-        // A new session on every sign-in, so a session from before the sign-in is never reused.
-        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        var sessionToken = await signIn.CreateSessionAsync(user, client, context.RequestAborted);
-        List<Claim> claims =
-        [
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(PanelClaims.UserId, user.Id.ToString()),
-            new Claim(PanelClaims.Session, sessionToken)
-        ];
-        if (accessToken is not null)
-            claims.Add(new Claim(AccessTokenClaim, accessToken));
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await context.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity),
-            new AuthenticationProperties { IsPersistent = true });
-        return Results.Redirect("/");
+        return await CompleteSignInAsync(context, signIn, user, ticket.AccessToken);
     })
     .AllowAnonymous()
     .RequireRateLimiting(LoginRateLimitPolicy);
@@ -362,6 +349,28 @@ static string RequiredSetting(IConfiguration configuration, string key) =>
     configuration[key] is { Length: > 0 } value
         ? value
         : throw new InvalidOperationException($"Configuration value '{key}' is required.");
+
+// A new session on every sign-in, so a session from before the sign-in is never reused.
+static async Task<IResult> CompleteSignInAsync(HttpContext context, PanelSignInService signIn, PanelUser user, string? accessToken)
+{
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    var sessionToken = await signIn.CreateSessionAsync(user, ClientInfo.From(context), context.RequestAborted);
+    List<Claim> claims =
+    [
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(PanelClaims.UserId, user.Id.ToString()),
+        new Claim(PanelClaims.Session, sessionToken)
+    ];
+    if (accessToken is not null)
+        claims.Add(new Claim(AccessTokenClaim, accessToken));
+
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    await context.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(identity),
+        new AuthenticationProperties { IsPersistent = true });
+    return Results.Redirect("/");
+}
 
 // Revokes the signed-in session in the database, records why, and removes the cookie.
 static async Task EndSessionAsync(HttpContext context, string auditEvent)

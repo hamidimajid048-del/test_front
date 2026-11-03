@@ -180,6 +180,10 @@ function userActions(user) {
     }));
   }
 
+  if (can(me, 'users.reset-credentials'))
+    actions.append(actionButton('Disable 2FA', () => runAction(
+      `Disable two-factor for ${name}?`, () => panelRequest('DELETE', `users/${user.id}/two-factor`), `${name} has no two-factor.`), true));
+
   if (can(me, 'users.edit-permissions') && user.role !== 'superadmin')
     actions.append(actionButton('Edit access', () => openAccessDialog(user)));
 

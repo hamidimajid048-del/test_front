@@ -35,9 +35,50 @@ form.addEventListener('submit', async event => {
   }
 });
 
+const twoFactorState = document.getElementById('two-factor-state');
+const twoFactorStart = document.getElementById('two-factor-start');
+const twoFactorSetup = document.getElementById('two-factor-setup');
+const twoFactorForm = document.getElementById('two-factor-form');
+let setupToken = null;
+
+function showTwoFactorState(enabled) {
+  twoFactorState.textContent = enabled ? 'Enabled' : 'Not set up';
+  twoFactorStart.hidden = enabled;
+  twoFactorSetup.hidden = true;
+}
+
+twoFactorStart.addEventListener('click', async () => {
+  try {
+    const result = await panelRequest('POST', 'account/two-factor/begin');
+    setupToken = result.setupToken;
+    document.getElementById('two-factor-qr').src = result.twoFactor.qrCode;
+    document.getElementById('two-factor-key').textContent = result.twoFactor.key;
+    twoFactorSetup.hidden = false;
+    twoFactorStart.hidden = true;
+    twoFactorForm.elements.code.focus();
+  } catch (error) {
+    if (error.message) showMessage(error.message, 'error');
+  }
+});
+
+twoFactorForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  try {
+    await panelRequest('POST', 'account/two-factor/confirm', { setupToken, code: twoFactorForm.elements.code.value });
+    twoFactorForm.reset();
+    document.getElementById('two-factor-qr').removeAttribute('src');
+    document.getElementById('two-factor-key').textContent = '';
+    showTwoFactorState(true);
+    showMessage('Two-factor enabled', 'success');
+  } catch (error) {
+    if (error.message) showMessage(error.message, 'error');
+  }
+});
+
 renderMenu();
 currentAccount().then(me => {
   if (!me) return;
+  showTwoFactorState(me.twoFactor);
   form.elements.username.value = me.username;
   renderSummary(document.getElementById('account'), [['Account', me.username], ['Role', ROLE_NAMES[me.role] ?? me.role],
     ['Access', me.role === 'superadmin' ? 'Every permission' : `${me.permissions.length} permissions`]]);

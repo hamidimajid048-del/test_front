@@ -26,6 +26,21 @@
       </form>
     </section>
 
+    <section>
+      <div class="section-head"><h2>Authenticator</h2></div>
+      <p id="two-factor-state"></p>
+      <button type="button" id="two-factor-start" hidden>Set up</button>
+      <div class="two-factor-setup" id="two-factor-setup" hidden>
+        <img id="two-factor-qr" alt="Authenticator QR code">
+        <div>
+          <code class="secret-key" id="two-factor-key"></code>
+          <form class="filters" id="two-factor-form" autocomplete="off">
+            <label>Code <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" required autocomplete="one-time-code"></label>
+            <button type="submit">Enable</button>
+          </form>
+        </div>
+      </div>
+    </section>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>

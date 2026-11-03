@@ -16,6 +16,8 @@ public static class PanelUserEndpoints
 
     private const string CurrentUserItem = "panel-current-user";
     private const int MaxAuditEntries = 500;
+    private const string TwoFactorSetupPurpose = "panel-two-factor-setup";
+    private static readonly TimeSpan TwoFactorSetupLifetime = TimeSpan.FromMinutes(10);
 
     public static void MapPanelUserEndpoints(this WebApplication app)
     {
@@ -24,8 +26,11 @@ public static class PanelUserEndpoints
         api.MapGet("/me", (HttpContext context) =>
         {
             var user = CurrentUser(context);
-            return Results.Ok(new { id = user.Id, username = user.Username, role = user.Role, permissions = user.EffectivePermissions });
+            return Results.Ok(new { id = user.Id, username = user.Username, role = user.Role, permissions = user.EffectivePermissions, twoFactor = user.TotpSecret is not null });
         });
+
+        api.MapPost("/account/two-factor/begin", BeginTwoFactor);
+        api.MapPost("/account/two-factor/confirm", ConfirmTwoFactorAsync);
 
         api.MapPost("/account/password", ChangeOwnPasswordAsync).RequirePermission(PanelPermissions.AccountChangePassword);
 
@@ -42,6 +47,13 @@ public static class PanelUserEndpoints
         users.MapPost("", CreateUserAsync).RequirePermission(PanelPermissions.UsersCreate);
         users.MapPost("/{id:guid}/password", ResetPasswordAsync).RequirePermission(PanelPermissions.UsersResetCredentials);
         users.MapPost("/{id:guid}/two-factor", ResetTwoFactorAsync).RequirePermission(PanelPermissions.UsersResetCredentials);
+        users.MapDelete("/{id:guid}/two-factor", (Guid id, HttpContext context, PanelAuthStore store) =>
+                ChangeUserAsync(id, context, store, "two_factor_disabled", allowSelf: false, async (user, token) =>
+                {
+                    await store.DisableTwoFactorAsync(user.Id, token);
+                    await store.RevokeUserSessionsAsync(user.Id, token);
+                }))
+            .RequirePermission(PanelPermissions.UsersResetCredentials);
         users.MapPost("/{id:guid}/permissions", ChangePermissionsAsync).RequirePermission(PanelPermissions.UsersEditPermissions);
         users.MapPost("/{id:guid}/role", ChangeRoleAsync).AddEndpointFilter(RequireSuperAdmin);
         users.MapPost("/{id:guid}/unlock", (Guid id, HttpContext context, PanelAuthStore store) =>
@@ -127,6 +139,41 @@ public static class PanelUserEndpoints
         await store.RevokeOtherSessionsAsync(user.Id, context.User.GetSessionTokenHash()!, context.RequestAborted);
         await store.AuditAsync("password_changed", user.Username, user.Id, client.IpAddress, client.UserAgent,
             "by the account itself", CancellationToken.None);
+        return Results.NoContent();
+    }
+
+    private static IResult BeginTwoFactor(HttpContext context, IDataProtectionProvider dataProtection)
+    {
+        var user = CurrentUser(context);
+        if (user.TotpSecret is not null)
+            return Error(StatusCodes.Status400BadRequest, "Two-factor is already set up.");
+
+        var secret = Totp.GenerateSecret();
+        var token = dataProtection.CreateProtector(TwoFactorSetupPurpose).ToTimeLimitedDataProtector().Protect(secret, TwoFactorSetupLifetime);
+        return Results.Ok(new { setupToken = token, twoFactor = TwoFactorSetup(user.Username, secret) });
+    }
+
+    private static async Task<IResult> ConfirmTwoFactorAsync(ConfirmTwoFactorRequest request, HttpContext context,
+        PanelAuthStore store, IDataProtectionProvider dataProtection, TimeProvider timeProvider)
+    {
+        var user = CurrentUser(context);
+        string secret;
+        try
+        {
+            secret = dataProtection.CreateProtector(TwoFactorSetupPurpose).ToTimeLimitedDataProtector().Unprotect(request.SetupToken ?? string.Empty);
+        }
+        catch (CryptographicException)
+        {
+            return Error(StatusCodes.Status400BadRequest, "The setup expired. Start again.");
+        }
+
+        var code = (request.Code ?? string.Empty).Replace(" ", string.Empty);
+        if (Totp.Verify(secret, code, timeProvider.GetUtcNow(), 0) is not { } step)
+            return Error(StatusCodes.Status400BadRequest, "Incorrect code.");
+        if (!await store.EnableTwoFactorAsync(user.Id, secret, step, context.RequestAborted))
+            return Error(StatusCodes.Status400BadRequest, "Two-factor is already set up.");
+
+        await AuditAsync(context, store, "two_factor_enabled", user.Username, user.Id, "by the account itself");
         return Results.NoContent();
     }
 
@@ -304,5 +351,6 @@ public static class PanelUserEndpoints
     private sealed record CreateUserRequest(string? Username, string? Password, string? Role, string[]? Permissions);
     private sealed record ResetPasswordRequest(string? Password);
     private sealed record ChangeRoleRequest(string? Role);
+    private sealed record ConfirmTwoFactorRequest(string? SetupToken, string? Code);
     private sealed record ChangePermissionsRequest(string[]? Permissions);
 }
