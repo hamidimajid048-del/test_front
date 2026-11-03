@@ -134,6 +134,18 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
             INSERT INTO violation_panel.audit_log (event, username, user_id, detail)
             SELECT 'role_changed', username, id, 'superadmin: oldest account promoted when roles were introduced' FROM promoted;
 
+            CREATE TABLE IF NOT EXISTS violation_panel.mt5_account_changes (
+                id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                occurred_at timestamptz NOT NULL DEFAULT now(),
+                login bigint NOT NULL,
+                action text NOT NULL,
+                succeeded boolean NOT NULL,
+                detail text NULL,
+                user_id uuid NULL,
+                username text NULL,
+                ip_address text NULL);
+            CREATE INDEX IF NOT EXISTS ix_mt5_account_changes_login ON violation_panel.mt5_account_changes (login, id DESC);
+
             -- Permissions: what an admin may do (a super admin always may everything). Admins made before permissions
             -- existed keep what they could do then: everything except managing accounts.
             ALTER TABLE violation_panel.users ADD COLUMN IF NOT EXISTS permissions text[] NULL;

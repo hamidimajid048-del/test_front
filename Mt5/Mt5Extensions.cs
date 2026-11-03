@@ -6,6 +6,7 @@ public static class Mt5Extensions
     public const string UsersDataSourceKey = "mt5-users";
     private const string UsersConnectionStringName = "Mt5Users";
     private const int MaxEmailLength = 320;
+    private const int MaxChangeEntries = 500;
 
     public static void AddMt5UserDirectory(this WebApplicationBuilder builder)
     {
@@ -32,6 +33,7 @@ public static class Mt5Extensions
     public static void MapMt5Endpoints(this WebApplication app)
     {
         var mt5 = app.MapGroup($"{PanelUserEndpoints.Prefix}/mt5");
+        mt5.MapGet("/account-changes", ReadAccountChanges).RequirePermission(PanelPermissions.AccountChangesView);
         if (app.Services.GetService<Mt5AccountReader>() is not null)
         {
             mt5.MapGet("/accounts", ReadAccounts).RequirePermission(PanelPermissions.AllReportViews);
@@ -49,6 +51,11 @@ public static class Mt5Extensions
             .RequirePermission(PanelPermissions.AccountDataView);
         mt5.MapMt5AccountDataEndpoints();
     }
+
+    private static async Task<IResult> ReadAccountChanges(string? login, Mt5ChangeLog changeLog, CancellationToken cancellationToken) =>
+        ulong.TryParse(login, out var parsed) && parsed > 0
+            ? Results.Ok(await changeLog.ListAsync(parsed, MaxChangeEntries, cancellationToken))
+            : Error(StatusCodes.Status400BadRequest, "Enter a valid account number.");
 
     private static async Task<IResult> ReadAccounts(string? logins, Mt5AccountReader reader, CancellationToken cancellationToken)
     {

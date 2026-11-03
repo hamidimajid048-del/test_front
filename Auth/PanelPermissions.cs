@@ -4,6 +4,7 @@ public static class PanelPermissions
 {
     public const string AccountDataView = "account-data.view";
     public const string AccountDataActivate = "account-data.activate";
+    public const string AccountChangesView = "account-data.changes";
     public const string LoginsView = "logins.view";
     public const string EmailLoginsView = "email-logins.view";
     public const string SimilarityView = "similarity.view";
@@ -36,6 +37,7 @@ public static class PanelPermissions
         new(CopyTradeView, ReportsGroup, "Copy trade & hedge", "Accounts that opened the same or opposite trades."),
         new(CompareView, ReportsGroup, "Compare accounts", "Two logins side by side."),
         new(CompareEmailsView, ReportsGroup, "Compare emails", "All logins of two emails compared."),
+        new(AccountChangesView, ReportsGroup, "Account change log", "Every change made to a trading account from the panel.", AccountDataView),
         new(ReportsExport, ReportsGroup, "Export to Excel / CSV", "Download report data as files."),
         new(AccountDataActivate, OperationsGroup, "Activate accounts", "Enable a trading account from the Account data page.", AccountDataView),
         new(AccountChangePassword, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),

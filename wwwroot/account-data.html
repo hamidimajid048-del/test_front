@@ -25,6 +25,7 @@
       <button type="button" data-tab="positions">Positions</button>
       <button type="button" data-tab="orders">Orders</button>
       <button type="button" data-tab="deals">Deals</button>
+      <button type="button" data-tab="changes" data-permission="account-data.changes">Changes</button>
     </div>
 
     <section data-panel="overview">
@@ -72,6 +73,10 @@
     <section data-panel="deals" hidden>
       <div id="deals"></div>
       <div id="deals-pager"></div>
+    </section>
+    <section data-panel="changes" hidden>
+      <div id="changes"></div>
+      <div id="changes-pager"></div>
     </section>
   </main>
   <script src="/errors.js"></script>

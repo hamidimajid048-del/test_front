@@ -7,7 +7,10 @@ const message = document.getElementById('message');
 const activateButton = document.getElementById('activate');
 let canActivate = false;
 currentAccount().then(me => { canActivate = can(me, 'account-data.activate'); });
-const TABS = ['overview', 'open', 'transfers', 'positions', 'orders', 'deals'];
+const TABS = ['overview', 'open', 'transfers', 'positions', 'orders', 'deals', 'changes'];
+
+// One label per change action the panel records (Mt5ChangeLog); an action without one shows its own name.
+const CHANGE_ACTIONS = { account_enable: 'Account activated' };
 
 let currentTab = 'overview';
 let currentLogin = null;
@@ -115,6 +118,19 @@ const grids = {
       column('comment', 'Comment'),
     ],
   }),
+  changes: createLocalGrid({
+    containerId: 'changes',
+    pagerId: 'changes-pager',
+    sort: { item: 'Time (UTC)', direction: 'Desc' },
+    columns: [
+      utcColumn('occurredAt', 'Time'),
+      column('action', 'Change', value => CHANGE_ACTIONS[value] ?? label(value)),
+      column('succeeded', 'Result', ok => badge(ok ? 'Succeeded' : 'Failed', ok ? 'ok' : 'danger')),
+      column('detail', 'Detail'),
+      column('username', 'By'),
+      column('ipAddress', 'IP'),
+    ],
+  }),
   transfers: createLocalGrid({
     containerId: 'transfers',
     pagerId: 'transfers-pager',
@@ -173,6 +189,9 @@ const TAB_LOADERS = {
   },
   async orders() {
     grids.orders.setRows(await panelRequest('GET', panelPath('/orders')));
+  },
+  async changes() {
+    grids.changes.setRows(await panelRequest('GET', `mt5/account-changes?login=${encodeURIComponent(currentLogin)}`));
   },
   async deals() {
     grids.deals.setRows(await panelRequest('GET', panelPath('/deals')));

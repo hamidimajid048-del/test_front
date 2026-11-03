@@ -2,7 +2,7 @@ namespace Sgb.Trading.Violation.Panel.AccountActivation;
 
 public static class AccountActivationExtensions
 {
-    private const string AuditEvent = "mt5_account_enable";
+    private const string ChangeAction = "account_enable";
 
     public static void AddAccountActivation(this WebApplicationBuilder builder)
     {
@@ -21,7 +21,7 @@ public static class AccountActivationExtensions
         HttpContext context,
         AccountActivationOptions options,
         AccountActivationClient client,
-        PanelAuthStore store,
+        Mt5ChangeLog changeLog,
         ILogger<AccountActivationClient> logger)
     {
         if (!context.Request.Headers.ContainsKey(PanelUserEndpoints.RequestHeader))
@@ -39,14 +39,11 @@ public static class AccountActivationExtensions
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
             logger.LogWarning("Enabling account {Login} failed: {Error}", request.Login, exception.Message);
+            await changeLog.RecordAsync(request.Login, ChangeAction, false, "activation service could not be reached", context);
             return Mt5Extensions.Error(StatusCodes.Status502BadGateway, "The activation service could not be reached.");
         }
 
-        var user = context.User;
-        var info = ClientInfo.From(context);
-        await store.AuditAsync(
-            AuditEvent, user.Identity?.Name, user.GetUserId(), info.IpAddress, info.UserAgent,
-            $"login {request.Login}, answered {result.StatusCode}", CancellationToken.None);
+        await changeLog.RecordAsync(request.Login, ChangeAction, result.Succeeded, $"answered {result.StatusCode}", context);
         logger.LogInformation("Enable request for account {Login} answered {Status}", request.Login, result.StatusCode);
 
         return result.Succeeded

@@ -61,9 +61,15 @@ money or percent.
 
 The Overview tab also has an **Activate account** button. It asks the panel to call the account-enable API
 (`POST {AccountActivation:Url}` with the header `APIKey` and the body `{ "Logins": [login] }`, from the server so the key
-never reaches the browser) through `POST /panel-api/account-activation/enable`; every use is recorded in the audit log
-(`mt5_account_enable`) with the signed-in user. Keep `AccountActivation:ApiKey` in `appsettings.local.json`, user
+never reaches the browser) through `POST /panel-api/account-activation/enable`; every use is recorded in the account change log
+(see below) with the signed-in user. Keep `AccountActivation:ApiKey` in `appsettings.local.json`, user
 secrets or the environment variable `AccountActivation__ApiKey`; without it the endpoint answers 503.
+
+**Account change log:** every change the panel makes to a trading account is stored in
+`violation_panel.mt5_account_changes` (time, login, action, result, detail, who, IP) and shown on the **Changes** tab of the
+Account data page (`account-data.changes` permission; `GET /panel-api/mt5/account-changes?login=`). Activation is the first
+action. A new one (deposit, withdrawal, password change, ...) must call `Mt5ChangeLog.RecordAsync(login, action, succeeded,
+detail, context)` after it runs, whether it worked or not, and get a label in `CHANGE_ACTIONS` in `account-data.js`.
 
 The **Email logins** page (`email-logins.html`) takes an email and an optional UTC day range, finds the logins as above,
 and asks the service for the reports of all those logins together (`login-reports/get-logins-ip-mappings`,
