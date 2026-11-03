@@ -26,6 +26,55 @@ const MENU_ITEMS = [
 ];
 const USERS_PAGE = { href: '/users.html', title: 'Users', permission: 'users.view' };
 
+const TOAST_ICONS = {
+  success: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>',
+  error: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
+};
+const TOAST_SECONDS = { success: 4, error: 8 };
+
+// A short notification in the corner: kind is 'success' or 'error'; detail is an optional second line.
+function toast(title, kind = 'success', detail = '') {
+  if (!title) return;
+  let stack = document.getElementById('toasts');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.id = 'toasts';
+    stack.className = 'toasts';
+    document.body.append(stack);
+  }
+
+  const element = document.createElement('div');
+  element.className = `toast ${kind}`;
+  element.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  icon.innerHTML = TOAST_ICONS[kind] ?? TOAST_ICONS.success;
+  const text = document.createElement('div');
+  text.className = 'toast-text';
+  const heading = document.createElement('strong');
+  heading.textContent = title;
+  text.append(heading);
+  if (detail) {
+    const line = document.createElement('span');
+    line.textContent = detail;
+    text.append(line);
+  }
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'toast-close';
+  close.setAttribute('aria-label', 'Dismiss');
+  close.textContent = '×';
+
+  const dismiss = () => {
+    element.classList.add('leaving');
+    setTimeout(() => element.remove(), 200);
+  };
+  close.addEventListener('click', dismiss);
+  element.append(icon, text, close);
+  stack.append(element);
+  setTimeout(dismiss, (TOAST_SECONDS[kind] ?? 4) * 1000);
+}
+
 class ApiError extends Error {
   // fieldErrors: { fieldName: [messages] } for request values the service could not read (a ValidationError response).
   // reason: the service's failure reason (status.description), such as "AccountNotFound", when there is one.

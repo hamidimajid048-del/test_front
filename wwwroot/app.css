@@ -674,3 +674,17 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .switch:hover:not(:disabled) { filter: brightness(1.08); }
 .switch:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 640px) { .control { grid-template-columns: 1fr auto; } .control-state { grid-column: 1; } .switch { grid-row: 1; grid-column: 2; } }
+
+/* ---------- Notifications ---------- */
+
+.toasts { position: fixed; top: 76px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 10px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.toast { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 12px 14px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-inline-start: 4px solid var(--success); border-radius: 12px; box-shadow: var(--shadow-md); pointer-events: auto; animation: toast-in .2s ease; }
+.toast.error { border-inline-start-color: var(--danger); }
+.toast.leaving { opacity: 0; transform: translateX(12px); transition: opacity .2s ease, transform .2s ease; }
+.toast-icon svg { display: block; width: 22px; height: 22px; fill: none; stroke: var(--success); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.toast.error .toast-icon svg { stroke: var(--danger); }
+.toast-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13.5px; }
+.toast-text span { color: var(--text-muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.toast-close { width: 24px; height: 24px; padding: 0; color: var(--text-faint); background: none; border: 0; font-size: 18px; line-height: 1; }
+.toast-close:hover:not(:disabled) { color: var(--text); background: none; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }

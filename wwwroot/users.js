@@ -23,9 +23,8 @@ let catalog = { permissions: [], presets: [] };
 let createAccess = null;
 let accessEditor = null;
 
-function showMessage(text, kind = '') {
-  message.className = kind ? `message ${kind}` : 'message';
-  message.textContent = text;
+function showMessage(text, kind = 'success') {
+  toast(text, kind);
 }
 
 function showTab(tab) {

@@ -5,9 +5,8 @@ const ROLE_NAMES = { superadmin: 'Super admin', admin: 'Admin' };
 const message = document.getElementById('message');
 const form = document.getElementById('password-form');
 
-function showMessage(text, kind = '') {
-  message.className = kind ? `message ${kind}` : 'message';
-  message.textContent = text;
+function showMessage(text, kind = 'success') {
+  toast(text, kind);
 }
 
 form.addEventListener('submit', async event => {

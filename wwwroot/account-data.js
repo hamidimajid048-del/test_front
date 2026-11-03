@@ -294,13 +294,12 @@ async function changeSwitch(definition, enabled, toggle) {
   const login = currentLogin;
   clearMessages(form, message);
   toggle.disabled = true;
-  message.textContent = 'Saving...';
   try {
     await panelRequest('POST', 'mt5/account-switch', { login: Number(login), switch: definition.api, enabled });
     await search(login);
-    message.textContent = `${definition.title} ${enabled ? 'enabled' : 'disabled'}`;
+    toast(`${definition.title} ${enabled ? 'enabled' : 'disabled'}`, 'success', `Account ${login}`);
   } catch (error) {
-    showError(form, message, error instanceof ApiError ? error : new ApiError(UNAVAILABLE_MESSAGE));
+    toast(`${definition.title} was not changed`, 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
     toggle.disabled = false;
   }
 }
