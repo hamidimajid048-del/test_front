@@ -24,42 +24,52 @@ public static class PanelUserEndpoints
         api.MapGet("/me", (HttpContext context) =>
         {
             var user = CurrentUser(context);
-            return Results.Ok(new { id = user.Id, username = user.Username, role = user.Role });
+            return Results.Ok(new { id = user.Id, username = user.Username, role = user.Role, permissions = user.EffectivePermissions });
         });
 
-        api.MapPost("/account/password", ChangeOwnPasswordAsync);
+        api.MapPost("/account/password", ChangeOwnPasswordAsync).RequirePermission(PanelPermissions.AccountChangePassword);
 
-        var users = api.MapGroup("/users").AddEndpointFilter(RequireSuperAdmin);
+        api.MapGet("/permissions", () => Results.Ok(new { permissions = PanelPermissions.All, presets = PanelPermissions.Presets }))
+            .RequirePermission(PanelPermissions.UsersView);
+
+        var users = api.MapGroup("/users");
         users.MapGet("", async (HttpContext context, PanelAuthStore store) =>
-        {
-            var self = CurrentUser(context);
-            return Results.Ok((await store.ListUsersAsync(context.RequestAborted)).Select(user => ToResponse(user, self)));
-        });
-        users.MapPost("", CreateUserAsync);
-        users.MapPost("/{id:guid}/password", ResetPasswordAsync);
-        users.MapPost("/{id:guid}/two-factor", ResetTwoFactorAsync);
-        users.MapPost("/{id:guid}/role", ChangeRoleAsync);
-        users.MapPost("/{id:guid}/unlock", (Guid id, HttpContext context, PanelAuthStore store) =>
-            ChangeUserAsync(id, context, store, "account_unlocked", allowSelf: true, (user, token) => store.UnlockAsync(user.Id, token)));
-        users.MapPost("/{id:guid}/disable", (Guid id, HttpContext context, PanelAuthStore store) =>
-            ChangeUserAsync(id, context, store, "account_disabled", allowSelf: false, async (user, token) =>
             {
-                await store.SetDisabledAsync(user.Id, true, token);
-                await store.RevokeUserSessionsAsync(user.Id, token);
-            }));
+                var self = CurrentUser(context);
+                return Results.Ok((await store.ListUsersAsync(context.RequestAborted)).Select(user => ToResponse(user, self)));
+            })
+            .RequirePermission(PanelPermissions.UsersView);
+        users.MapPost("", CreateUserAsync).RequirePermission(PanelPermissions.UsersCreate);
+        users.MapPost("/{id:guid}/password", ResetPasswordAsync).RequirePermission(PanelPermissions.UsersResetCredentials);
+        users.MapPost("/{id:guid}/two-factor", ResetTwoFactorAsync).RequirePermission(PanelPermissions.UsersResetCredentials);
+        users.MapPost("/{id:guid}/permissions", ChangePermissionsAsync).RequirePermission(PanelPermissions.UsersEditPermissions);
+        users.MapPost("/{id:guid}/role", ChangeRoleAsync).AddEndpointFilter(RequireSuperAdmin);
+        users.MapPost("/{id:guid}/unlock", (Guid id, HttpContext context, PanelAuthStore store) =>
+                ChangeUserAsync(id, context, store, "account_unlocked", allowSelf: true, (user, token) => store.UnlockAsync(user.Id, token)))
+            .RequirePermission(PanelPermissions.UsersManageState);
+        users.MapPost("/{id:guid}/disable", (Guid id, HttpContext context, PanelAuthStore store) =>
+                ChangeUserAsync(id, context, store, "account_disabled", allowSelf: false, async (user, token) =>
+                {
+                    await store.SetDisabledAsync(user.Id, true, token);
+                    await store.RevokeUserSessionsAsync(user.Id, token);
+                }))
+            .RequirePermission(PanelPermissions.UsersManageState);
         users.MapPost("/{id:guid}/enable", (Guid id, HttpContext context, PanelAuthStore store) =>
-            ChangeUserAsync(id, context, store, "account_enabled", allowSelf: false, (user, token) => store.SetDisabledAsync(user.Id, false, token)));
+                ChangeUserAsync(id, context, store, "account_enabled", allowSelf: false, (user, token) => store.SetDisabledAsync(user.Id, false, token)))
+            .RequirePermission(PanelPermissions.UsersManageState);
         users.MapPost("/{id:guid}/revoke-sessions", (Guid id, HttpContext context, PanelAuthStore store) =>
-            ChangeUserAsync(id, context, store, "sessions_revoked", allowSelf: false, (user, token) => store.RevokeUserSessionsAsync(user.Id, token)));
+                ChangeUserAsync(id, context, store, "sessions_revoked", allowSelf: false, (user, token) => store.RevokeUserSessionsAsync(user.Id, token)))
+            .RequirePermission(PanelPermissions.UsersManageState);
         users.MapDelete("/{id:guid}", (Guid id, HttpContext context, PanelAuthStore store) =>
-            ChangeUserAsync(id, context, store, "user_deleted", allowSelf: false, (user, token) => store.DeleteUserAsync(user.Id, token)));
+                ChangeUserAsync(id, context, store, "user_deleted", allowSelf: false, (user, token) => store.DeleteUserAsync(user.Id, token)))
+            .RequirePermission(PanelPermissions.UsersDelete);
 
         api.MapGet("/audit", async (string? username, int? limit, PanelAuthStore store, HttpContext context) =>
                 Results.Ok(await store.ListAuditAsync(
                     string.IsNullOrWhiteSpace(username) ? null : username.Trim(),
                     Math.Clamp(limit ?? 200, 1, MaxAuditEntries),
                     context.RequestAborted)))
-            .AddEndpointFilter(RequireSuperAdmin);
+            .RequirePermission(PanelPermissions.AuditView);
     }
 
     // Reads the signed-in account from the database on every request, so a role change, a disabled account or a
@@ -82,7 +92,7 @@ public static class PanelUserEndpoints
     private static async ValueTask<object?> RequireSuperAdmin(EndpointFilterInvocationContext invocation, EndpointFilterDelegate next) =>
         CurrentUser(invocation.HttpContext).IsSuperAdmin
             ? await next(invocation)
-            : Error(StatusCodes.Status403Forbidden, "Only a super admin can manage accounts.");
+            : Error(StatusCodes.Status403Forbidden, "Only a super admin can change roles.");
 
     private static PanelUser CurrentUser(HttpContext context) => (PanelUser)context.Items[CurrentUserItem]!;
 
@@ -130,13 +140,26 @@ public static class PanelUserEndpoints
             return Error(StatusCodes.Status400BadRequest, problem);
         if (!PanelRoles.IsValid(role))
             return Error(StatusCodes.Status400BadRequest, "The role is not valid.");
+        if (role == PanelRoles.SuperAdmin && !actor.IsSuperAdmin)
+            return Error(StatusCodes.Status403Forbidden, "Only a super admin can add a super admin.");
+
+        var permissions = Array.Empty<string>();
+        if (role == PanelRoles.Admin)
+        {
+            if (ValidatePermissions(request.Permissions) is { } invalid)
+                return Error(StatusCodes.Status400BadRequest, invalid);
+
+            permissions = PanelPermissions.Normalize(request.Permissions!);
+            if (CheckGrant(actor, [], permissions) is { } denied)
+                return Error(StatusCodes.Status403Forbidden, denied);
+        }
 
         var id = Guid.CreateVersion7();
         var secret = Totp.GenerateSecret();
-        if (!await store.CreateUserAsync(id, username, PanelSignInService.HashPassword(password), secret, role, context.RequestAborted))
+        if (!await store.CreateUserAsync(id, username, PanelSignInService.HashPassword(password), secret, role, permissions, context.RequestAborted))
             return Error(StatusCodes.Status409Conflict, $"An account named '{username}' already exists.");
 
-        await AuditAsync(context, store, "user_created", username, id, $"role {role}, by {actor.Username}");
+        await AuditAsync(context, store, "user_created", username, id, $"role {role}, {permissions.Length} permissions, by {actor.Username}");
         return Results.Ok(new { id, username, twoFactor = TwoFactorSetup(username, secret) });
     }
 
@@ -175,10 +198,42 @@ public static class PanelUserEndpoints
                 return Error(StatusCodes.Status400BadRequest, "The role is not valid.");
 
             await store.SetRoleAsync(user.Id, request.Role!, token);
-            // A demoted super admin's open pages must not keep their old rights.
+            if (request.Role == PanelRoles.Admin && user.Permissions.Length == 0)
+                await store.SetPermissionsAsync(user.Id, [.. PanelPermissions.DefaultPreset.Permissions], token);
             await store.RevokeUserSessionsAsync(user.Id, token);
             return null;
-        }, detailPrefix: request.Role);
+        }, describe: () => request.Role);
+
+    private static Task<IResult> ChangePermissionsAsync(Guid id, ChangePermissionsRequest request, HttpContext context, PanelAuthStore store)
+    {
+        string? change = null;
+        return ChangeUserAsync(id, context, store, "permissions_changed", allowSelf: false, async (user, token) =>
+        {
+            if (user.IsSuperAdmin)
+                return Error(StatusCodes.Status400BadRequest, "A super admin always has every permission.");
+            if (ValidatePermissions(request.Permissions) is { } invalid)
+                return Error(StatusCodes.Status400BadRequest, invalid);
+
+            var permissions = PanelPermissions.Normalize(request.Permissions!);
+            if (CheckGrant(CurrentUser(context), user.Permissions, permissions) is { } denied)
+                return Error(StatusCodes.Status403Forbidden, denied);
+
+            await store.SetPermissionsAsync(user.Id, permissions, token);
+            change = string.Join(' ', permissions.Except(user.Permissions).Select(key => $"+{key}")
+                .Concat(user.Permissions.Except(permissions).Select(key => $"-{key}")));
+            return null;
+        }, describe: () => change);
+    }
+
+    private static string? ValidatePermissions(string[]? permissions) =>
+        permissions is null ? "Choose the permissions."
+        : permissions.FirstOrDefault(key => !PanelPermissions.IsKnown(key)) is { } unknown ? $"'{unknown}' is not a permission."
+        : null;
+
+    private static string? CheckGrant(PanelUser actor, IEnumerable<string> before, IEnumerable<string> after) =>
+        before.Except(after).Concat(after.Except(before)).Any(key => !actor.EffectivePermissions.Contains(key))
+            ? "You can only grant or remove permissions that you have yourself."
+            : null;
 
     private static Task<IResult> ChangeUserAsync(Guid id, HttpContext context, PanelAuthStore store, string auditEvent,
         bool allowSelf, Func<PanelUser, CancellationToken, Task> change) =>
@@ -194,7 +249,7 @@ public static class PanelUserEndpoints
     /// the change and records it. The change returns an error result, or null on success.
     /// </summary>
     private static async Task<IResult> ChangeUserAsync(Guid id, HttpContext context, PanelAuthStore store, string auditEvent,
-        bool allowSelf, Func<PanelUser, CancellationToken, Task<IResult?>> change, string? detailPrefix = null)
+        bool allowSelf, Func<PanelUser, CancellationToken, Task<IResult?>> change, Func<string?>? describe = null)
     {
         var actor = CurrentUser(context);
         if (!allowSelf && id == actor.Id)
@@ -205,11 +260,14 @@ public static class PanelUserEndpoints
         if (user is null)
             return Error(StatusCodes.Status404NotFound, "The account no longer exists.");
 
+        if (user.IsSuperAdmin && !actor.IsSuperAdmin)
+            return Error(StatusCodes.Status403Forbidden, "Only a super admin can change a super admin.");
+
         if (await change(user, context.RequestAborted) is { } error)
             return error;
 
         await AuditAsync(context, store, auditEvent, user.Username, user.Id,
-            detailPrefix is null ? $"by {actor.Username}" : $"{detailPrefix}, by {actor.Username}");
+            describe?.Invoke() is { Length: > 0 } detail ? $"{detail}, by {actor.Username}" : $"by {actor.Username}");
         return Results.NoContent();
     }
 
@@ -230,7 +288,8 @@ public static class PanelUserEndpoints
         activeSessions = user.ActiveSessions,
         lastSignInAt = user.LastSignInAt,
         createdAt = user.CreatedAt,
-        isSelf = user.Id == self.Id
+        isSelf = user.Id == self.Id,
+        permissions = user.EffectivePermissions
     };
 
     private static Task AuditAsync(HttpContext context, PanelAuthStore store, string auditEvent, string username, Guid userId, string detail)
@@ -242,7 +301,8 @@ public static class PanelUserEndpoints
     private static IResult Error(int statusCode, string message) => Results.Json(new { error = message }, statusCode: statusCode);
 
     private sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
-    private sealed record CreateUserRequest(string? Username, string? Password, string? Role);
+    private sealed record CreateUserRequest(string? Username, string? Password, string? Role, string[]? Permissions);
     private sealed record ResetPasswordRequest(string? Password);
     private sealed record ChangeRoleRequest(string? Role);
+    private sealed record ChangePermissionsRequest(string[]? Permissions);
 }

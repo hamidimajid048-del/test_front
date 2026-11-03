@@ -263,6 +263,7 @@ section {
   box-shadow: var(--shadow-sm);
 }
 section[hidden] { display: none; }
+.nav-link[hidden], [data-permission][hidden], [data-export][hidden] { display: none !important; }
 section form.filters { padding: 0; border: 0; box-shadow: none; background: none; }
 
 .section-head { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
@@ -635,3 +636,19 @@ button[aria-pressed="true"] { font-weight: 600; outline: 2px solid currentColor;
 .chart-cursor { stroke: var(--border-strong); stroke-width: 1; }
 .chart-dot { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
 .chart-tip { fill: var(--text); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+
+/* ---------- Access editor (Users page) ---------- */
+
+.access-host { grid-column: 1 / -1; }
+.access-host:empty { display: none; }
+dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; }
+.access-editor { display: flex; flex-direction: column; gap: 12px; }
+.access-editor .access-preset { display: flex; flex-direction: row; align-items: center; gap: 10px; margin: 0; max-width: 360px; }
+.access-editor .access-preset select { flex: 1; }
+.access-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.access-group { margin: 0; padding: 10px 14px 12px; border: 1px solid var(--border); border-radius: 12px; }
+.access-group legend { padding: 0 6px; color: var(--text-muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.access-editor label.access-item { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: start; margin: 6px 0; color: var(--text); font-size: 13px; font-weight: 500; cursor: pointer; }
+.access-editor label.access-item input { width: auto; height: auto; margin-top: 3px; }
+.access-editor label.access-item .access-note { grid-column: 2; color: var(--text-muted); font-size: 12px; font-weight: 400; }
+.access-editor label.access-item.locked { opacity: .55; cursor: not-allowed; }

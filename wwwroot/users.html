@@ -15,21 +15,23 @@
 
     <div class="tabs" id="tabs">
       <button type="button" data-tab="accounts">Accounts</button>
-      <button type="button" data-tab="audit">Audit log</button>
+      <button type="button" data-tab="audit" data-permission="audit.view">Audit log</button>
     </div>
 
     <section data-panel="accounts">
+      <div data-permission="users.create">
       <div class="section-head"><h2>Add an account</h2></div>
       <form class="filters" id="create-form" autocomplete="off">
         <label>Username <input name="username" maxlength="64" required autocomplete="off"></label>
         <label>Password <input name="password" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
         <label>Repeat password <input name="confirm" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
         <label>Role
-          <select name="role">
-            <option value="admin">Admin (reports)</option>
-            <option value="superadmin">Super admin (reports and accounts)</option>
+          <select name="role" id="create-role">
+            <option value="admin">Admin (access chosen below)</option>
+            <option value="superadmin">Super admin (every permission)</option>
           </select>
         </label>
+        <div class="access-host" id="create-access"></div>
         <button type="submit">Add account</button>
         <p class="form-note">The new account signs in with this password and an authenticator code; its key is shown once, after it is created.</p>
       </form>
@@ -50,6 +52,8 @@
           </div>
           <p class="form-note">This key is shown only now. Give it to the account's owner over a private channel.</p>
         </div>
+      </div>
+
       </div>
 
       <div class="section-head" style="margin-top: 24px"><h2>Accounts</h2></div>
@@ -82,6 +86,19 @@
       <div class="dialog-buttons">
         <button type="button" id="password-cancel">Cancel</button>
         <button type="submit">Set password</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="panel-dialog access-dialog" id="access-dialog">
+    <form method="dialog" id="access-form">
+      <h3 id="access-dialog-title">Edit access</h3>
+      <p>Changes apply at once; the account does not have to sign in again.</p>
+      <div class="access-host" id="access-editor"></div>
+      <p class="message error" id="access-dialog-error"></p>
+      <div class="dialog-buttons">
+        <button type="button" id="access-cancel">Cancel</button>
+        <button type="submit">Save access</button>
       </div>
     </form>
   </dialog>

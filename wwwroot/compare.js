@@ -385,6 +385,7 @@ function showPanel() {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = text;
+      hideUnlessAllowed(button, 'reports.export');
       button.addEventListener('click', () => {
         downloadExport(
           `${COMPARE_PATH}/export-${tab.exportPath}`,

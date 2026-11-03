@@ -69,8 +69,12 @@ builder.Services
             var token = context.Principal?.FindFirstValue(PanelClaims.Session);
             var store = context.HttpContext.RequestServices.GetRequiredService<PanelAuthStore>();
             if (token is not null &&
-                await store.TouchSessionAsync(PanelSignInService.HashSessionToken(token), authOptions.IdleTimeout))
+                await store.TouchSessionAsync(PanelSignInService.HashSessionToken(token), authOptions.IdleTimeout) is { } access)
+            {
+                context.Principal!.AddIdentity(new ClaimsIdentity(
+                    PanelPermissions.Effective(access.Role, access.Permissions).Select(key => new Claim(PanelClaims.Permission, key))));
                 return;
+            }
 
             context.RejectPrincipal();
             await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -237,6 +241,7 @@ app.UseWhen(
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+app.UseMiddleware<PanelApiAccessMiddleware>();
 
 app.UseDefaultFiles();
 app.UseStaticFiles(staticFiles);

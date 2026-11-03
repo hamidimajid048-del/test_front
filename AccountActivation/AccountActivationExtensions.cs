@@ -13,7 +13,7 @@ public static class AccountActivationExtensions
 
     public static void MapAccountActivationEndpoints(this WebApplication app)
     {
-        app.MapPost($"{PanelUserEndpoints.Prefix}/account-activation/enable", EnableAsync);
+        app.MapPost($"{PanelUserEndpoints.Prefix}/account-activation/enable", EnableAsync).RequirePermission(PanelPermissions.AccountDataActivate);
     }
 
     private static async Task<IResult> EnableAsync(

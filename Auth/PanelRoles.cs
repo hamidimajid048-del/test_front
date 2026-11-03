@@ -1,6 +1,6 @@
 namespace Sgb.Trading.Violation.Panel.Auth;
 
-/// <summary>Account roles: a super admin also manages the accounts; an admin sees the reports only.</summary>
+/// <summary>Account roles: a super admin always has every permission; an admin has only the permissions granted to it.</summary>
 public static class PanelRoles
 {
     public const string SuperAdmin = "superadmin";

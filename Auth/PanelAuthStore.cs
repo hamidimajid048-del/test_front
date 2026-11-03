@@ -12,9 +12,12 @@ public sealed record PanelUser(
     DateTime CreatedAt,
     DateTime? LastSignInAt,
     string Role,
-    int ActiveSessions)
+    int ActiveSessions,
+    string[] Permissions)
 {
     public bool IsSuperAdmin => Role == PanelRoles.SuperAdmin;
+
+    public IReadOnlyList<string> EffectivePermissions => PanelPermissions.Effective(Role, Permissions);
 }
 
 public sealed record PanelAuditEntry(
@@ -36,10 +39,13 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
         "id, username, password_hash, totp_secret, totp_last_step, failed_attempts, " +
         "coalesce(locked_until > now(), false), is_disabled, created_at, last_sign_in_at, role, " +
         "(SELECT count(*)::int FROM violation_panel.sessions s " +
-        "WHERE s.user_id = users.id AND s.revoked_at IS NULL AND s.expires_at > now())";
+        "WHERE s.user_id = users.id AND s.revoked_at IS NULL AND s.expires_at > now()), permissions";
 
     // Names of databases the panel must never use: the node database the Violation reports are read from, and the
     // PostgreSQL system databases.
+    private static readonly string ExistingAdminPermissions =
+        $"ARRAY[{string.Join(", ", PanelPermissions.ForExistingAdmins.Select(key => $"'{key}'"))}]::text[]";
+
     private static readonly string[] ForbiddenDatabases = ["sgb_node", "postgres", "template0", "template1"];
 
     /// <summary>
@@ -79,7 +85,7 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
     {
         await EnsureDedicatedDatabaseAsync(cancellationToken);
         await using var command = dataSource.CreateCommand(
-            """
+            $$"""
             CREATE SCHEMA IF NOT EXISTS violation_panel;
 
             CREATE TABLE IF NOT EXISTS violation_panel.users (
@@ -128,6 +134,14 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
             INSERT INTO violation_panel.audit_log (event, username, user_id, detail)
             SELECT 'role_changed', username, id, 'superadmin: oldest account promoted when roles were introduced' FROM promoted;
 
+            -- Permissions: what an admin may do (a super admin always may everything). Admins made before permissions
+            -- existed keep what they could do then: everything except managing accounts.
+            ALTER TABLE violation_panel.users ADD COLUMN IF NOT EXISTS permissions text[] NULL;
+            UPDATE violation_panel.users SET permissions = {{ExistingAdminPermissions}} WHERE permissions IS NULL AND role = 'admin';
+            UPDATE violation_panel.users SET permissions = '{}' WHERE permissions IS NULL;
+            ALTER TABLE violation_panel.users ALTER COLUMN permissions SET NOT NULL;
+            ALTER TABLE violation_panel.users ALTER COLUMN permissions SET DEFAULT '{}';
+
             -- Ended sessions are kept for a month for investigations, then removed.
             DELETE FROM violation_panel.sessions WHERE expires_at < now() - interval '30 days';
             """);
@@ -171,11 +185,11 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
 
     /// <summary>Creates the account; returns false when the username is taken (case-insensitive).</summary>
     public async Task<bool> CreateUserAsync(Guid id, string username, string passwordHash, string totpSecret, string role,
-        CancellationToken cancellationToken = default)
+        string[] permissions, CancellationToken cancellationToken = default)
     {
         await using var command = dataSource.CreateCommand(
             """
-            INSERT INTO violation_panel.users (id, username, password_hash, totp_secret, role) VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO violation_panel.users (id, username, password_hash, totp_secret, role, permissions) VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT DO NOTHING
             """);
         command.Parameters.AddWithValue(id);
@@ -183,11 +197,15 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
         command.Parameters.AddWithValue(passwordHash);
         command.Parameters.AddWithValue(totpSecret);
         command.Parameters.AddWithValue(role);
+        command.Parameters.AddWithValue(permissions);
         return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
     }
 
     public Task SetRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default) =>
         ExecuteAsync("UPDATE violation_panel.users SET role = $2 WHERE id = $1", cancellationToken, userId, role);
+
+    public Task SetPermissionsAsync(Guid userId, string[] permissions, CancellationToken cancellationToken = default) =>
+        ExecuteAsync("UPDATE violation_panel.users SET permissions = $2 WHERE id = $1", cancellationToken, userId, permissions);
 
     /// <summary>Deletes the account and its sessions; its audit entries stay, by username.</summary>
     public Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
@@ -297,10 +315,10 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
     }
 
     /// <summary>
-    /// Marks the session as used now and returns true when it is still valid: not revoked, within its lifetime, used
-    /// within the idle timeout, and its user is not disabled.
+    /// Marks the session as used now and returns the account's role and permissions when it is still valid: not revoked,
+    /// within its lifetime, used within the idle timeout, and its user is not disabled. Otherwise null.
     /// </summary>
-    public async Task<bool> TouchSessionAsync(byte[] tokenHash, TimeSpan idleTimeout, CancellationToken cancellationToken = default)
+    public async Task<PanelSessionAccess?> TouchSessionAsync(byte[] tokenHash, TimeSpan idleTimeout, CancellationToken cancellationToken = default)
     {
         await using var command = dataSource.CreateCommand(
             """
@@ -309,10 +327,14 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
             FROM violation_panel.users AS u
             WHERE s.token_hash = $1 AND u.id = s.user_id AND NOT u.is_disabled
               AND s.revoked_at IS NULL AND s.expires_at > now() AND s.last_seen_at > now() - $2
+            RETURNING u.role, u.permissions
             """);
         command.Parameters.AddWithValue(tokenHash);
         command.Parameters.AddWithValue(idleTimeout);
-        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken)
+            ? new PanelSessionAccess(reader.GetString(0), reader.GetFieldValue<string[]>(1))
+            : null;
     }
 
     public Task RevokeSessionAsync(byte[] tokenHash, CancellationToken cancellationToken = default) =>
@@ -366,5 +388,6 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
         reader.GetDateTime(8),
         reader.IsDBNull(9) ? null : reader.GetDateTime(9),
         reader.GetString(10),
-        reader.GetInt32(11));
+        reader.GetInt32(11),
+        reader.GetFieldValue<string[]>(12));
 }

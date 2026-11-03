@@ -11,16 +11,20 @@ const PAGE_SIZES = [50, 100, 250, 500, 1000, 2000];
 // A 401 means the panel session or the admin's Identity token ended; the panel signs out and asks for a new sign-in.
 const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
+const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
+
+// Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
 const MENU_ITEMS = [
-  { href: '/account-data.html', title: 'Account data' },
-  { href: '/logins.html', title: 'Login history' },
-  { href: '/email-logins.html', title: 'Email logins' },
-  { href: '/similarity.html', title: 'IP/CID similarity' },
-  { href: '/value-search.html', title: 'CID / IP search' },
-  { href: '/copy-trade.html', title: 'Copy trade & hedge' },
-  { href: '/compare.html', title: 'Compare accounts' },
-  { href: '/compare-emails.html', title: 'Compare emails' },
+  { href: '/account-data.html', title: 'Account data', permission: 'account-data.view' },
+  { href: '/logins.html', title: 'Login history', permission: 'logins.view' },
+  { href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view' },
+  { href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view' },
+  { href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view' },
+  { href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view' },
+  { href: '/compare.html', title: 'Compare accounts', permission: 'compare.view' },
+  { href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view' },
 ];
+const USERS_PAGE = { href: '/users.html', title: 'Users', permission: 'users.view' };
 
 class ApiError extends Error {
   // fieldErrors: { fieldName: [messages] } for request values the service could not read (a ValidationError response).
@@ -74,6 +78,7 @@ async function apiGet(path, params) {
     location.href = SESSION_EXPIRED_PAGE;
     throw new ApiError('');
   }
+  if (response.status === 403) throw new ApiError(FORBIDDEN_MESSAGE);
 
   let body = null;
   try {
@@ -116,6 +121,7 @@ async function downloadExport(path, params, button, messageElement) {
       location.href = SESSION_EXPIRED_PAGE;
       return;
     }
+    if (response.status === 403) throw new ApiError(FORBIDDEN_MESSAGE);
     const contentType = response.headers.get('Content-Type') ?? '';
     if (response.ok && !contentType.includes('json')) {
       const url = URL.createObjectURL(await response.blob());
@@ -176,6 +182,7 @@ function renderMenu() {
     link.className = 'nav-link';
     link.href = item.href;
     link.textContent = item.title;
+    link.hidden = true;
     if (location.pathname === item.href) link.classList.add('active');
     return link;
   });
@@ -215,19 +222,49 @@ function renderMenu() {
   currentAccount().then(me => {
     if (!me) return;
     signedInAs.textContent = me.username;
-    if (me.role !== 'superadmin') return;
-    const users = document.createElement('a');
-    users.className = 'nav-link';
-    users.href = '/users.html';
-    users.textContent = 'Users';
-    if (location.pathname === '/users.html') users.classList.add('active');
-    actions.before(users);
+    MENU_ITEMS.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
+    if (can(me, USERS_PAGE.permission)) {
+      const users = document.createElement('a');
+      users.className = 'nav-link';
+      users.href = USERS_PAGE.href;
+      users.textContent = USERS_PAGE.title;
+      if (location.pathname === USERS_PAGE.href) users.classList.add('active');
+      actions.before(users);
+    }
+    applyPermissions(me);
+    guardPage(me);
   });
+}
+
+function can(me, permission) {
+  return Boolean(me) && me.permissions.includes(permission);
+}
+
+// Hides what the account may not use: elements marked data-permission="key", and the export buttons.
+function applyPermissions(me) {
+  for (const element of document.querySelectorAll('[data-permission]'))
+    if (!can(me, element.dataset.permission)) element.hidden = true;
+  if (!can(me, 'reports.export'))
+    for (const button of document.querySelectorAll('[data-export]')) button.hidden = true;
+}
+
+// For elements a page creates after the menu is drawn.
+function hideUnlessAllowed(element, permission) {
+  currentAccount().then(me => { if (!can(me, permission)) element.hidden = true; });
+}
+
+function guardPage(me) {
+  const needed = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.permission;
+  if (!needed || can(me, needed)) return;
+  const notice = document.createElement('p');
+  notice.className = 'message error';
+  notice.textContent = 'Your account does not have access to this page.';
+  document.querySelector('main').replaceChildren(notice);
 }
 
 let currentAccountRequest;
 
-// The signed-in account ({ id, username, role }), or null when it cannot be read.
+// The signed-in account ({ id, username, role, permissions }), or null when it cannot be read.
 function currentAccount() {
   currentAccountRequest ??= fetch('/panel-api/me', { headers: { Accept: 'application/json' } })
     .then(response => response.ok ? response.json() : null)

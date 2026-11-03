@@ -5,6 +5,8 @@
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const activateButton = document.getElementById('activate');
+let canActivate = false;
+currentAccount().then(me => { canActivate = can(me, 'account-data.activate'); });
 const TABS = ['overview', 'open', 'transfers', 'positions', 'orders', 'deals'];
 
 let currentTab = 'overview';
@@ -211,7 +213,7 @@ function renderOverview(data) {
   ];
   if (data.source === 'Archive') badges.push(badge('Deleted account (archive)', 'warn'));
   status.replaceChildren(inline(...badges));
-  activateButton.hidden = false;
+  activateButton.hidden = !canActivate;
   activateButton.disabled = data.source === 'Archive';
   activateButton.title = data.source === 'Archive' ? 'A deleted account cannot be activated' : '';
 

@@ -39,5 +39,6 @@ renderMenu();
 currentAccount().then(me => {
   if (!me) return;
   form.elements.username.value = me.username;
-  renderSummary(document.getElementById('account'), [['Account', me.username], ['Role', ROLE_NAMES[me.role] ?? me.role]]);
+  renderSummary(document.getElementById('account'), [['Account', me.username], ['Role', ROLE_NAMES[me.role] ?? me.role],
+    ['Access', me.role === 'superadmin' ? 'Every permission' : `${me.permissions.length} permissions`]]);
 });

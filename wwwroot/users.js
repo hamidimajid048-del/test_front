@@ -1,4 +1,5 @@
-// Users page: super admins add, change and remove panel accounts, and read the sign-in audit log.
+// Users page: add, change and remove panel accounts, choose what each account may do, and read the sign-in audit log.
+// Which of these an account sees depends on its permissions; the server enforces the same rules.
 
 const message = document.getElementById('message');
 const createForm = document.getElementById('create-form');
@@ -11,7 +12,16 @@ const passwordError = document.getElementById('password-dialog-error');
 const ROLE_LABELS = { superadmin: 'Super admin', admin: 'Admin' };
 const STATE_BADGES = { active: ['Active', 'ok'], locked: ['Locked', 'warn'], disabled: ['Disabled', 'danger'] };
 
+const accessDialog = document.getElementById('access-dialog');
+const accessForm = document.getElementById('access-form');
+const accessError = document.getElementById('access-dialog-error');
+
 let passwordTarget = null;
+let accessTarget = null;
+let me = null;
+let catalog = { permissions: [], presets: [] };
+let createAccess = null;
+let accessEditor = null;
 
 function showMessage(text, kind = '') {
   message.className = kind ? `message ${kind}` : 'message';
@@ -63,6 +73,90 @@ async function runAction(confirmText, action, doneText) {
   }
 }
 
+// A preset picker and the permissions as grouped checkboxes. Permissions the signed-in account does not have itself are
+// shown but locked, because nobody can hand out more than they hold. Choosing a permission also chooses what it needs.
+function createAccessEditor(host) {
+  const boxes = new Map();
+  const root = document.createElement('div');
+  root.className = 'access-editor';
+
+  const presetLabel = document.createElement('label');
+  presetLabel.className = 'access-preset';
+  const presetSelect = document.createElement('select');
+  presetLabel.append('Start from', presetSelect);
+  presetSelect.append(new Option('Custom', ''));
+  for (const preset of catalog.presets) presetSelect.append(new Option(`${preset.title} — ${preset.description}`, preset.key));
+
+  const groups = document.createElement('div');
+  groups.className = 'access-groups';
+  for (const groupName of [...new Set(catalog.permissions.map(permission => permission.group))]) {
+    const group = document.createElement('fieldset');
+    group.className = 'access-group';
+    const legend = document.createElement('legend');
+    legend.textContent = groupName;
+    group.append(legend);
+    for (const permission of catalog.permissions.filter(item => item.group === groupName)) {
+      const label = document.createElement('label');
+      label.className = 'access-item';
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.disabled = !can(me, permission.key);
+      label.classList.toggle('locked', box.disabled);
+      box.addEventListener('change', () => { settle(permission.key); showPreset(); });
+      const note = document.createElement('span');
+      note.className = 'access-note';
+      note.textContent = permission.description;
+      label.append(box, permission.title, note);
+      group.append(label);
+      boxes.set(permission.key, box);
+    }
+    groups.append(group);
+  }
+
+  function settle(changedKey) {
+    const changed = boxes.get(changedKey);
+    for (const permission of catalog.permissions) {
+      if (changed.checked && permission.key === changedKey && permission.requires && !boxes.get(permission.requires).disabled)
+        boxes.get(permission.requires).checked = true;
+      if (!changed.checked && permission.requires === changedKey && !boxes.get(permission.key).disabled)
+        boxes.get(permission.key).checked = false;
+    }
+  }
+
+  function selected() {
+    return catalog.permissions.filter(permission => boxes.get(permission.key).checked).map(permission => permission.key);
+  }
+
+  function showPreset() {
+    const current = selected().join();
+    presetSelect.value = catalog.presets.find(preset => preset.permissions.join() === current)?.key ?? '';
+  }
+
+  function apply(keys) {
+    for (const [key, box] of boxes) if (!box.disabled) box.checked = keys.includes(key);
+    for (const permission of catalog.permissions)
+      if (boxes.get(permission.key).checked && permission.requires && !boxes.get(permission.requires).disabled)
+        boxes.get(permission.requires).checked = true;
+    showPreset();
+  }
+
+  presetSelect.addEventListener('change', () => {
+    const preset = catalog.presets.find(item => item.key === presetSelect.value);
+    if (preset) apply(preset.permissions);
+  });
+
+  root.append(presetLabel, groups);
+  host.replaceChildren(root);
+  return {
+    get: selected,
+    set(keys) {
+      for (const [key, box] of boxes) box.checked = keys.includes(key);
+      showPreset();
+    },
+    apply,
+  };
+}
+
 function userActions(user) {
   const actions = document.createElement('div');
   actions.className = 'actions';
@@ -71,48 +165,80 @@ function userActions(user) {
     return actions;
   }
 
+  const isSuperAdmin = me.role === 'superadmin';
+  if (user.role === 'superadmin' && !isSuperAdmin) return actions;
+
   const name = user.username;
-  actions.append(actionButton('Reset password', () => openPasswordDialog(user)));
-  actions.append(actionButton('Reset 2FA', async () => {
-    const result = await runAction(
-      `Issue a new authenticator key for ${name}? The current key stops working and ${name} is signed out.`,
-      () => panelRequest('POST', `users/${user.id}/two-factor`),
-      `${name} has a new authenticator key.`);
-    if (result) showTwoFactorSetup(name, result.twoFactor);
-  }));
+  if (can(me, 'users.reset-credentials')) {
+    actions.append(actionButton('Reset password', () => openPasswordDialog(user)));
+    actions.append(actionButton('Reset 2FA', async () => {
+      const result = await runAction(
+        `Issue a new authenticator key for ${name}? The current key stops working and ${name} is signed out.`,
+        () => panelRequest('POST', `users/${user.id}/two-factor`),
+        `${name} has a new authenticator key.`);
+      if (result) showTwoFactorSetup(name, result.twoFactor);
+    }));
+  }
 
-  const newRole = user.role === 'superadmin' ? 'admin' : 'superadmin';
-  actions.append(actionButton(newRole === 'superadmin' ? 'Make super admin' : 'Make admin', () => runAction(
-    `Change ${name} to ${ROLE_LABELS[newRole]}? ${name} is signed out and signs in again with the new rights.`,
-    () => panelRequest('POST', `users/${user.id}/role`, { role: newRole }),
-    `${name} is now ${ROLE_LABELS[newRole]}.`)));
+  if (can(me, 'users.edit-permissions') && user.role !== 'superadmin')
+    actions.append(actionButton('Edit access', () => openAccessDialog(user)));
 
-  if (user.state === 'locked' || user.failedAttempts > 0)
-    actions.append(actionButton('Unlock', () => runAction(
-      null, () => panelRequest('POST', `users/${user.id}/unlock`), `${name} is unlocked.`)));
+  if (isSuperAdmin) {
+    const newRole = user.role === 'superadmin' ? 'admin' : 'superadmin';
+    actions.append(actionButton(newRole === 'superadmin' ? 'Make super admin' : 'Make admin', () => runAction(
+      `Change ${name} to ${ROLE_LABELS[newRole]}? ${name} is signed out and signs in again with the new rights.`,
+      () => panelRequest('POST', `users/${user.id}/role`, { role: newRole }),
+      `${name} is now ${ROLE_LABELS[newRole]}.`)));
+  }
 
-  if (user.activeSessions > 0)
-    actions.append(actionButton('Sign out everywhere', () => runAction(
-      `End all sessions of ${name}?`,
-      () => panelRequest('POST', `users/${user.id}/revoke-sessions`), `All sessions of ${name} ended.`)));
+  if (can(me, 'users.manage-state')) {
+    if (user.state === 'locked' || user.failedAttempts > 0)
+      actions.append(actionButton('Unlock', () => runAction(
+        null, () => panelRequest('POST', `users/${user.id}/unlock`), `${name} is unlocked.`)));
 
-  if (user.state === 'disabled')
-    actions.append(actionButton('Enable', () => runAction(
-      null, () => panelRequest('POST', `users/${user.id}/enable`), `${name} is enabled.`)));
-  else
-    actions.append(actionButton('Disable', () => runAction(
-      `Disable ${name}? ${name} is signed out and cannot sign in until enabled again.`,
-      () => panelRequest('POST', `users/${user.id}/disable`), `${name} is disabled.`), true));
+    if (user.activeSessions > 0)
+      actions.append(actionButton('Sign out everywhere', () => runAction(
+        `End all sessions of ${name}?`,
+        () => panelRequest('POST', `users/${user.id}/revoke-sessions`), `All sessions of ${name} ended.`)));
 
-  actions.append(actionButton('Delete', () => runAction(
-    `Delete the account ${name}? This cannot be undone; its audit log entries stay.`,
-    () => panelRequest('DELETE', `users/${user.id}`), `${name} is deleted.`), true));
+    if (user.state === 'disabled')
+      actions.append(actionButton('Enable', () => runAction(
+        null, () => panelRequest('POST', `users/${user.id}/enable`), `${name} is enabled.`)));
+    else
+      actions.append(actionButton('Disable', () => runAction(
+        `Disable ${name}? ${name} is signed out and cannot sign in until enabled again.`,
+        () => panelRequest('POST', `users/${user.id}/disable`), `${name} is disabled.`), true));
+  }
+
+  if (can(me, 'users.delete'))
+    actions.append(actionButton('Delete', () => runAction(
+      `Delete the account ${name}? This cannot be undone; its audit log entries stay.`,
+      () => panelRequest('DELETE', `users/${user.id}`), `${name} is deleted.`), true));
   return actions;
+}
+
+function accessBadge(user) {
+  if (user.role === 'superadmin') return badge('Every permission', 'main');
+  const names = catalog.permissions.filter(permission => user.permissions.includes(permission.key)).map(permission => permission.title);
+  const preset = catalog.presets.find(item => item.permissions.join() === user.permissions.join());
+  const element = badge(preset ? preset.title : `${user.permissions.length} of ${catalog.permissions.length}`, user.permissions.length ? 'ok' : 'warn');
+  element.title = names.length ? names.join('\n') : 'No permissions';
+  return element;
+}
+
+function openAccessDialog(user) {
+  accessTarget = user;
+  accessError.textContent = '';
+  document.getElementById('access-dialog-title').textContent = `Access of ${user.username}`;
+  accessEditor = createAccessEditor(document.getElementById('access-editor'));
+  accessEditor.set(user.permissions);
+  accessDialog.showModal();
 }
 
 const USER_COLUMNS = [
   { key: 'username', title: 'Username', format: (value, user) => user.isSelf ? inline(value, badge('You', 'main')) : value },
   { key: 'role', title: 'Role', format: value => badge(ROLE_LABELS[value] ?? value, value === 'superadmin' ? 'main' : 'muted') },
+  { key: 'permissions', title: 'Access', sortable: false, filterable: false, format: (_, user) => accessBadge(user) },
   { key: 'state', title: 'State', format: value => badge(...(STATE_BADGES[value] ?? [value, 'muted'])) },
   { key: 'failedAttempts', title: 'Failed sign-ins' },
   { key: 'activeSessions', title: 'Open sessions' },
@@ -180,6 +306,24 @@ passwordForm.addEventListener('submit', async event => {
 document.getElementById('password-cancel').addEventListener('click', () => passwordDialog.close());
 passwordDialog.addEventListener('close', () => passwordForm.reset());
 
+accessForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  try {
+    await panelRequest('POST', `users/${accessTarget.id}/permissions`, { permissions: accessEditor.get() });
+    accessDialog.close();
+    showMessage(`The access of ${accessTarget.username} is saved.`, 'success');
+    await loadUsers();
+  } catch (error) {
+    accessError.textContent = error.message;
+  }
+});
+
+document.getElementById('access-cancel').addEventListener('click', () => accessDialog.close());
+
+document.getElementById('create-role').addEventListener('change', event => {
+  document.getElementById('create-access').hidden = event.target.value !== 'admin';
+});
+
 createForm.addEventListener('submit', async event => {
   event.preventDefault();
   const values = new FormData(createForm);
@@ -194,8 +338,11 @@ createForm.addEventListener('submit', async event => {
       username: values.get('username').trim(),
       password: values.get('password'),
       role: values.get('role'),
+      permissions: values.get('role') === 'admin' ? createAccess.get() : undefined,
     });
     createForm.reset();
+    createAccess.apply(catalog.presets[0].permissions);
+    document.getElementById('create-access').hidden = false;
     showMessage(`Account ${result.username} created. Set up its authenticator now.`, 'success');
     showTwoFactorSetup(result.username, result.twoFactor);
     await loadUsers();
@@ -228,14 +375,15 @@ document.getElementById('tabs').addEventListener('click', event => {
 });
 
 renderMenu();
-currentAccount().then(async me => {
-  if (me?.role !== 'superadmin') {
-    document.querySelector('main').replaceChildren(message);
-    showMessage('Only a super admin can manage accounts.', 'error');
-    return;
-  }
-  showTab('accounts');
+currentAccount().then(async account => {
+  me = account;
+  if (!can(me, 'users.view')) return;
   try {
+    catalog = await panelRequest('GET', 'permissions');
+    if (me.role !== 'superadmin') document.querySelector('#create-role option[value="superadmin"]').remove();
+    createAccess = createAccessEditor(document.getElementById('create-access'));
+    createAccess.apply(catalog.presets[0].permissions);
+    showTab('accounts');
     await loadUsers();
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');

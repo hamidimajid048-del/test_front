@@ -34,8 +34,9 @@ public static class Mt5Extensions
         var mt5 = app.MapGroup($"{PanelUserEndpoints.Prefix}/mt5");
         if (app.Services.GetService<Mt5AccountReader>() is not null)
         {
-            mt5.MapGet("/accounts", ReadAccounts);
-            mt5.MapGet("/logins-by-email", FindLoginsByEmail);
+            mt5.MapGet("/accounts", ReadAccounts).RequirePermission(PanelPermissions.AllReportViews);
+            mt5.MapGet("/logins-by-email", FindLoginsByEmail)
+                .RequirePermission(PanelPermissions.EmailLoginsView, PanelPermissions.CompareEmailsView);
         }
 
         if (app.Services.GetService<Mt5ConnectionService>() is null)
@@ -44,7 +45,8 @@ public static class Mt5Extensions
             return;
         }
 
-        mt5.MapGet("/status", (Mt5ConnectionService connection) => Results.Ok(connection.Status));
+        mt5.MapGet("/status", (Mt5ConnectionService connection) => Results.Ok(connection.Status))
+            .RequirePermission(PanelPermissions.AccountDataView);
         mt5.MapMt5AccountDataEndpoints();
     }
 

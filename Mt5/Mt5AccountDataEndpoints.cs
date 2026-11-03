@@ -4,7 +4,7 @@ public static class Mt5AccountDataEndpoints
 {
     public static void MapMt5AccountDataEndpoints(this RouteGroupBuilder mt5)
     {
-        var data = mt5.MapGroup("/account-data");
+        var data = mt5.MapGroup("/account-data").RequirePermission(PanelPermissions.AccountDataView);
         data.MapGet("", (string? login, Mt5AccountDataReader reader) => Read(login, reader.Overview));
         data.MapGet("/open", (string? login, Mt5AccountDataReader reader) => Read(login, reader.OpenTrades));
         data.MapGet("/transfers", (string? login, Mt5AccountDataReader reader) => Read(login, reader.Transfers));

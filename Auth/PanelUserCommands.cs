@@ -16,8 +16,10 @@ public static class PanelUserCommands
           list                          List the accounts and their state
           add <username> [role]         Create an account (asks for the password, prints the authenticator key);
                                         role is 'superadmin' or 'admin', by default superadmin when there is no
-                                        active super admin, otherwise admin
-          set-role <username> <role>    Change the role ('superadmin' manages accounts, 'admin' sees reports only)
+                                        active super admin, otherwise admin (with the 'viewer' permissions)
+          set-role <username> <role>    Change the role ('superadmin' has every permission, 'admin' only the granted ones)
+          set-permissions <username> <preset|key,key,...>
+                                        Set what an admin may do: a preset (viewer, analyst, full) or permission keys
           reset-password <username>     Set a new password and end the account's sessions
           reset-2fa <username>          Issue a new authenticator key and end the account's sessions
           unlock <username>             Clear the failed sign-ins and the lockout
@@ -33,13 +35,16 @@ public static class PanelUserCommands
         var command = args.ElementAtOrDefault(0);
         var username = args.ElementAtOrDefault(1)?.Trim();
         var role = args.ElementAtOrDefault(2)?.Trim().ToLowerInvariant();
+        var permissions = command == "set-permissions" ? PanelPermissions.Parse(args.ElementAtOrDefault(2)) : null;
 
         if (command == "list" && args.Length == 1)
             return await ListAsync(store);
 
+        var takesThird = command is "add" or "set-role" or "set-permissions";
         var takesRole = command is "add" or "set-role";
-        if (command is null || string.IsNullOrEmpty(username) || args.Length > (takesRole ? 3 : 2) ||
-            (command == "set-role" && role is null) || (role is not null && !PanelRoles.IsValid(role)))
+        if (command is null || string.IsNullOrEmpty(username) || args.Length > (takesThird ? 3 : 2) ||
+            (command == "set-role" && role is null) || (takesRole && role is not null && !PanelRoles.IsValid(role)) ||
+            (command == "set-permissions" && permissions is null))
         {
             Console.Error.WriteLine(Usage);
             return 1;
@@ -60,8 +65,21 @@ public static class PanelUserCommands
         {
             case "set-role":
                 await store.SetRoleAsync(user.Id, role!);
+                if (role == PanelRoles.Admin && user.Permissions.Length == 0)
+                    await store.SetPermissionsAsync(user.Id, [.. PanelPermissions.DefaultPreset.Permissions]);
                 await store.RevokeUserSessionsAsync(user.Id);
                 detail = role;
+                break;
+            case "set-permissions":
+                if (user.IsSuperAdmin)
+                {
+                    Console.Error.WriteLine("A super admin always has every permission; change the role first.");
+                    return 1;
+                }
+
+                await store.SetPermissionsAsync(user.Id, permissions!);
+                detail = string.Join(' ', permissions!.Except(user.Permissions).Select(key => $"+{key}")
+                    .Concat(user.Permissions.Except(permissions!).Select(key => $"-{key}")));
                 break;
             case "reset-password":
                 if (ReadNewPassword(user.Username) is not { } password)
@@ -121,7 +139,8 @@ public static class PanelUserCommands
         role ??= await store.CountActiveSuperAdminsAsync() == 0 ? PanelRoles.SuperAdmin : PanelRoles.Admin;
         var id = Guid.CreateVersion7();
         var secret = Totp.GenerateSecret();
-        await store.CreateUserAsync(id, username, PanelSignInService.HashPassword(password), secret, role);
+        string[] permissions = role == PanelRoles.Admin ? [.. PanelPermissions.DefaultPreset.Permissions] : [];
+        await store.CreateUserAsync(id, username, PanelSignInService.HashPassword(password), secret, role, permissions);
         await AuditAsync(store, "add", username, id, role);
         Console.WriteLine($"Account '{username}' created with the role '{role}'.");
         PrintAuthenticatorKey(username, secret);
@@ -137,12 +156,12 @@ public static class PanelUserCommands
             return 0;
         }
 
-        Console.WriteLine($"{"Username",-24} {"Role",-11} {"State",-10} {"Failed",6}  {"Last sign-in (UTC)",-20} Created (UTC)");
+        Console.WriteLine($"{"Username",-24} {"Role",-11} {"State",-10} {"Failed",6} {"Perms",5}  {"Last sign-in (UTC)",-20} Created (UTC)");
         foreach (var user in users)
         {
             var state = user.IsDisabled ? "disabled" : user.IsLocked ? "locked" : "active";
             Console.WriteLine(
-                $"{user.Username,-24} {user.Role,-11} {state,-10} {user.FailedAttempts,6}  " +
+                $"{user.Username,-24} {user.Role,-11} {state,-10} {user.FailedAttempts,6} {user.EffectivePermissions.Count,5}  " +
                 $"{user.LastSignInAt?.ToString("yyyy-MM-dd HH:mm") ?? "-",-20} {user.CreatedAt:yyyy-MM-dd HH:mm}");
         }
 
