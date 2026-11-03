@@ -656,3 +656,21 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 
 .banner { display: block; padding: 10px 24px; color: var(--warning); background: var(--warning-soft); font-size: 13.5px; font-weight: 600; text-align: center; }
 .banner:hover { text-decoration: underline; }
+
+/* ---------- Account switches (Account data page) ---------- */
+
+.controls { display: grid; gap: 1px; margin: 0 0 20px; overflow: hidden; background: var(--border); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); }
+.controls:empty { display: none; }
+.control { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(200px, auto) auto; gap: 16px; align-items: center; padding: 14px 18px; background: var(--surface); }
+.control-text, .control-state { display: flex; flex-direction: column; gap: 2px; }
+.control-text span, .control-state span { color: var(--text-muted); font-size: 12.5px; }
+.control-state strong { font-size: 13px; }
+.switch { position: relative; width: 52px; height: 28px; padding: 0; background: var(--text-faint); border: 0; border-radius: 999px; transition: background .15s ease; }
+.switch span { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: #ffffff; border-radius: 50%; box-shadow: var(--shadow-sm); transition: transform .15s ease; }
+.switch.on { background: var(--success); }
+.switch.on span { transform: translateX(24px); }
+.switch.off { background: var(--danger); }
+.switch.unknown span { transform: translateX(12px); }
+.switch:hover:not(:disabled) { filter: brightness(1.08); }
+.switch:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 640px) { .control { grid-template-columns: 1fr auto; } .control-state { grid-column: 1; } .switch { grid-row: 1; grid-column: 2; } }

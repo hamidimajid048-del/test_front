@@ -19,6 +19,27 @@ public sealed class Mt5ChangeLog(NpgsqlDataSource dataSource)
         await command.ExecuteNonQueryAsync(CancellationToken.None);
     }
 
+    public async Task<IReadOnlyList<Mt5SwitchChangeDto>> LastSwitchChangesAsync(ulong login, CancellationToken cancellationToken)
+    {
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT DISTINCT ON (switch) switch, enabled, username, occurred_at
+            FROM (
+                SELECT regexp_replace(action, '_(enable|disable)$', '') AS switch, right(action, 7) = '_enable' AS enabled,
+                       username, occurred_at, id
+                FROM violation_panel.mt5_account_changes
+                WHERE login = $1 AND succeeded AND action ~ '_(enable|disable)$') changes
+            ORDER BY switch, id DESC
+            """);
+        command.Parameters.AddWithValue((long)login);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var changes = new List<Mt5SwitchChangeDto>();
+        while (await reader.ReadAsync(cancellationToken))
+            changes.Add(new Mt5SwitchChangeDto(
+                reader.GetString(0), reader.GetBoolean(1), reader.IsDBNull(2) ? null : reader.GetString(2), reader.GetDateTime(3)));
+        return changes;
+    }
+
     public async Task<IReadOnlyList<Mt5ChangeEntryDto>> ListAsync(ulong login, int limit, CancellationToken cancellationToken)
     {
         await using var command = dataSource.CreateCommand(

@@ -4,13 +4,39 @@
 
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
-const activateButton = document.getElementById('activate');
-let canActivate = false;
-currentAccount().then(me => { canActivate = can(me, 'account-data.activate'); });
+let me = null;
+currentAccount().then(account => { me = account; });
 const TABS = ['overview', 'open', 'transfers', 'positions', 'orders', 'deals', 'changes'];
 
 // One label per change action the panel records (Mt5ChangeLog); an action without one shows its own name.
-const CHANGE_ACTIONS = { account_enable: 'Account activated' };
+const CHANGE_ACTIONS = {
+  account_enable: 'Account enabled',
+  account_disable: 'Account disabled',
+  trading_enable: 'Trading enabled',
+  trading_disable: 'Trading disabled',
+  stop_out_enable: 'Stop-out plugin enabled',
+  stop_out_disable: 'Stop-out plugin disabled',
+};
+
+// The state of the account and trading comes from MetaTrader; the stop-out plugin has no readable state, so it is the
+// last change made from the panel (unknown until then). `last` is that change: { enabled, username, occurredAt }.
+const SWITCHES = [
+  {
+    key: 'account', api: 'Account', title: 'Account', permission: 'account-data.switch-account',
+    description: 'The owner can sign in to the account.',
+    state: (data) => data.isEnabled,
+  },
+  {
+    key: 'trading', api: 'Trading', title: 'Trading', permission: 'account-data.switch-trading',
+    description: 'The owner can open and close trades.',
+    state: (data) => data.isTradeEnabled,
+  },
+  {
+    key: 'stop_out', api: 'StopOut', title: 'Stop-out plugin', permission: 'account-data.switch-stop-out',
+    description: 'The stop-out plugin watches the account.',
+    state: (data, last) => last?.enabled ?? null,
+  },
+];
 
 let currentTab = 'overview';
 let currentLogin = null;
@@ -217,7 +243,69 @@ function writeState() {
   writeQuery({ login: currentLogin, tab: currentTab });
 }
 
-function renderOverview(data) {
+function switchRow(data, last, definition) {
+  const enabled = definition.state(data, last);
+  const allowed = can(me, definition.permission) && data.source !== 'Archive';
+
+  const row = document.createElement('div');
+  row.className = 'control';
+  const text = document.createElement('div');
+  text.className = 'control-text';
+  const title = document.createElement('strong');
+  title.textContent = definition.title;
+  const description = document.createElement('span');
+  description.textContent = definition.description;
+  text.append(title, description);
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = `switch ${enabled === null ? 'unknown' : enabled ? 'on' : 'off'}`;
+  toggle.setAttribute('role', 'switch');
+  toggle.setAttribute('aria-checked', String(enabled === true));
+  toggle.setAttribute('aria-label', definition.title);
+  toggle.disabled = !allowed;
+  toggle.title = data.source === 'Archive' ? 'A deleted account cannot be changed' : allowed ? '' : 'You do not have permission to change this';
+  toggle.append(document.createElement('span'));
+  toggle.addEventListener('click', () => changeSwitch(definition, enabled !== true, toggle));
+
+  const state = document.createElement('div');
+  state.className = 'control-state';
+  const stateText = document.createElement('strong');
+  stateText.textContent = enabled === null ? 'Unknown' : enabled ? 'Enabled' : 'Disabled';
+  state.append(stateText);
+  if (last) {
+    const lastChange = document.createElement('span');
+    lastChange.textContent = `Last change by ${last.username ?? 'unknown'} · ${formatUtc(last.occurredAt)} UTC`;
+    state.append(lastChange);
+  }
+
+  row.append(text, state, toggle);
+  return row;
+}
+
+function renderControls(data, changes) {
+  const byKey = new Map(changes.map(change => [change.switch, change]));
+  document.getElementById('controls').replaceChildren(...SWITCHES.map(definition => switchRow(data, byKey.get(definition.key), definition)));
+}
+
+async function changeSwitch(definition, enabled, toggle) {
+  const verb = enabled ? 'Enable' : 'Disable';
+  if (!currentLogin || !confirm(`${verb} ${definition.title.toLowerCase()} for account ${currentLogin}?`)) return;
+  const login = currentLogin;
+  clearMessages(form, message);
+  toggle.disabled = true;
+  message.textContent = 'Saving...';
+  try {
+    await panelRequest('POST', 'mt5/account-switch', { login: Number(login), switch: definition.api, enabled });
+    await search(login);
+    message.textContent = `${definition.title} ${enabled ? 'enabled' : 'disabled'}`;
+  } catch (error) {
+    showError(form, message, error instanceof ApiError ? error : new ApiError(UNAVAILABLE_MESSAGE));
+    toggle.disabled = false;
+  }
+}
+
+function renderOverview(data, switches) {
   renderSummary(document.getElementById('identity'), [
     ['Account', data.login],
     ['Name', data.name || '—'],
@@ -225,16 +313,9 @@ function renderOverview(data) {
     ['Email', data.email || '—'],
   ]);
 
-  const status = document.getElementById('status');
-  const badges = [
-    badge(data.isEnabled ? 'Active' : 'Inactive', data.isEnabled ? 'ok' : 'danger'),
-    badge(data.isTradeEnabled ? 'Trade enabled' : 'Trade disabled', data.isTradeEnabled ? 'ok' : 'danger'),
-  ];
-  if (data.source === 'Archive') badges.push(badge('Deleted account (archive)', 'warn'));
-  status.replaceChildren(inline(...badges));
-  activateButton.hidden = !canActivate;
-  activateButton.disabled = data.source === 'Archive';
-  activateButton.title = data.source === 'Archive' ? 'A deleted account cannot be activated' : '';
+  document.getElementById('status').replaceChildren(
+    ...(data.source === 'Archive' ? [badge('Deleted account (archive)', 'warn')] : []));
+  renderControls(data, switches);
 
   renderSummary(document.getElementById('figures'), [
     ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance)],
@@ -254,8 +335,7 @@ function renderOverview(data) {
 }
 
 function clearResults() {
-  activateButton.hidden = true;
-  for (const id of ['identity', 'status', 'figures', 'chart', 'transfer-totals'])
+  for (const id of ['identity', 'status', 'controls', 'figures', 'chart', 'transfer-totals'])
     document.getElementById(id).replaceChildren();
   document.getElementById('comment').textContent = '';
   for (const grid of Object.values(grids)) grid.clear();
@@ -270,10 +350,14 @@ async function search(login) {
   loaded = new Set();
   currentLogin = login;
   message.textContent = 'Loading...';
-  const data = await panelRequest('GET', panelPath(''));
+  me = await currentAccount();
+  const [data, switches] = await Promise.all([
+    panelRequest('GET', panelPath('')),
+    panelRequest('GET', `mt5/account-switches?login=${encodeURIComponent(login)}`).catch(() => []),
+  ]);
   if (current !== request) return;
   overview = data;
-  renderOverview(data);
+  renderOverview(data, switches);
   writeState();
   message.textContent = '';
   await loadTab(currentTab);
@@ -291,25 +375,6 @@ async function submit() {
     submitButton.disabled = false;
   }
 }
-
-async function activate() {
-  if (!currentLogin || !confirm(`Activate account ${currentLogin}?`)) return;
-  const login = currentLogin;
-  clearMessages(form, message);
-  activateButton.disabled = true;
-  message.textContent = 'Activating...';
-  try {
-    const result = await panelRequest('POST', 'account-activation/enable', { login: Number(login) });
-    await search(login);
-    message.textContent = `Activation request accepted (HTTP ${result.statusCode}).`;
-  } catch (error) {
-    showError(form, message, error instanceof ApiError ? error : new ApiError(UNAVAILABLE_MESSAGE));
-  } finally {
-    activateButton.disabled = overview?.source === 'Archive';
-  }
-}
-
-activateButton.addEventListener('click', activate);
 
 document.getElementById('tabs').addEventListener('click', event => {
   const tab = event.target.closest('button')?.dataset.tab;

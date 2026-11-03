@@ -5,9 +5,9 @@ public sealed class AccountActivationClient(HttpClient http, AccountActivationOp
     public const string ApiKeyHeader = "APIKey";
     private const int MaxDetailLength = 300;
 
-    public async Task<AccountActivationResultDto> EnableAsync(ulong login, CancellationToken cancellationToken)
+    public async Task<AccountActivationResultDto> SetAsync(ulong login, bool enabled, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, options.Url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, enabled ? options.Url : options.DisableUrl)
         {
             Content = JsonContent.Create(new Dictionary<string, ulong[]> { ["Logins"] = [login] })
         };

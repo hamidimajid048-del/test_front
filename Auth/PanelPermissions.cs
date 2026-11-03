@@ -3,7 +3,9 @@ namespace Sgb.Trading.Violation.Panel.Auth;
 public static class PanelPermissions
 {
     public const string AccountDataView = "account-data.view";
-    public const string AccountDataActivate = "account-data.activate";
+    public const string SwitchAccount = "account-data.switch-account";
+    public const string SwitchTrading = "account-data.switch-trading";
+    public const string SwitchStopOut = "account-data.switch-stop-out";
     public const string AccountChangesView = "account-data.changes";
     public const string LoginsView = "logins.view";
     public const string EmailLoginsView = "email-logins.view";
@@ -39,7 +41,9 @@ public static class PanelPermissions
         new(CompareEmailsView, ReportsGroup, "Compare emails", "All logins of two emails compared."),
         new(AccountChangesView, ReportsGroup, "Account change log", "Every change made to a trading account from the panel.", AccountDataView),
         new(ReportsExport, ReportsGroup, "Export to Excel / CSV", "Download report data as files."),
-        new(AccountDataActivate, OperationsGroup, "Activate accounts", "Enable a trading account from the Account data page.", AccountDataView),
+        new(SwitchAccount, OperationsGroup, "Enable / disable account", "Turn a trading account on or off.", AccountDataView),
+        new(SwitchTrading, OperationsGroup, "Enable / disable trading", "Allow or block trading on an account.", AccountDataView),
+        new(SwitchStopOut, OperationsGroup, "Enable / disable stop-out plugin", "Turn the stop-out plugin on or off for an account.", AccountDataView),
         new(AccountChangePassword, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),
         new(UsersView, AdministrationGroup, "See accounts", "Open the Users page and list the panel accounts."),
         new(UsersCreate, AdministrationGroup, "Add accounts", "Create panel accounts.", UsersView),
@@ -62,7 +66,7 @@ public static class PanelPermissions
     [
         new("viewer", "Viewer", "Reads every report; no export, no changes.",
             [.. All.Where(permission => permission.Group == ReportsGroup && permission.Key != ReportsExport).Select(permission => permission.Key), AccountChangePassword]),
-        new("analyst", "Analyst", "Viewer, plus export and account activation.", ForExistingAdmins),
+        new("analyst", "Analyst", "Viewer, plus export and the account switches.", ForExistingAdmins),
         new("full", "Full access", "Everything, including managing the other accounts.", AllKeys)
     ];
 

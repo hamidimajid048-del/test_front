@@ -323,7 +323,6 @@ app.MapPost("/auth/logout", async (HttpContext context) =>
 // The signed-in account (/panel-api/me) and account management; see docs/panel-authentication.md.
 app.MapPanelUserEndpoints();
 app.MapMt5Endpoints();
-app.MapAccountActivationEndpoints();
 
 // The service's own health endpoint listens on a restricted port (and not at all in local mode), so the panel probes it.
 app.MapGet("/service-status", async (IHttpClientFactory httpClientFactory, CancellationToken cancellationToken) =>

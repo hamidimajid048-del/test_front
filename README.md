@@ -59,16 +59,25 @@ Net profit is profit + commission + swap + fee of all deals that are not deposit
 **Account data** page (`account-data.html`) shows them in six tabs, each read when first opened, with a growth chart in
 money or percent.
 
-The Overview tab also has an **Activate account** button. It asks the panel to call the account-enable API
-(`POST {AccountActivation:Url}` with the header `APIKey` and the body `{ "Logins": [login] }`, from the server so the key
-never reaches the browser) through `POST /panel-api/account-activation/enable`; every use is recorded in the account change log
-(see below) with the signed-in user. Keep `AccountActivation:ApiKey` in `appsettings.local.json`, user
-secrets or the environment variable `AccountActivation__ApiKey`; without it the endpoint answers 503.
+The Overview tab has three **switches** (green = enabled, red = disabled) that show the current state and change it
+through `POST /panel-api/mt5/account-switch` (`{ login, switch, enabled }`), each with its own permission:
+
+| Switch | State shown | Changed through |
+|---|---|---|
+| Account (`account-data.switch-account`) | MetaTrader `USER_RIGHT_ENABLED` | the Manager API, directly on the user |
+| Trading (`account-data.switch-trading`) | MetaTrader `USER_RIGHT_TRADE_DISABLED` (inverted) | the Manager API, directly on the user |
+| Stop-out plugin (`account-data.switch-stop-out`) | the last change made from the panel (grey "Unknown" before the first) | the company API: `POST {AccountActivation:Url}` to enable, `POST {AccountActivation:DisableUrl}` to disable, header `APIKey`, body `{ "Logins": [login] }` |
+
+The Manager account (`Mt5:Login`) needs the right to change users, otherwise MetaTrader answers with a permission error
+and the change is logged as failed. Without `AccountActivation:DisableUrl` the plugin can only be enabled. Keep
+`AccountActivation:ApiKey` in `appsettings.local.json`, user secrets or the environment variable
+`AccountActivation__ApiKey`. Under each switch the panel shows who made the last change from the panel; changes made
+elsewhere (the MetaTrader terminal) are not recorded.
 
 **Account change log:** every change the panel makes to a trading account is stored in
 `violation_panel.mt5_account_changes` (time, login, action, result, detail, who, IP) and shown on the **Changes** tab of the
-Account data page (`account-data.changes` permission; `GET /panel-api/mt5/account-changes?login=`). Activation is the first
-action. A new one (deposit, withdrawal, password change, ...) must call `Mt5ChangeLog.RecordAsync(login, action, succeeded,
+Account data page (`account-data.changes` permission; `GET /panel-api/mt5/account-changes?login=`). Every switch change is the first
+kind of entry. A new one (deposit, withdrawal, password change, ...) must call `Mt5ChangeLog.RecordAsync(login, action, succeeded,
 detail, context)` after it runs, whether it worked or not, and get a label in `CHANGE_ACTIONS` in `account-data.js`.
 
 The **Email logins** page (`email-logins.html`) takes an email and an optional UTC day range, finds the logins as above,
