@@ -8,11 +8,15 @@ public sealed class AccountActivationOptions
 
     public string DisableUrl { get; init; } = string.Empty;
 
+    public string StatusUrl { get; init; } = string.Empty;
+
     public string ApiKey { get; init; } = string.Empty;
 
     public int TimeoutSeconds { get; init; } = 15;
 
     public bool IsConfigured => Url.Length > 0 && ApiKey.Length > 0;
+
+    public bool IsStatusConfigured => IsConfigured && StatusUrl.Contains("{login}", StringComparison.Ordinal);
 
     public bool IsDisableConfigured => IsConfigured && DisableUrl.Length > 0;
 
@@ -26,6 +30,8 @@ public sealed class AccountActivationOptions
             failures.Add($"{SectionName}:Url must be an absolute http(s) address.");
         if (DisableUrl.Length > 0 && (!Uri.TryCreate(DisableUrl, UriKind.Absolute, out var disableUri) || disableUri.Scheme is not ("http" or "https")))
             failures.Add($"{SectionName}:DisableUrl must be an absolute http(s) address.");
+        if (StatusUrl.Length > 0 && !StatusUrl.Contains("{login}", StringComparison.Ordinal))
+            failures.Add($"{SectionName}:StatusUrl must contain {{login}}.");
         if (ApiKey.Length == 0)
             failures.Add($"{SectionName}:ApiKey is required when {SectionName}:Url is set.");
         if (TimeoutSeconds is < 1 or > 120)

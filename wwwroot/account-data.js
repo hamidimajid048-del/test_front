@@ -18,8 +18,8 @@ const CHANGE_ACTIONS = {
   stop_out_disable: 'Stop-out plugin disabled',
 };
 
-// The state of the account and trading comes from MetaTrader; the stop-out plugin has no readable state, so it is the
-// last change made from the panel (unknown until then). `last` is that change: { enabled, username, occurredAt }.
+// The state of the account and trading comes from MetaTrader, the stop-out plugin's from the status service (when it
+// cannot be read, the last change made from the panel). `last` is that change: { enabled, username, occurredAt }.
 const SWITCHES = [
   {
     key: 'account', api: 'Account', title: 'Account', permission: 'account-data.switch-account',
@@ -37,7 +37,7 @@ const SWITCHES = [
     key: 'stop_out', api: 'StopOut', title: 'Stop-out plugin', permission: 'account-data.switch-stop-out',
     description: 'The stop-out plugin watches the account.',
     effect: ['The stop-out plugin will stop watching this account.', 'The stop-out plugin will watch this account.'],
-    state: (data, last) => last?.enabled ?? null,
+    state: (data, last, status) => ({ Enabled: true, Disabled: false })[status?.pluginState] ?? last?.enabled ?? null,
   },
 ];
 
@@ -246,8 +246,8 @@ function writeState() {
   writeQuery({ login: currentLogin, tab: currentTab });
 }
 
-function switchRow(data, last, definition) {
-  const enabled = definition.state(data, last);
+function switchRow(data, last, status, definition) {
+  const enabled = definition.state(data, last, status);
   const allowed = can(me, definition.permission) && data.source !== 'Archive';
 
   const row = document.createElement('div');
@@ -286,35 +286,58 @@ function switchRow(data, last, definition) {
   return row;
 }
 
-function renderControls(data, changes) {
+function renderControls(data, changes, status) {
   const byKey = new Map(changes.map(change => [change.switch, change]));
-  document.getElementById('controls').replaceChildren(...SWITCHES.map(definition => switchRow(data, byKey.get(definition.key), definition)));
+  document.getElementById('controls').replaceChildren(
+    ...SWITCHES.map(definition => switchRow(data, byKey.get(definition.key), status, definition)));
+  renderStopOutStatus(status);
 }
 
-async function changeSwitch(definition, enabled, toggle) {
-  const verb = enabled ? 'Enable' : 'Disable';
-  if (!currentLogin) return;
-  const confirmed = await confirmAction({
-    title: `${verb} ${definition.title.toLowerCase()}?`,
-    message: `Account ${currentLogin}. ${definition.effect[enabled ? 1 : 0]}`,
-    confirmText: verb,
-    danger: !enabled,
-  });
-  if (!confirmed) return;
-  const login = currentLogin;
-  clearMessages(form, message);
-  toggle.disabled = true;
-  try {
-    await panelRequest('POST', 'mt5/account-switch', { login: Number(login), switch: definition.api, enabled });
-    await search(login);
-    toast(`${definition.title} ${enabled ? 'enabled' : 'disabled'}`, 'success', `Account ${login}`);
-  } catch (error) {
-    toast(`${definition.title} was not changed`, 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
-    toggle.disabled = false;
+const STATUS_BADGES = { Monitored: 'ok', StoppedOut: 'danger', Liquidated: 'danger', Disabled: 'muted' };
+const words = value => String(value).replace(/([a-z])([A-Z])/g, '$1 $2');
+
+function renderStopOutStatus(status) {
+  const summary = document.getElementById('stop-out-status');
+  const reason = document.getElementById('stop-out-reason');
+  if (!status) {
+    summary.replaceChildren();
+    reason.textContent = '';
+    return;
   }
+
+  const items = [['Status', badge(words(status.status), STATUS_BADGES[status.status] ?? 'warn')]];
+  if (status.metaTrader) {
+    items.push(['Total limit', money(status.rule?.totalLimit)], ['To total limit', money(status.metaTrader.totalLimitDistance)]);
+    if (status.monitor?.dailyCheckActive)
+      items.push(['Daily limit', money(status.rule?.dailyLimit)], ['To daily limit', money(status.metaTrader.dailyLimitDistance)]);
+  }
+
+  const trigger = status.lastTrigger;
+  if (trigger)
+    items.push(
+      ['Trigger', badge(words(trigger.type), 'warn')],
+      ['Triggered (UTC)', formatUtc(trigger.time)],
+      ['Balance at trigger', money(trigger.balance)],
+      ['Equity at trigger', money(trigger.equity)]);
+
+  const liquidation = status.liquidation;
+  if (liquidation) {
+    const failed = liquidation.consecutiveFailures > 0 || Boolean(liquidation.lastError);
+    items.push(
+      ['Liquidation', badge(words(liquidation.stage), failed ? 'danger' : liquidation.completedAt ? 'ok' : 'warn')],
+      ['Attempts', liquidation.attempts],
+      ['Liquidation ended (UTC)', liquidation.completedAt ? formatUtc(liquidation.completedAt) : '—']);
+  }
+
+  renderSummary(summary, items);
+  reason.textContent = [
+    status.statusReason,
+    status.stateConflict && `Conflict: ${typeof status.stateConflict === 'string' ? status.stateConflict : JSON.stringify(status.stateConflict)}`,
+    liquidation?.lastError && `Liquidation error: ${liquidation.lastError}`,
+  ].filter(Boolean).join(' ');
 }
 
-function renderOverview(data, switches) {
+function renderOverview(data, switches, status) {
   renderSummary(document.getElementById('identity'), [
     ['Account', data.login],
     ['Name', data.name || '—'],
@@ -324,7 +347,7 @@ function renderOverview(data, switches) {
 
   document.getElementById('status').replaceChildren(
     ...(data.source === 'Archive' ? [badge('Deleted account (archive)', 'warn')] : []));
-  renderControls(data, switches);
+  renderControls(data, switches, status);
 
   renderSummary(document.getElementById('figures'), [
     ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance)],
@@ -344,7 +367,8 @@ function renderOverview(data, switches) {
 }
 
 function clearResults() {
-  for (const id of ['identity', 'status', 'controls', 'figures', 'chart', 'transfer-totals'])
+  document.getElementById('stop-out-reason').textContent = '';
+  for (const id of ['identity', 'status', 'controls', 'stop-out-status', 'figures', 'chart', 'transfer-totals'])
     document.getElementById(id).replaceChildren();
   document.getElementById('comment').textContent = '';
   for (const grid of Object.values(grids)) grid.clear();
@@ -360,13 +384,14 @@ async function search(login) {
   currentLogin = login;
   message.textContent = 'Loading...';
   me = await currentAccount();
-  const [data, switches] = await Promise.all([
+  const [data, switches, status] = await Promise.all([
     panelRequest('GET', panelPath('')),
     panelRequest('GET', `mt5/account-switches?login=${encodeURIComponent(login)}`).catch(() => []),
+    panelRequest('GET', `mt5/account-status?login=${encodeURIComponent(login)}`).catch(() => null),
   ]);
   if (current !== request) return;
   overview = data;
-  renderOverview(data, switches);
+  renderOverview(data, switches, status);
   writeState();
   message.textContent = '';
   await loadTab(currentTab);

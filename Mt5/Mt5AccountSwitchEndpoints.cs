@@ -5,6 +5,7 @@ public static class Mt5AccountSwitchEndpoints
     public static void MapMt5AccountSwitchEndpoints(this RouteGroupBuilder mt5)
     {
         mt5.MapGet("/account-switches", ReadAsync).RequirePermission(PanelPermissions.AccountDataView);
+        mt5.MapGet("/account-status", ReadStatusAsync).RequirePermission(PanelPermissions.AccountDataView);
         mt5.MapPost("/account-switch", SetAsync);
     }
 
@@ -12,6 +13,28 @@ public static class Mt5AccountSwitchEndpoints
         ulong.TryParse(login, out var parsed) && parsed > 0
             ? Results.Ok(await changeLog.LastSwitchChangesAsync(parsed, cancellationToken))
             : Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Enter a valid account number.");
+
+    private static async Task<IResult> ReadStatusAsync(
+        string? login, AccountActivationOptions options, AccountActivationClient client, CancellationToken cancellationToken)
+    {
+        if (!ulong.TryParse(login, out var parsed) || parsed == 0)
+            return Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Enter a valid account number.");
+        if (!options.IsStatusConfigured)
+            return Mt5Extensions.Error(StatusCodes.Status503ServiceUnavailable, "The status service is not configured.");
+
+        try
+        {
+            var result = await client.GetStatusAsync(parsed, cancellationToken);
+            return result.Succeeded
+                ? Results.Content(result.Body, "application/json")
+                : Mt5Extensions.Error(result.StatusCode == StatusCodes.Status404NotFound ? StatusCodes.Status404NotFound : StatusCodes.Status502BadGateway,
+                    $"The status service answered {result.StatusCode}.");
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return Mt5Extensions.Error(StatusCodes.Status502BadGateway, "The status service could not be reached.");
+        }
+    }
 
     private static async Task<IResult> SetAsync(
         Mt5AccountSwitchInput request,
