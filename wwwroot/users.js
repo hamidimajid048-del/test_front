@@ -173,7 +173,7 @@ function userActions(user) {
     actions.append(actionButton('Reset password', () => openPasswordDialog(user)));
     actions.append(actionButton('Reset 2FA', async () => {
       const result = await runAction(
-        `Issue a new authenticator key for ${name}? The current key stops working and ${name} is signed out.`,
+        `Issue a new authenticator key for ${name}?`,
         () => panelRequest('POST', `users/${user.id}/two-factor`),
         `${name} has a new authenticator key.`);
       if (result) showTwoFactorSetup(name, result.twoFactor);
@@ -186,7 +186,7 @@ function userActions(user) {
   if (isSuperAdmin) {
     const newRole = user.role === 'superadmin' ? 'admin' : 'superadmin';
     actions.append(actionButton(newRole === 'superadmin' ? 'Make super admin' : 'Make admin', () => runAction(
-      `Change ${name} to ${ROLE_LABELS[newRole]}? ${name} is signed out and signs in again with the new rights.`,
+      `Change ${name} to ${ROLE_LABELS[newRole]}?`,
       () => panelRequest('POST', `users/${user.id}/role`, { role: newRole }),
       `${name} is now ${ROLE_LABELS[newRole]}.`)));
   }
@@ -206,13 +206,13 @@ function userActions(user) {
         null, () => panelRequest('POST', `users/${user.id}/enable`), `${name} is enabled.`)));
     else
       actions.append(actionButton('Disable', () => runAction(
-        `Disable ${name}? ${name} is signed out and cannot sign in until enabled again.`,
+        `Disable ${name}?`,
         () => panelRequest('POST', `users/${user.id}/disable`), `${name} is disabled.`), true));
   }
 
   if (can(me, 'users.delete'))
     actions.append(actionButton('Delete', () => runAction(
-      `Delete the account ${name}? This cannot be undone; its audit log entries stay.`,
+      `Delete the account ${name}?`,
       () => panelRequest('DELETE', `users/${user.id}`), `${name} is deleted.`), true));
   return actions;
 }
@@ -281,8 +281,7 @@ function openPasswordDialog(user) {
   passwordTarget = user;
   passwordForm.reset();
   passwordError.textContent = '';
-  document.getElementById('password-dialog-text').textContent =
-    `${user.username} is signed out and signs in with the new password and the same authenticator app.`;
+  document.getElementById('password-dialog-text').textContent = user.username;
   passwordDialog.showModal();
 }
 

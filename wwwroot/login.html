@@ -24,7 +24,6 @@
       <label>Admin access token
         <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
       </label>
-      <small class="login-hint" id="access-token-hint">The reports are for admins only.</small>
     </div>
     <button type="submit">Continue</button>
   </form>
@@ -35,7 +34,7 @@
       </span>
       Violation Panel
     </div>
-    <p class="login-subtitle">Password accepted. Enter the code from your authenticator app</p>
+    <p class="login-subtitle">Enter the authentication code</p>
     <p id="code-error" class="message error" hidden></p>
     <label>Authentication code
       <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="6-digit code" required>
@@ -46,12 +45,12 @@
   <script>
     document.body.append(createThemeToggle());
     const messages = {
-      invalid: 'Incorrect username or password. Repeated failures lock the account for a while',
-      code: 'Incorrect code. Repeated failures lock the account for a while',
-      restart: 'The sign-in took too long or was interrupted. Start again',
-      rate: 'Too many attempts. Try again in a minute',
-      token: 'Enter a valid, unexpired admin access token',
-      expired: 'Your session has ended. Sign in again',
+      invalid: 'Incorrect username or password',
+      code: 'Incorrect code',
+      restart: 'Sign-in expired. Start again',
+      rate: 'Too many attempts',
+      token: 'Invalid access token',
+      expired: 'Session ended',
     };
     const query = new URLSearchParams(location.search);
     const codeStep = query.get('step') === 'code';
@@ -73,8 +72,6 @@
         if (accessToken === 'none') return;
         document.getElementById('access-token').hidden = false;
         document.querySelector('[name="accessToken"]').required = accessToken === 'required';
-        if (accessToken === 'optional')
-          document.getElementById('access-token-hint').textContent += ' Leave empty to use the configured token.';
       });
   </script>
 </body>

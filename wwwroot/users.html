@@ -33,7 +33,6 @@
         </label>
         <div class="access-host" id="create-access"></div>
         <button type="submit">Add account</button>
-        <p class="form-note">The new account signs in with this password and an authenticator code; its key is shown once, after it is created.</p>
       </form>
 
       <div class="two-factor-setup" id="two-factor-setup" hidden>
@@ -50,7 +49,6 @@
             <button type="button" id="two-factor-copy">Copy key</button>
             <button type="button" id="two-factor-close">Done, hide the key</button>
           </div>
-          <p class="form-note">This key is shown only now. Give it to the account's owner over a private channel.</p>
         </div>
       </div>
 
@@ -93,7 +91,6 @@
   <dialog class="panel-dialog access-dialog" id="access-dialog">
     <form method="dialog" id="access-form">
       <h3 id="access-dialog-title">Edit access</h3>
-      <p>Changes apply at once; the account does not have to sign in again.</p>
       <div class="access-host" id="access-editor"></div>
       <p class="message error" id="access-dialog-error"></p>
       <div class="dialog-buttons">

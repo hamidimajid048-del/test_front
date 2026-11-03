@@ -27,7 +27,7 @@ form.addEventListener('submit', async event => {
     const username = form.elements.username.value;
     form.reset();
     form.elements.username.value = username;
-    showMessage('Your password is changed. Your other sessions have ended.', 'success');
+    showMessage('Password changed', 'success');
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   } finally {
