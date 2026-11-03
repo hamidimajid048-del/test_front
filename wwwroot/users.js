@@ -61,7 +61,7 @@ function actionButton(text, onClick, danger = false) {
 
 // Runs one account change, then reloads the list. confirmText: asked first, when the change needs a confirmation.
 async function runAction(confirmText, action, doneText) {
-  if (confirmText && !confirm(confirmText)) return;
+  if (confirmText && !await confirmAction({ title: confirmText, confirmText: 'Confirm', danger: /^(Delete|Disable)/.test(confirmText) })) return;
   try {
     const result = await action();
     showMessage(doneText, 'success');

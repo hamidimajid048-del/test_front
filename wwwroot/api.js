@@ -96,6 +96,40 @@ document.addEventListener('change', event => {
   if (input.max !== '' && value > Number(input.max)) input.value = input.max;
 }, true);
 
+// Asks the user to confirm an action in a dialog; resolves true when confirmed. danger paints the button red.
+function confirmAction({ title, message = '', confirmText = 'Confirm', danger = false }) {
+  return new Promise(resolve => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'panel-dialog confirm-dialog';
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    const text = document.createElement('p');
+    text.textContent = message;
+    text.hidden = !message;
+    const buttons = document.createElement('div');
+    buttons.className = 'dialog-buttons';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.textContent = 'Cancel';
+    const confirm = document.createElement('button');
+    confirm.type = 'button';
+    confirm.textContent = confirmText;
+    confirm.className = danger ? 'confirm danger-solid' : 'confirm';
+    buttons.append(cancel, confirm);
+    dialog.append(heading, text, buttons);
+
+    cancel.addEventListener('click', () => dialog.close('cancel'));
+    confirm.addEventListener('click', () => dialog.close('confirm'));
+    dialog.addEventListener('close', () => {
+      resolve(dialog.returnValue === 'confirm');
+      dialog.remove();
+    });
+    document.body.append(dialog);
+    dialog.showModal();
+    (danger ? cancel : confirm).focus();
+  });
+}
+
 class ApiError extends Error {
   // fieldErrors: { fieldName: [messages] } for request values the service could not read (a ValidationError response).
   // reason: the service's failure reason (status.description), such as "AccountNotFound", when there is one.

@@ -24,16 +24,19 @@ const SWITCHES = [
   {
     key: 'account', api: 'Account', title: 'Account', permission: 'account-data.switch-account',
     description: 'The owner can sign in to the account.',
+    effect: ['The owner will no longer be able to sign in.', 'The owner will be able to sign in again.'],
     state: (data) => data.isEnabled,
   },
   {
     key: 'trading', api: 'Trading', title: 'Trading', permission: 'account-data.switch-trading',
     description: 'The owner can open and close trades.',
+    effect: ['The owner will no longer be able to open or close trades.', 'The owner will be able to trade again.'],
     state: (data) => data.isTradeEnabled,
   },
   {
     key: 'stop_out', api: 'StopOut', title: 'Stop-out plugin', permission: 'account-data.switch-stop-out',
     description: 'The stop-out plugin watches the account.',
+    effect: ['The stop-out plugin will stop watching this account.', 'The stop-out plugin will watch this account.'],
     state: (data, last) => last?.enabled ?? null,
   },
 ];
@@ -290,7 +293,14 @@ function renderControls(data, changes) {
 
 async function changeSwitch(definition, enabled, toggle) {
   const verb = enabled ? 'Enable' : 'Disable';
-  if (!currentLogin || !confirm(`${verb} ${definition.title.toLowerCase()} for account ${currentLogin}?`)) return;
+  if (!currentLogin) return;
+  const confirmed = await confirmAction({
+    title: `${verb} ${definition.title.toLowerCase()}?`,
+    message: `Account ${currentLogin}. ${definition.effect[enabled ? 1 : 0]}`,
+    confirmText: verb,
+    danger: !enabled,
+  });
+  if (!confirmed) return;
   const login = currentLogin;
   clearMessages(form, message);
   toggle.disabled = true;
