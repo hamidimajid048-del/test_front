@@ -3,6 +3,7 @@ global using MetaQuotes.MT5ManagerAPI;
 global using Microsoft.AspNetCore.Authentication.Cookies;
 global using Microsoft.AspNetCore.Authentication;
 global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.DataProtection;
 global using Microsoft.AspNetCore.HttpOverrides;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.Extensions.FileProviders;

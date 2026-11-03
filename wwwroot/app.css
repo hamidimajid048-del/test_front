@@ -652,3 +652,4 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .access-editor label.access-item input { width: auto; height: auto; margin-top: 3px; }
 .access-editor label.access-item .access-note { grid-column: 2; color: var(--text-muted); font-size: 12px; font-weight: 400; }
 .access-editor label.access-item.locked { opacity: .55; cursor: not-allowed; }
+.login-box[hidden] { display: none; }

@@ -22,8 +22,9 @@ public static class Totp
         $"?secret={secret}&issuer={Uri.EscapeDataString(Issuer)}&algorithm=SHA1&digits={Digits}&period={StepSeconds}";
 
     /// <summary>
-    /// Returns the time step the code belongs to, or null for a wrong code. Steps up to <paramref name="lastUsedStep"/>
-    /// are refused, so a code cannot be used twice.
+    /// Returns the time step the code belongs to, or null for a wrong code. Steps before <paramref name="lastUsedStep"/>
+    /// are refused, so an older code cannot be replayed; the current step stays valid, so one user can sign in on several
+    /// devices with the same code.
     /// </summary>
     public static long? Verify(string secret, string code, DateTimeOffset now, long lastUsedStep)
     {
@@ -37,7 +38,7 @@ public static class Totp
         for (var step = currentStep - AllowedDriftSteps; step <= currentStep + AllowedDriftSteps; step++)
         {
             var expected = Encoding.ASCII.GetBytes(Compute(key, step));
-            if (CryptographicOperations.FixedTimeEquals(expected, Encoding.ASCII.GetBytes(code)) && step > lastUsedStep)
+            if (CryptographicOperations.FixedTimeEquals(expected, Encoding.ASCII.GetBytes(code)) && step >= lastUsedStep)
                 matchedStep ??= step;
         }
 

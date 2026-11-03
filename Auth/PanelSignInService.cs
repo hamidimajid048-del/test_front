@@ -27,12 +27,11 @@ public sealed class PanelSignInService(
         password.Length <= MaxPasswordLength &&
         PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, password) != PasswordVerificationResult.Failed;
 
-    /// <summary>Returns the user when the sign-in is valid; otherwise null, after recording the failure.</summary>
-    public async Task<PanelUser?> VerifyAsync(string username, string password, string code, ClientInfo client,
+    /// <summary>First step: returns the user when the username and password are right; otherwise null, after recording the failure.</summary>
+    public async Task<PanelUser?> VerifyPasswordAsync(string username, string password, ClientInfo client,
         CancellationToken cancellationToken)
     {
         username = username.Trim();
-        code = code.Replace(" ", string.Empty).Trim();
         if (username.Length is 0 or > MaxUsernameLength || password.Length is 0 or > MaxPasswordLength)
         {
             await FailAsync("sign_in_failed", username.Length > MaxUsernameLength ? null : username, null, client, "malformed");
@@ -50,46 +49,57 @@ public sealed class PanelSignInService(
         var passwordResult = PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (user.IsDisabled || user.IsLocked)
         {
-            // A correct password does not unlock or reveal anything while the account is locked or disabled.
             await FailAsync("sign_in_failed", user.Username, user.Id, client, user.IsDisabled ? "disabled" : "locked");
             return null;
         }
 
-        var reason = passwordResult == PasswordVerificationResult.Failed ? "wrong_password" : null;
-        long? step = null;
-        if (reason is null)
+        if (passwordResult == PasswordVerificationResult.Failed)
         {
-            step = user.TotpSecret is null
-                ? null
-                : Totp.Verify(user.TotpSecret, code, timeProvider.GetUtcNow(), user.TotpLastStep);
-            if (step is null)
-                reason = user.TotpSecret is null ? "no_two_factor" : "wrong_code";
+            await RegisterFailureAsync(user, client, "wrong_password");
+            return null;
         }
 
-        if (reason is null)
-        {
-            var rehashed = passwordResult == PasswordVerificationResult.SuccessRehashNeeded ? HashPassword(password) : null;
-            if (await store.RegisterSuccessAsync(user.Id, step!.Value, rehashed, cancellationToken))
-            {
-                await store.AuditAsync("sign_in_succeeded", user.Username, user.Id, client.IpAddress, client.UserAgent,
-                    cancellationToken: CancellationToken.None);
-                return user;
-            }
+        if (passwordResult == PasswordVerificationResult.SuccessRehashNeeded)
+            await store.UpdatePasswordHashAsync(user.Id, HashPassword(password), CancellationToken.None);
+        await store.AuditAsync("password_accepted", user.Username, user.Id, client.IpAddress, client.UserAgent,
+            cancellationToken: CancellationToken.None);
+        return user;
+    }
 
-            reason = "replayed_code";
+    /// <summary>Second step: returns the user when the one-time code is right; otherwise null, after recording the failure.</summary>
+    public async Task<PanelUser?> VerifyCodeAsync(Guid userId, string code, ClientInfo client, CancellationToken cancellationToken)
+    {
+        code = code.Replace(" ", string.Empty).Trim();
+        var user = await store.GetUserAsync(userId, cancellationToken);
+        if (user is null || user.IsDisabled || user.IsLocked)
+        {
+            await FailAsync("sign_in_failed", user?.Username, user?.Id, client, user is null ? "unknown_user" : user.IsDisabled ? "disabled" : "locked");
+            return null;
         }
 
+        var step = user.TotpSecret is null ? null : Totp.Verify(user.TotpSecret, code, timeProvider.GetUtcNow(), user.TotpLastStep);
+        if (step is not null && await store.RegisterSuccessAsync(user.Id, step.Value, null, cancellationToken))
+        {
+            await store.AuditAsync("sign_in_succeeded", user.Username, user.Id, client.IpAddress, client.UserAgent,
+                cancellationToken: CancellationToken.None);
+            return user;
+        }
+
+        await RegisterFailureAsync(user, client, user.TotpSecret is null ? "no_two_factor" : step is null ? "wrong_code" : "replayed_code");
+        return null;
+    }
+
+    private async Task RegisterFailureAsync(PanelUser user, ClientInfo client, string reason)
+    {
         var locked = await store.RegisterFailureAsync(user.Id, options.MaxFailedAttempts, options.Lockout, CancellationToken.None);
         await FailAsync("sign_in_failed", user.Username, user.Id, client, reason);
-        if (locked)
-        {
-            await store.AuditAsync("account_locked", user.Username, user.Id, client.IpAddress, client.UserAgent,
-                $"{options.MaxFailedAttempts} failed attempts; locked for {options.LockoutMinutes} minutes", CancellationToken.None);
-            logger.LogWarning("Panel account {Username} is locked after {Attempts} failed sign-ins (last from {IpAddress}).",
-                user.Username, options.MaxFailedAttempts, client.IpAddress);
-        }
+        if (!locked)
+            return;
 
-        return null;
+        await store.AuditAsync("account_locked", user.Username, user.Id, client.IpAddress, client.UserAgent,
+            $"{options.MaxFailedAttempts} failed attempts; locked for {options.LockoutMinutes} minutes", CancellationToken.None);
+        logger.LogWarning("Panel account {Username} is locked after {Attempts} failed sign-ins (last from {IpAddress}).",
+            user.Username, options.MaxFailedAttempts, client.IpAddress);
     }
 
     /// <summary>Creates the session and returns its token, which only the encrypted sign-in cookie carries.</summary>

@@ -275,7 +275,7 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
             UPDATE violation_panel.users
             SET totp_last_step = $2, failed_attempts = 0, locked_until = NULL, last_sign_in_at = now(),
                 password_hash = coalesce($3, password_hash)
-            WHERE id = $1 AND totp_last_step < $2
+            WHERE id = $1 AND totp_last_step <= $2
             """);
         command.Parameters.AddWithValue(userId);
         command.Parameters.AddWithValue(totpStep);
@@ -286,6 +286,9 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
     public Task SetPasswordAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default) =>
         ExecuteAsync("UPDATE violation_panel.users SET password_hash = $2, failed_attempts = 0, locked_until = NULL WHERE id = $1",
             cancellationToken, userId, passwordHash);
+
+    public Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default) =>
+        ExecuteAsync("UPDATE violation_panel.users SET password_hash = $2 WHERE id = $1", cancellationToken, userId, passwordHash);
 
     public Task SetTotpSecretAsync(Guid userId, string totpSecret, CancellationToken cancellationToken = default) =>
         ExecuteAsync("UPDATE violation_panel.users SET totp_secret = $2, totp_last_step = 0 WHERE id = $1",

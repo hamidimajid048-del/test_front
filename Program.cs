@@ -47,6 +47,7 @@ builder.Services.AddSingleton(authOptions);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<PanelAuthStore>();
 builder.Services.AddSingleton<PanelSignInService>();
+builder.Services.AddSingleton<PanelPendingSignIn>();
 builder.AddMt5UserDirectory();
 builder.AddMt5Connection();
 builder.AddAccountActivation();
@@ -246,10 +247,11 @@ app.UseMiddleware<PanelApiAccessMiddleware>();
 app.UseDefaultFiles();
 app.UseStaticFiles(staticFiles);
 
-app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn) =>
+app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn, PanelPendingSignIn pending) =>
     {
         var form = await context.Request.ReadFormAsync();
         var client = ClientInfo.From(context);
+        pending.Clear(context);
 
         // The token is checked first: a sign-in with a bad token neither counts against the account nor uses the code.
         string? accessToken = null;
@@ -261,10 +263,34 @@ app.MapPost("/auth/login", async (HttpContext context, PanelSignInService signIn
                 return Results.Redirect($"{LoginPage}?error=token");
         }
 
-        var user = await signIn.VerifyAsync(
-            form["username"].ToString(), form["password"].ToString(), form["code"].ToString(), client, context.RequestAborted);
+        var user = await signIn.VerifyPasswordAsync(form["username"].ToString(), form["password"].ToString(), client, context.RequestAborted);
         if (user is null)
             return Results.Redirect($"{LoginPage}?error=invalid");
+
+        pending.Issue(context, user.Id, accessToken);
+        return Results.Redirect($"{LoginPage}?step=code");
+    })
+    .AllowAnonymous()
+    .RequireRateLimiting(LoginRateLimitPolicy);
+
+app.MapPost("/auth/verify-code", async (HttpContext context, PanelSignInService signIn, PanelPendingSignIn pending) =>
+    {
+        var form = await context.Request.ReadFormAsync();
+        var client = ClientInfo.From(context);
+        if (pending.Read(context) is not { } ticket)
+            return Results.Redirect($"{LoginPage}?error=restart");
+
+        var user = await signIn.VerifyCodeAsync(ticket.UserId, form["code"].ToString(), client, context.RequestAborted);
+        if (user is null)
+        {
+            var locked = (await context.RequestServices.GetRequiredService<PanelAuthStore>().GetUserAsync(ticket.UserId, context.RequestAborted))?.IsLocked ?? true;
+            if (locked)
+                pending.Clear(context);
+            return Results.Redirect(locked ? $"{LoginPage}?error=invalid" : $"{LoginPage}?step=code&error=code");
+        }
+
+        pending.Clear(context);
+        var accessToken = ticket.AccessToken;
 
         // A new session on every sign-in, so a session from before the sign-in is never reused.
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

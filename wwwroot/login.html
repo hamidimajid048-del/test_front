@@ -9,7 +9,7 @@
   <script src="/theme.js"></script>
 </head>
 <body class="login-page">
-  <form class="login-box" method="post" action="/auth/login">
+  <form class="login-box" id="login-form" method="post" action="/auth/login">
     <div class="brand">
       <span class="brand-mark">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
@@ -20,31 +20,50 @@
     <p id="error" class="message error" hidden></p>
     <label>Username <input name="username" autocomplete="username" maxlength="64" required autofocus></label>
     <label>Password <input name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
-    <label>Authentication code
-      <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="6-digit code from your authenticator app" required>
-    </label>
     <div id="access-token" hidden>
       <label>Admin access token
         <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
       </label>
       <small class="login-hint" id="access-token-hint">The reports are for admins only.</small>
     </div>
+    <button type="submit">Continue</button>
+  </form>
+  <form class="login-box" id="code-form" method="post" action="/auth/verify-code" hidden>
+    <div class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      </span>
+      Violation Panel
+    </div>
+    <p class="login-subtitle">Password accepted. Enter the code from your authenticator app</p>
+    <p id="code-error" class="message error" hidden></p>
+    <label>Authentication code
+      <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="6-digit code" required>
+    </label>
     <button type="submit">Sign in</button>
+    <a href="/login.html">Start again</a>
   </form>
   <script>
     document.body.append(createThemeToggle());
     const messages = {
-      invalid: 'Incorrect username, password or code. Repeated failures lock the account for a while',
+      invalid: 'Incorrect username or password. Repeated failures lock the account for a while',
+      code: 'Incorrect code. Repeated failures lock the account for a while',
+      restart: 'The sign-in took too long or was interrupted. Start again',
       rate: 'Too many attempts. Try again in a minute',
       token: 'Enter a valid, unexpired admin access token',
       expired: 'Your session has ended. Sign in again',
     };
-    const error = messages[new URLSearchParams(location.search).get('error')];
+    const query = new URLSearchParams(location.search);
+    const codeStep = query.get('step') === 'code';
+    document.getElementById('login-form').hidden = codeStep;
+    document.getElementById('code-form').hidden = !codeStep;
+    const error = messages[query.get('error')];
     if (error) {
-      const el = document.getElementById('error');
+      const el = document.getElementById(codeStep ? 'code-error' : 'error');
       el.textContent = error;
       el.hidden = false;
     }
+    if (codeStep) document.querySelector('#code-form [name="code"]').focus();
 
     // "none" while the service runs in its temporary panel access mode; any failure shows the token field.
     fetch('/auth/options')

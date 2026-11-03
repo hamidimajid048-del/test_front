@@ -9,7 +9,7 @@ public sealed class PanelAuthOptions
     /// <summary>Failed sign-ins (wrong password or code) after which the account is locked.</summary>
     public int MaxFailedAttempts { get; init; } = 5;
 
-    public int LockoutMinutes { get; init; } = 15;
+    public int LockoutMinutes { get; init; } = 1;
 
     /// <summary>A session without a request for this long ends.</summary>
     public int IdleTimeoutMinutes { get; init; } = 10080;
