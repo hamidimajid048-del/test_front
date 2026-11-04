@@ -65,6 +65,19 @@
       <div id="open-orders-pager"></div>
     </section>
     <section data-panel="transfers" hidden>
+      <div data-permission="account-data.balance">
+        <form class="filters" id="balance-form" autocomplete="off">
+          <label>Operation
+            <select name="kind">
+              <option value="Deposit">Deposit</option>
+              <option value="Withdrawal">Withdrawal</option>
+            </select>
+          </label>
+          <label>Amount <input name="amount" type="text" inputmode="decimal" autocomplete="off" required></label>
+          <label>Comment <input name="comment" maxlength="32" autocomplete="off" required placeholder="Required"></label>
+          <button type="submit">Apply</button>
+        </form>
+      </div>
       <div class="summary" id="transfer-totals"></div>
       <div id="transfers"></div>
       <div id="transfers-pager"></div>

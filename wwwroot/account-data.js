@@ -16,6 +16,8 @@ const CHANGE_ACTIONS = {
   trading_disable: 'Trading disabled',
   stop_out_enable: 'Stop-out plugin enabled',
   stop_out_disable: 'Stop-out plugin disabled',
+  deposit: 'Deposit',
+  withdrawal: 'Withdrawal',
   password_main_change: 'Main password changed',
   password_main_check: 'Main password checked',
   password_investor_change: 'Investor password changed',
@@ -459,6 +461,46 @@ function renderPasswords() {
   document.getElementById('password-rows').replaceChildren(...PASSWORD_TYPES.map(([type, title]) => passwordRow(type, title)));
   document.getElementById('passwords').hidden = false;
 }
+
+const balanceForm = document.getElementById('balance-form');
+
+balanceForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!currentLogin) return;
+  const kind = balanceForm.elements.kind.value;
+  const amountText = balanceForm.elements.amount.value.trim().replaceAll(',', '');
+  const comment = balanceForm.elements.comment.value.trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(amountText) || Number(amountText) <= 0) {
+    toast('Enter an amount above zero with at most two decimals', 'error');
+    return;
+  }
+  if (!comment) {
+    toast('A comment is required', 'error');
+    return;
+  }
+  const amount = Number(amountText);
+  const verb = kind === 'Deposit' ? 'Deposit' : 'Withdraw';
+  if (!await confirmAction({
+    title: `${verb} ${money(amount)}?`,
+    message: `Account ${currentLogin}. Comment: ${comment}`,
+    confirmText: verb,
+    danger: kind === 'Withdrawal',
+  })) return;
+
+  const login = currentLogin;
+  const submitButton = balanceForm.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  try {
+    await panelRequest('POST', 'mt5/account-balance', { login: Number(login), kind, amount, comment });
+    balanceForm.reset();
+    await search(login);
+    toast(`${kind === 'Deposit' ? 'Deposit' : 'Withdrawal'} of ${money(amount)} done`, 'success', `Account ${login}`);
+  } catch (error) {
+    toast(`The ${kind.toLowerCase()} was not made`, 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
+  } finally {
+    submitButton.disabled = false;
+  }
+});
 
 function renderOverview(data, switches, status) {
   renderSummary(document.getElementById('identity'), [
