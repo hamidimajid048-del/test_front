@@ -13,7 +13,8 @@ public static class PanelApiRules
         ["compare-reports"] = [PanelPermissions.CompareView],
         ["group-compare-reports"] = [PanelPermissions.CompareEmailsView],
         ["copy-trade-and-hedge-reports"] = [PanelPermissions.CopyTradeView],
-        ["position-compare-reports"] = [PanelPermissions.CopyTradeView]
+        ["position-compare-reports"] = [PanelPermissions.CopyTradeView],
+        ["transaction-reports"] = [PanelPermissions.AccountDataView]
     };
 
     public static bool IsAllowed(PathString path, ClaimsPrincipal user)

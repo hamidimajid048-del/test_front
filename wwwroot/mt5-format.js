@@ -1,7 +1,7 @@
 // Formatters and column helpers for MetaTrader data (account data and position details pages).
 
 const label = value => {
-  const text = String(value).replace(/^(DEAL_REASON_|ORDER_REASON_|DEAL_|POSITION_|OP_|ORDER_STATE_|ENTRY_)/, '').replaceAll('_', ' ').toLowerCase();
+  const text = String(value).replace(/^(DEAL_REASON_|ORDER_REASON_|DEAL_|POSITION_|OP_|ORDER_STATE_|ENTRY_|ACTION_|TYPE_|MT_RET_)/, '').replaceAll('_', ' ').toLowerCase();
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 const money = value => value === null || value === undefined

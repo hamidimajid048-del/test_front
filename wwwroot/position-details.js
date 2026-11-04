@@ -35,29 +35,55 @@ const grids = {
     columns: [
       column('recordNo', 'Record'),
       utcColumn('time', 'Time'),
-      labelColumn('action', 'Action'),
-      labelColumn('type', 'Type'),
-      labelColumn('entry', 'Entry'),
+      codeColumn('actionText', 'Action', 'action'),
+      codeColumn('typeText', 'Type', 'type'),
+      codeColumn('entryText', 'Entry', 'entry'),
       column('symbol', 'Symbol'),
-      column('lots', 'Volume', lots),
+      column('lots', 'Volume', value => value === null ? '—' : lots(value)),
       priceColumn('price', 'Price'),
       priceColumn('bid', 'Bid'),
       priceColumn('ask', 'Ask'),
+      priceColumn('priceGateway', 'Gateway price'),
       priceColumn('sl', 'SL'),
       priceColumn('tp', 'TP'),
       amountColumn('amount', 'Amount'),
+      amountColumn('amountClosed', 'Closed amount'),
       amountColumn('profit', 'Profit'),
       amountColumn('commission', 'Commission'),
       amountColumn('swap', 'Swap'),
       column('order', 'Order'),
       column('deal', 'Deal'),
-      labelColumn('reason', 'Reason'),
-      labelColumn('retcode', 'Result'),
+      codeColumn('reasonText', 'Reason', 'reason'),
+      codeColumn('retcodeText', 'Result', 'retcode'),
       column('ip', 'IP'),
+      column('platform', 'Device', platformLabel),
+      column('accessPoint', 'Access point'),
       column('dealer', 'Dealer'),
     ],
   }),
 };
+
+const codeText = code => code ? label(code.name) : '';
+
+function codeColumn(key, title, codeKey) {
+  return column(key, title, (text, row) => {
+    const cell = document.createElement('span');
+    cell.textContent = text || '—';
+    cell.title = row[codeKey]?.description ?? '';
+    return cell;
+  });
+}
+
+function transactionRow(item) {
+  return {
+    ...item,
+    actionText: codeText(item.action),
+    typeText: codeText(item.type),
+    entryText: codeText(item.entry),
+    reasonText: codeText(item.reason),
+    retcodeText: codeText(item.retcode),
+  };
+}
 
 function showTab(tab) {
   currentTab = TABS.includes(tab) ? tab : 'deals';
@@ -84,8 +110,6 @@ function renderPosition(login, { position, deals }) {
     ['Deals', deals.length],
   ]);
   grids.deals.setRows(deals);
-  // The transaction tracker rows come from the service once it exposes them; until then the grid stays empty.
-  grids.transactions.setRows([]);
 }
 
 function writeState(login, position) {
@@ -97,14 +121,21 @@ async function search({ login, position }) {
   document.getElementById('summary').replaceChildren();
   for (const grid of Object.values(grids)) grid.clear();
   message.textContent = 'Loading...';
-  const detail = await panelRequest('GET', `mt5/account-data/position${toQueryString({ login, position })}`);
+  const [detail, tracker] = await Promise.allSettled([
+    panelRequest('GET', `mt5/account-data/position${toQueryString({ login, position })}`),
+    apiGet('transaction-reports/get-position-transactions', { position }),
+  ]);
   if (current !== request) return;
-  renderPosition(login, detail);
+  if (detail.status === 'rejected' && tracker.status === 'rejected') throw detail.reason;
+  if (detail.status === 'fulfilled') renderPosition(login, detail.value);
+  if (tracker.status === 'fulfilled') grids.transactions.setRows(tracker.value.map(transactionRow));
+  const failure = [detail, tracker].find(result => result.status === 'rejected');
   const back = document.getElementById('back');
   back.href = `/account-data.html?login=${encodeURIComponent(login)}&tab=positions`;
   back.hidden = false;
   writeState(login, position);
   message.textContent = '';
+  if (failure) throw failure.reason;
 }
 
 async function submit() {

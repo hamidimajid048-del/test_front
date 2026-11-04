@@ -5,6 +5,7 @@ const ERROR_MESSAGES = {
   AdminRequired: ACCESS_MESSAGE,
   InvalidLogin: 'The login number is not valid',
   InvalidLogins: 'Send 1 to 100 valid login numbers',
+  InvalidPosition: 'The position number is not valid',
   InvalidOtherLogins: 'Send 1 to 100 valid login numbers for the second email',
   OverlappingLogins: 'A login belongs to both emails, so they cannot be compared',
   InvalidRelatedLogin: 'The related login is not valid or is the same as the login',
