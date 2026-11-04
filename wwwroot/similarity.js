@@ -19,6 +19,11 @@ const SUMMARY_KEYS = [
 
 const TYPE_LABELS = { Ip: 'IP', Cid: 'CID' };
 
+const SHARED_SIGNINS_HELP = 'How many times this related account signed in from an IP or CID that the searched account also used. '
+  + 'A high number means the two accounts keep working from the same device or network, which points to one person or linked accounts; '
+  + 'a low number (1-2) is often a coincidence such as a shared network. It follows the filters above (date range, device type, CID).';
+const DETAIL_SIGNINS_HELP = 'How many times the related account signed in from this value. Compare it with Logins, the sign-ins of the searched account.';
+
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
 let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
@@ -29,7 +34,7 @@ let activeTab = SUMMARY_TAB;
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]));
 
 const rangeControls = initRangeControls(form);
-const deviceTypePicker = initDeviceTypePicker(form, () => apiGet('similarity-reports/get-device-types'));
+const deviceTypePicker = initDeviceTypePicker(form);
 
 // The account's data range comes from the login sessions report metadata, the only place the service exposes it.
 let accountRangeLogin = null;
@@ -124,11 +129,11 @@ function detailsButton(row) {
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
-  { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
-  accountsDirectory.column('Name', 'name', 'relatedLogin'),
-  accountsDirectory.column('Group', 'group', 'relatedLogin'),
+  { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
+  { ...accountsDirectory.column('Name', 'name', 'relatedLogin'), hiddenByDefault: true },
+  { ...accountsDirectory.column('Group', 'group', 'relatedLogin'), hiddenByDefault: true },
   accountsDirectory.column('Email', 'email', 'relatedLogin'),
-  accountsDirectory.column('Balance', 'balance', 'relatedLogin'),
+  { ...accountsDirectory.column('Balance', 'balance', 'relatedLogin'), hiddenByDefault: true },
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -149,7 +154,8 @@ const SUMMARY_COLUMNS = [
 const DETAILS_COLUMNS = [
   { key: 'value', title: 'Value', sortKey: 'Value' },
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
-  { key: 'relatedLoginCount', title: 'Related logins', sortKey: 'RelatedLoginCount' },
+  { key: 'relatedLoginCount', title: 'Related sign-ins', sortKey: 'RelatedLoginCount', help: DETAIL_SIGNINS_HELP },
+  { key: 'platforms', title: 'Device type', format: platformList, sortable: false, filterable: false },
   seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
   seenColumn('relatedFirstSeenUtc', 'relatedLastSeenUtc', 'Related first / last seen', { sortKey: 'RelatedFirstSeenUtc' }),
 ];

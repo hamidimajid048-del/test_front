@@ -32,15 +32,16 @@
       </label>
       <label>From day (UTC) <input name="fromUtc" type="date"></label>
       <label>To day (UTC) <input name="toUtc" type="date"></label>
-      <label>Device type
+      <div class="device-type-field">
+        <span>Device type</span>
         <input type="hidden" name="deviceType">
         <button type="button" class="device-type-button">Any</button>
-      </label>
+      </div>
       <label>CID <input name="cid" maxlength="200"></label>
       <label>Related login <input name="relatedLogin" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"></label>
       <label>Sort by
         <select name="sortItem">
-          <option value="RelatedLoginCount">Related logins</option>
+          <option value="RelatedLoginCount">Shared sign-ins</option>
           <option value="RelatedLogin">Related login</option>
           <option value="Type">Type</option>
         </select>
@@ -71,7 +72,7 @@
       <div id="summary"></div>
       <div id="summary-pager"></div>
       <ul class="help">
-        <li><strong>Related logins:</strong> how many times the related login signed in from the shared IPs or CIDs (as the filters select), over the whole recorded range.</li>
+        <li><strong>Shared sign-ins:</strong> how many times the related login signed in from the shared IPs or CIDs (as the filters select). The higher it is, the more likely the two accounts belong to one person; a value of 1-2 is often a coincidence.</li>
         <li><strong>Name, Group, Email, Balance:</strong> read from MetaTrader after the table loads. Active accounts come from the Manager; deleted accounts, marked "(deleted)", from the Administrator archive.</li>
         <li><strong>Different email only</strong> hides the rows on this page whose email equals the searched login's email. Rows whose email is unknown stay visible.</li>
         <li><strong>Details</strong> opens the shared values of that account in its own tab; an account that is already open is selected instead of opened again. Close a tab with ×.</li>
@@ -92,7 +93,7 @@
         <label>Min related logins <input name="minRelatedLoginCount" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" step="1"></label>
         <label>Sort by
           <select name="sortItem">
-            <option value="RelatedLoginCount">Related login count</option>
+            <option value="RelatedLoginCount">Related sign-ins</option>
             <option value="Value">Value</option>
             <option value="LoginCount">Login count</option>
             <option value="FirstSeenUtc">First seen</option>
