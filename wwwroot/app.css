@@ -724,3 +724,10 @@ button.confirm.danger-solid:hover:not(:disabled) { background: var(--danger); bo
 
 .country-cell { display: inline-flex; align-items: center; gap: 8px; }
 img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px var(--border); }
+
+.platform-list { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; }
+.platform-cell { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.platform-icon { flex: none; color: var(--text-muted); }
+.platform-icon.web { color: #2f7de1; }
+.platform-icon.mobile { color: #1f9d6b; }
+.platform-icon.system { color: #7a5af8; }

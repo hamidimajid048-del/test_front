@@ -43,7 +43,7 @@ const SESSION_COLUMNS = [
   { ...utcColumn('logoutAt', 'Logout'), sortKey: 'LogoutAt' },
   { key: 'ip', title: 'IP', sortKey: 'Ip' },
   { key: 'cid', title: 'CID', sortKey: 'Cid' },
-  { key: 'platform', title: 'Platform', sortKey: 'Platform' },
+  { key: 'platform', title: 'Platform', sortKey: 'Platform', format: platformLabel },
   { key: 'accessPointName', title: 'Access Point', hiddenByDefault: true, sortKey: 'AccessPointName' },
   { key: 'pingMs', title: 'Ping (ms)', hiddenByDefault: true, sortKey: 'PingMs' },
   { key: 'isSessionValid', title: 'Session valid', hiddenByDefault: true, format: yesNo, sortKey: 'IsSessionValid' },

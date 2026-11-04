@@ -104,7 +104,7 @@ function renderMapping(containerId, tab, label, key, outcome) {
   const container = document.getElementById(containerId);
   const title = document.getElementById(`${containerId}-title`);
   if (outcome.status === 'fulfilled') {
-    renderTable(container, mappingColumns(key, label, key === 'cid' ? [{ key: 'deviceType', title: 'Device type' }] : []), outcome.value);
+    renderTable(container, mappingColumns(key, label, key === 'cid' ? [{ key: 'deviceType', title: 'Device type', format: platformList }] : []), outcome.value);
     title.textContent = `${label} summary (${outcome.value?.length ?? 0})`;
   } else {
     const error = document.createElement('p');

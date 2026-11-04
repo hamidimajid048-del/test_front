@@ -22,8 +22,6 @@ const TYPE_LABELS = { Ip: 'IP', Cid: 'CID' };
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
 let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
-// Column filters typed under the table headers; the server applies them to every page.
-let summaryColumnFilters = {};
 // The details tabs opened from the summary, by "Type:login"; an account already open is selected, not opened twice.
 const detailsTabs = new Map();
 let activeTab = SUMMARY_TAB;
@@ -77,14 +75,13 @@ function summaryParams() {
   return {
     ...pick(filters, SUMMARY_KEYS),
     ...commonParams(),
-    ...columnFilterParams(summaryColumnFilters),
     currentPage: summaryPaging.currentPage,
     pageSize: summaryPaging.pageSize,
   };
 }
 
 function writeState() {
-  const state = { ...filters, ...columnFilterState(summaryColumnFilters), currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
+  const state = { ...filters, currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
   if (detailsTabs.size) {
     state.tabs = [...detailsTabs.keys()].join(',');
     if (activeTab !== SUMMARY_TAB) state.tab = activeTab;
@@ -173,14 +170,7 @@ async function loadSummary() {
         return withLoading(form, message, loadSummary);
       },
     },
-    filter: {
-      values: summaryColumnFilters,
-      onChange: values => {
-        summaryColumnFilters = values;
-        summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
-        return withLoading(form, message, loadSummary);
-      },
-    },
+    columnFilters: false,
   });
   renderPager(document.getElementById('summary-pager'), paging, (page, pageSize) => {
     summaryPaging = { currentPage: page, pageSize };
@@ -256,13 +246,11 @@ function addDetailsTab(relatedLogin, type) {
   const detailsForm = part('filters');
   const detailsMessage = part('message');
   let values = {};
-  let columnFilters = {};
   let paging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
 
   const params = () => ({
     ...commonParams(),
     ...values,
-    ...columnFilterParams(columnFilters),
     type,
     relatedLogin,
     currentPage: paging.currentPage,
@@ -285,14 +273,7 @@ function addDetailsTab(relatedLogin, type) {
           return reload();
         },
       },
-      filter: {
-        values: columnFilters,
-        onChange: next => {
-          columnFilters = next;
-          paging = { currentPage: 1, pageSize: paging.pageSize };
-          return reload();
-        },
-      },
+      columnFilters: false,
     });
     renderPager(part('pager'), reportPaging, (page, pageSize) => {
       paging = { currentPage: page, pageSize };
@@ -351,7 +332,6 @@ form.addEventListener('submit', event => {
     const values = formValues(form);
     validateRange(values);
     filters = values;
-    summaryColumnFilters = {};
     summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
     closeAllDetails();
     await loadSummary();
@@ -365,7 +345,6 @@ async function restoreFromQuery() {
   showAccountRange();
   const query = new URLSearchParams(location.search);
   filters = formValues(form);
-  summaryColumnFilters = readColumnFilters(query);
   summaryPaging = {
     currentPage: Number(query.get('currentPage')) || 1,
     pageSize: Number(query.get('pageSize')) || DEFAULT_PAGE_SIZE,

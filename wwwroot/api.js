@@ -626,7 +626,8 @@ function nextSort(current, item, natural) {
 // (its sortKey when it has no filterKey) to the typed text, and a change (after a short pause in typing) calls onChange
 // with the new values, which re-reads the report from its first page. Only columns with such a key get a filter box, and
 // the boxes stay when no row matches. Without it, the boxes narrow the rows of the page on screen.
-// options.tools = false turns sorting and filtering off for small fixed tables.
+// options.tools = false turns sorting and filtering off for small fixed tables. options.columnFilters = false turns off
+// only the row of filter boxes under the titles.
 //
 // options.export = { name, rows? } adds CSV and Excel buttons (table-export.js) for reports the panel builds itself: they
 // download the rows shown with the filters and sort applied (rows() gives all of them when the table is paged by the caller)
@@ -653,7 +654,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const indexOf = column => allColumns.indexOf(column);
   const allRows = rows ?? [];
   const canSort = column => tools && column.sortable !== false && (serverSort ? Boolean(column.sortKey) : true);
-  const canFilter = column => tools && column.filterable !== false && (serverFilter ? Boolean(filterKeyOf(column)) : true);
+  const canFilter = column => tools && options.columnFilters !== false && column.filterable !== false && (serverFilter ? Boolean(filterKeyOf(column)) : true);
   const serverValue = column => (serverFilter?.values?.[filterKeyOf(column)] ?? '').trim();
   const serverFiltered = () => Boolean(serverFilter) && columns.some(column => canFilter(column) && serverValue(column));
   const filterable = tools && columns.some(canFilter) && (serverFilter ? true : allRows.length > 1);

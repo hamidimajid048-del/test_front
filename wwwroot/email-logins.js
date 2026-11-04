@@ -145,7 +145,7 @@ grids = [
   }),
   createReportGrid({
     path: 'login-reports/get-logins-cid-mappings',
-    columns: mappingColumns('cid', 'CID', [{ key: 'deviceType', title: 'Device type', sortKey: 'DeviceType' }]),
+    columns: mappingColumns('cid', 'CID', [{ key: 'deviceType', title: 'Device type', sortKey: 'DeviceType', format: platformList }]),
     sort: { item: 'SessionCount', direction: 'Desc' },
     titleId: 'cids-title',
     title: 'CID summary',

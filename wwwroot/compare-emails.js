@@ -89,7 +89,7 @@ const ipExtra = [
 
 const cidExtra = [
   { key: 'isCidValid', title: 'CID valid', format: yesNo, sortable: false, filterable: false },
-  { key: 'platforms', title: 'Platforms', format: platforms => platforms?.join(', ') || '—', sortable: false, filterable: false },
+  { key: 'platforms', title: 'Platforms', format: platforms => platformList(platforms) || '—', sortable: false, filterable: false },
 ];
 
 const detailColumns = () => [

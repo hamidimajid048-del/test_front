@@ -74,7 +74,7 @@ const SHARED_CID_COLUMNS = [
   {
     key: 'platforms',
     title: 'Platforms',
-    format: platforms => platforms?.length ? inline(...platforms.map(platform => badge(platform))) : '—',
+    format: platforms => platforms?.length ? platformList(platforms) : '—',
   },
   ...SHARED_VALUE_COLUMNS,
 ];
@@ -83,11 +83,11 @@ const NEAR_COLUMNS = [
   { ...utcColumn('loginAt', 'Login'), group: 'Main', sortKey: 'LoginAt' },
   { key: 'ip', title: 'IP', group: 'Main', filterKey: 'Ip' },
   { key: 'cid', title: 'CID', group: 'Main', filterKey: 'Cid' },
-  { key: 'platform', title: 'Platform', group: 'Main', filterKey: 'Platform' },
+  { key: 'platform', title: 'Platform', group: 'Main', filterKey: 'Platform', format: platformLabel },
   { ...utcColumn('otherLoginAt', 'Login'), group: 'Compared', filterKey: 'OtherLoginAt' },
   { key: 'otherIp', title: 'IP', group: 'Compared', filterKey: 'OtherIp' },
   { key: 'otherCid', title: 'CID', group: 'Compared', filterKey: 'OtherCid' },
-  { key: 'otherPlatform', title: 'Platform', group: 'Compared', filterKey: 'OtherPlatform' },
+  { key: 'otherPlatform', title: 'Platform', group: 'Compared', filterKey: 'OtherPlatform', format: platformLabel },
   { key: 'deltaSeconds', title: 'Gap', format: formatGap, sortKey: 'DeltaSeconds' },
   { key: 'matchLevel', title: 'Match', format: level => badge(MATCH_LABELS[level] ?? level, MATCH_KINDS[level]), filterKey: 'MatchLevel' },
   { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'danger'), filterKey: 'SameCid' },
@@ -121,7 +121,7 @@ const TIMELINE_COLUMNS = [
   { ...utcColumn('logoutAt', 'Logout'), filterKey: 'LogoutAt' },
   { key: 'ip', title: 'IP', filterKey: 'Ip' },
   { key: 'cid', title: 'CID', filterKey: 'Cid' },
-  { key: 'platform', title: 'Platform', filterKey: 'Platform' },
+  { key: 'platform', title: 'Platform', filterKey: 'Platform', format: platformLabel },
   { key: 'sharedIp', title: 'Shared IP', format: shared => shared ? badge('IP', 'danger') : '', filterKey: 'SharedIp' },
   { key: 'sharedCid', title: 'Shared CID', format: shared => shared ? badge('CID', 'warn') : '', filterKey: 'SharedCid' },
 ];
