@@ -676,6 +676,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     }
   }
 
+  const compact = columns.map(column => isCompactColumn(column, allRows));
   const body = table.createTBody();
   const meta = document.createElement('div');
   meta.className = 'grid-meta';
@@ -719,12 +720,13 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         tr.classList.add('clickable');
         tr.addEventListener('click', () => onRowClick(row));
       }
-      for (const column of columns) {
+      columns.forEach((column, position) => {
         const td = tr.insertCell();
+        if (compact[position]) td.classList.add('compact-col');
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';
-      }
+      });
     }
     const filtered = serverFilter ? serverFiltered() : state.filters.some(query => query.trim());
     meta.replaceChildren();
@@ -838,6 +840,12 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   }
 
   fill();
+  const filterCells = table.querySelector('tr.filter-row')?.cells;
+  compact.forEach((isCompact, position) => {
+    if (!isCompact) return;
+    headRow.cells[position].classList.add('compact-col');
+    filterCells?.[position].classList.add('compact-col');
+  });
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
@@ -869,6 +877,21 @@ function mountTools(container, tools) {
 }
 
 // ---- column visibility: every table with tools lets the user hide and show its columns ----
+
+// A column whose values are all numbers is kept as narrow as its content, so a short number does not take a wide column.
+const NUMBER_TEXT = /^-?\d+(\.\d+)?$/;
+
+function isCompactColumn(column, rows) {
+  if (column.compact !== undefined) return column.compact;
+  let seen = false;
+  for (const row of rows) {
+    const value = row[column.key];
+    if (value === null || value === undefined || value === '') continue;
+    if (typeof value !== 'number' && !(typeof value === 'string' && value.length <= 18 && NUMBER_TEXT.test(value))) return false;
+    seen = true;
+  }
+  return seen;
+}
 
 const columnId = column => `${column.group ?? ''}|${column.title}`;
 

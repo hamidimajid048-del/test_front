@@ -9,6 +9,10 @@ public static class Mt5AccountDataEndpoints
         data.MapGet("/open", (string? login, Mt5AccountDataReader reader) => Read(login, reader.OpenTrades));
         data.MapGet("/transfers", (string? login, Mt5AccountDataReader reader) => Read(login, reader.Transfers));
         data.MapGet("/positions", (string? login, Mt5AccountDataReader reader) => Read(login, reader.PositionHistory));
+        data.MapGet("/position", (string? login, string? position, Mt5AccountDataReader reader) =>
+            ulong.TryParse(position, out var positionId) && positionId != 0
+                ? Read(login, account => reader.PositionDetail(account, positionId))
+                : Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Enter a valid position number."));
         data.MapGet("/orders", (string? login, Mt5AccountDataReader reader) => Read(login, reader.OrderHistory));
         data.MapGet("/deals", (string? login, Mt5AccountDataReader reader) => Read(login, reader.Deals));
     }

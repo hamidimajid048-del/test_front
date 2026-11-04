@@ -740,3 +740,6 @@ form.filters .device-type-field { position: relative; display: flex; flex-direct
 form.filters .device-type-menu label.device-type-row { flex-direction: row; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--text); font-size: 13px; font-weight: 400; cursor: pointer; }
 form.filters .device-type-menu label.device-type-row:hover { background: var(--surface-2); }
 form.filters .device-type-menu input[type="checkbox"] { width: auto; }
+
+th.compact-col, td.compact-col { width: 1%; }
+thead tr.filter-row th.compact-col input { min-width: 52px; }

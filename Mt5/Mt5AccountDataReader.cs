@@ -57,6 +57,12 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
         return (IReadOnlyList<Mt5DealDto>)[.. deals.ToArray().Select(ToDto).OrderBy(deal => deal.Time).ThenBy(deal => deal.Deal)];
     });
 
+    public Mt5PositionDetailDto? PositionDetail(ulong login, ulong positionId)
+    {
+        List<Mt5DealDto> deals = [.. Deals(login).Where(deal => deal.PositionId == positionId)];
+        return Mt5DealAnalyzer.PositionHistory(deals).FirstOrDefault() is { } position ? new Mt5PositionDetailDto(position, deals) : null;
+    }
+
     public IReadOnlyList<Mt5DealDto> Transfers(ulong login) =>
         [.. Deals(login).Where(deal => Mt5DealAnalyzer.IsTransfer(deal.Action))];
 

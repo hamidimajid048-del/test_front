@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Position details — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Account <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+      <label>Position <input name="position" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+      <button type="submit">Search</button>
+      <a class="action-link" id="back" href="/account-data.html" hidden>Back to the account</a>
+    </form>
+    <p class="message" id="message"></p>
+    <div class="summary" id="summary"></div>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="deals">Deals</button>
+      <button type="button" data-tab="transactions">Transaction tracker</button>
+    </div>
+
+    <section data-panel="deals">
+      <div id="deals"></div>
+      <div id="deals-pager"></div>
+    </section>
+    <section data-panel="transactions" hidden>
+      <p class="hint" id="transactions-note">The transaction tracker records of this position are not connected yet. The columns below are ready for them.</p>
+      <div id="transactions"></div>
+      <div id="transactions-pager"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/table-views.js"></script>
+  <script src="/table-export.js"></script>
+  <script src="/local-grid.js"></script>
+  <script src="/mt5-format.js"></script>
+  <script src="/position-details.js"></script>
+</body>
+</html>
