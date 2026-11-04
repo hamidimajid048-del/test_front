@@ -28,6 +28,7 @@ public static class Mt5Extensions
         builder.Services.AddHostedService(services => services.GetRequiredService<Mt5ConnectionService>());
         builder.Services.AddSingleton<Mt5AccountDataReader>();
         builder.Services.AddSingleton<Mt5AccountRightsWriter>();
+        builder.Services.AddSingleton<Mt5AccountPasswordWriter>();
         builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     }
 
@@ -52,6 +53,7 @@ public static class Mt5Extensions
         mt5.MapGet("/status", (Mt5ConnectionService connection) => Results.Ok(connection.Status))
             .RequirePermission(PanelPermissions.AccountDataView);
         mt5.MapMt5AccountDataEndpoints();
+        mt5.MapMt5AccountPasswordEndpoints();
     }
 
     private static async Task<IResult> ReadAccountChanges(string? login, Mt5ChangeLog changeLog, CancellationToken cancellationToken) =>

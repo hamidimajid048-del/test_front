@@ -230,7 +230,7 @@ function clearResults() {
 }
 
 function showAccounts(side, email, accounts) {
-  renderTable(document.getElementById(`accounts-${side}`), accountColumns, accounts, undefined, { tools: false });
+  renderTable(document.getElementById(`accounts-${side}`), accountColumns, accounts, undefined, { tools: false, export: { name: `compare-emails-${side}` } });
   document.getElementById(`accounts-${side}-title`).textContent = `Logins of ${email} (${accounts.length})`;
 }
 

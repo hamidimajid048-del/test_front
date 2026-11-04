@@ -31,6 +31,13 @@
     <section data-panel="overview">
       <div class="summary" id="status"></div>
       <div class="controls" id="controls"></div>
+      <div data-permission="account-data.passwords">
+        <div class="password-card" id="passwords" hidden>
+          <h3>Passwords</h3>
+          <p class="hint">Type a password to check it against the account, or generate one and set it. 8 to 16 characters.</p>
+          <div id="password-rows"></div>
+        </div>
+      </div>
       <div class="summary" id="stop-out-status"></div>
       <p class="hint" id="stop-out-reason"></p>
       <div class="summary" id="figures"></div>
@@ -81,6 +88,7 @@
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
+  <script src="/table-export.js"></script>
   <script src="/local-grid.js"></script>
   <script src="/balance-chart.js"></script>
   <script src="/account-data.js"></script>

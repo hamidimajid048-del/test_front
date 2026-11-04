@@ -598,6 +598,10 @@ function nextSort(current, item, natural) {
 // with the new values, which re-reads the report from its first page. Only columns with such a key get a filter box, and
 // the boxes stay when no row matches. Without it, the boxes narrow the rows of the page on screen.
 // options.tools = false turns sorting and filtering off for small fixed tables.
+//
+// options.export = { name, rows? } adds CSV and Excel buttons (table-export.js) for reports the panel builds itself: they
+// download the rows shown with the filters and sort applied (rows() gives all of them when the table is paged by the caller)
+// and the columns shown, except columns marked noExport.
 function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const tools = options.tools !== false;
   const serverSort = tools ? options.sort : null;
@@ -803,8 +807,16 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   wrap.className = 'table-wrap';
   wrap.append(table);
   const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, () => renderTable(container, allColumns, rows, onRowClick, options)) : null;
+  const exporter = options.export && allRows.length
+    ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows)
+    : null;
   container.replaceChildren(wrap, meta);
-  if (picker) mountTools(container, picker);
+  if (picker || exporter) {
+    const bar = document.createElement('div');
+    bar.className = 'column-pickers';
+    bar.append(...[picker, exporter].filter(Boolean));
+    mountTools(container, bar);
+  }
 }
 
 // The column menu goes into the bar above the table when the table has a pager (next to the rows-per-page choice and

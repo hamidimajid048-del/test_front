@@ -249,12 +249,12 @@ const USER_COLUMNS = [
   { key: 'activeSessions', title: 'Open sessions' },
   utcColumn('lastSignInAt', 'Last sign-in'),
   utcColumn('createdAt', 'Created'),
-  { key: 'id', title: 'Actions', sortable: false, filterable: false, format: (_, user) => userActions(user) },
+  { key: 'id', title: 'Actions', sortable: false, filterable: false, noExport: true, format: (_, user) => userActions(user) },
 ];
 
 async function loadUsers() {
   const users = await panelRequest('GET', 'users');
-  renderTable(document.getElementById('users'), USER_COLUMNS, users);
+  renderTable(document.getElementById('users'), USER_COLUMNS, users, undefined, { export: { name: 'panel-accounts' } });
 }
 
 const AUDIT_COLUMNS = [
@@ -276,7 +276,7 @@ async function loadAudit() {
   const values = new FormData(auditForm);
   try {
     const entries = await panelRequest('GET', `audit${toQueryString({ username: values.get('username'), limit: values.get('limit') })}`);
-    renderTable(document.getElementById('audit'), AUDIT_COLUMNS, entries);
+    renderTable(document.getElementById('audit'), AUDIT_COLUMNS, entries, undefined, { export: { name: 'panel-audit-log' } });
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }
@@ -329,7 +329,7 @@ function renderRoles() {
     { key: 'description', title: 'Description' },
     { key: 'permissions', title: 'Permissions', sortable: false, filterable: false, format: value => `${value.length} of ${catalog.permissions.length}` },
     {
-      key: 'key', title: 'Actions', sortable: false, filterable: false, format: (_, role) => {
+      key: 'key', title: 'Actions', sortable: false, filterable: false, noExport: true, format: (_, role) => {
         const actions = document.createElement('div');
         actions.className = 'actions';
         actions.append(actionButton('Edit', () => openRoleDialog(role)));
@@ -340,7 +340,7 @@ function renderRoles() {
       },
     },
   ];
-  renderTable(document.getElementById('roles'), columns, catalog.presets);
+  renderTable(document.getElementById('roles'), columns, catalog.presets, undefined, { export: { name: 'panel-roles' } });
 }
 
 async function runRoleAction(confirmText, action, doneText) {

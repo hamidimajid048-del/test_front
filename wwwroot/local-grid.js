@@ -41,6 +41,7 @@ function createLocalGrid({ containerId, pagerId, columns, sort, onRowClick }) {
       render();
     };
     renderTable(container, keyed, shown.slice((currentPage - 1) * pageSize, currentPage * pageSize), onRowClick, {
+      export: { name: containerId, rows: view },
       sort: {
         item: sortState.item,
         direction: sortState.direction,

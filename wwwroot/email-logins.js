@@ -87,7 +87,7 @@ async function search(values) {
     renderSummary(document.getElementById('metadata'), [['Email', values.email], ['Logins', 0]]);
     throw new ApiError('No login was found for this email.');
   }
-  renderTable(document.getElementById('accounts'), accountColumns, accounts);
+  renderTable(document.getElementById('accounts'), accountColumns, accounts, undefined, { export: { name: 'email-logins' } });
   document.getElementById('accounts-title').textContent = `Logins (${accounts.length})`;
   if (accounts.length > MAX_LOGINS)
     throw new ApiError(`This email has ${accounts.length} logins; the reports take at most ${MAX_LOGINS}.`);

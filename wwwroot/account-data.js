@@ -16,6 +16,10 @@ const CHANGE_ACTIONS = {
   trading_disable: 'Trading disabled',
   stop_out_enable: 'Stop-out plugin enabled',
   stop_out_disable: 'Stop-out plugin disabled',
+  password_main_change: 'Main password changed',
+  password_main_check: 'Main password checked',
+  password_investor_change: 'Investor password changed',
+  password_investor_check: 'Investor password checked',
 };
 
 // The state of the account and trading comes from MetaTrader, the stop-out plugin's from the status service (when it
@@ -365,6 +369,97 @@ async function changeSwitch(definition, enabled, toggle) {
   }
 }
 
+const PASSWORD_TYPES = [['Main', 'Main password'], ['Investor', 'Investor password']];
+const PASSWORD_LENGTH = 12;
+const PASSWORD_CLASSES = ['abcdefghijkmnopqrstuvwxyz', 'ABCDEFGHJKLMNPQRSTUVWXYZ', '23456789', '#$%&*+-=?@'];
+
+// A random password with at least one character of every class, drawn with the browser's secure generator.
+function generatePassword() {
+  const pick = alphabet => alphabet[crypto.getRandomValues(new Uint32Array(1))[0] % alphabet.length];
+  const characters = [...PASSWORD_CLASSES.map(pick), ...Array.from({ length: PASSWORD_LENGTH - PASSWORD_CLASSES.length }, () => pick(PASSWORD_CLASSES.join('')))];
+  for (let i = characters.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [characters[i], characters[j]] = [characters[j], characters[i]];
+  }
+  return characters.join('');
+}
+
+function actionButton(text, onClick, danger = false) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = text;
+  if (danger) button.className = 'danger';
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function passwordRow(type, title) {
+  const row = document.createElement('div');
+  row.className = 'password-row';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.maxLength = 16;
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.placeholder = title;
+  input.setAttribute('aria-label', title);
+  const result = document.createElement('span');
+  result.className = 'password-result';
+
+  const run = async operation => {
+    result.className = 'password-result';
+    result.textContent = '';
+    try {
+      return await panelRequest('POST', `mt5/account-password/${operation}`, { login: Number(login), type, password: input.value });
+    } catch (error) {
+      result.className = 'password-result bad';
+      result.textContent = error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE;
+      return undefined;
+    }
+  };
+
+  const generate = actionButton('Generate', () => {
+    input.value = generatePassword();
+    result.textContent = '';
+  });
+  const check = actionButton('Check', async () => {
+    const answer = await run('check');
+    if (!answer) return;
+    result.className = `password-result ${answer.valid ? 'good' : 'bad'}`;
+    result.textContent = answer.valid ? 'This is the current password.' : 'This is not the current password.';
+  });
+  const change = actionButton('Change', async () => {
+    if (!await confirmAction({
+      title: `Change the ${title.toLowerCase()}?`,
+      message: `Account ${currentLogin}. The owner must use the new password from now on.`,
+      confirmText: 'Change',
+      danger: true,
+    })) return;
+    const login = currentLogin;
+    if (await run('change') === undefined) return;
+    result.className = 'password-result good';
+    result.textContent = 'Changed.';
+    toast(`${title} changed`, 'success', `Account ${login}`);
+  }, true);
+  const copy = actionButton('Copy', async () => {
+    try {
+      await navigator.clipboard.writeText(input.value);
+      result.className = 'password-result good';
+      result.textContent = 'Copied.';
+    } catch {
+      result.className = 'password-result bad';
+      result.textContent = 'Copying is not available here; select the password and copy it.';
+    }
+  });
+  row.append(input, generate, copy, check, change, result);
+  return row;
+}
+
+function renderPasswords() {
+  document.getElementById('password-rows').replaceChildren(...PASSWORD_TYPES.map(([type, title]) => passwordRow(type, title)));
+  document.getElementById('passwords').hidden = false;
+}
+
 function renderOverview(data, switches, status) {
   renderSummary(document.getElementById('identity'), [
     ['Account', data.login],
@@ -376,6 +471,7 @@ function renderOverview(data, switches, status) {
   document.getElementById('status').replaceChildren(
     ...(data.source === 'Archive' ? [badge('Deleted account (archive)', 'warn')] : []));
   renderControls(data, switches, status);
+  renderPasswords();
 
   renderSummary(document.getElementById('figures'), [
     ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance)],
@@ -396,6 +492,8 @@ function renderOverview(data, switches, status) {
 
 function clearResults() {
   document.getElementById('stop-out-reason').textContent = '';
+  document.getElementById('passwords').hidden = true;
+  document.getElementById('password-rows').replaceChildren();
   for (const id of ['identity', 'status', 'controls', 'stop-out-status', 'figures', 'chart', 'transfer-totals'])
     document.getElementById(id).replaceChildren();
   document.getElementById('comment').textContent = '';
