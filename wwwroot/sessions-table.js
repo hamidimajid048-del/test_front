@@ -48,7 +48,7 @@ const SESSION_COLUMNS = [
   { key: 'pingMs', title: 'Ping (ms)', hiddenByDefault: true, sortKey: 'PingMs' },
   { key: 'isSessionValid', title: 'Session valid', hiddenByDefault: true, format: yesNo, sortKey: 'IsSessionValid' },
   { key: 'isCidValid', title: 'CID valid', hiddenByDefault: true, format: yesNo, sortKey: 'IsCidValid' },
-  { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
+  { key: 'geo', title: 'Country / city', format: geo => geo ? withCountryFlag(geo.country, [geo.country, geo.city].filter(Boolean).join(' / ')) || '—' : '—' },
   { key: 'geo', title: 'ISP', format: geo => geo?.isp || '—' },
   { key: 'geo', title: 'ASN', format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
   {
@@ -68,7 +68,7 @@ function renderGeoDetails(container, session) {
     container.replaceChildren(title, empty);
   } else {
     const rows = [
-      ...GEO_FIELDS.map(([key, label]) => ({ label, value: session.geo[key] })),
+      ...GEO_FIELDS.map(([key, label]) => ({ label, value: key === 'country' ? withCountryFlag(session.geo[key], session.geo[key]) : session.geo[key] })),
       ...GEO_FLAGS.map(key => ({ label: flagLabel(key), value: yesNo(session.geo[key]) })),
     ];
     const table = document.createElement('div');

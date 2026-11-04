@@ -721,3 +721,6 @@ button.confirm.danger-solid:hover:not(:disabled) { background: var(--danger); bo
 
 .col-help { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-inline-start: 6px; border: 1px solid var(--border-strong); border-radius: 50%; font-size: 10px; font-weight: 700; line-height: 1; color: var(--text-muted); cursor: help; vertical-align: middle; }
 .col-help:hover { color: var(--primary); border-color: var(--primary); }
+
+.country-cell { display: inline-flex; align-items: center; gap: 8px; }
+img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px var(--border); }
