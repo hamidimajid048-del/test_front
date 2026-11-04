@@ -29,6 +29,8 @@ public static class PanelUserEndpoints
             return Results.Ok(new { id = user.Id, username = user.Username, role = user.Role, permissions = user.EffectivePermissions, twoFactor = user.TotpSecret is not null });
         });
 
+        api.MapPanelTableViewEndpoints();
+
         api.MapPost("/account/two-factor/begin", BeginTwoFactor);
         api.MapPost("/account/two-factor/confirm", ConfirmTwoFactorAsync);
 

@@ -711,3 +711,10 @@ button.confirm.danger-solid:hover:not(:disabled) { background: var(--danger); bo
 .password-result { font-size: 13px; color: var(--text-muted); }
 .password-result.good { color: var(--success, #1a7f37); }
 .password-result.bad { color: var(--danger, #c62828); }
+
+.views-menu { min-width: 300px; }
+.view-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.view-row .view-name { flex: 1 1 100%; text-align: start; font-weight: 600; }
+.views-menu button { height: 26px; padding: 0 8px; font-size: 12px; }
+.view-save { display: flex; gap: 6px; margin-top: 4px; }
+.view-save input { flex: 1; min-width: 0; height: 28px; }

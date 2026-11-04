@@ -273,6 +273,7 @@ function addDetailsTab(relatedLogin, type) {
     const report = await apiGet('similarity-reports/get-details', params());
     const reportPaging = pagingOf(report.paging);
     paging = { currentPage: reportPaging?.currentPage ?? 1, pageSize: reportPaging?.pageSize ?? paging.pageSize };
+    part('table').dataset.viewKey = 'details';
     renderTable(part('table'), DETAILS_COLUMNS, report.items, undefined, {
       sort: {
         item: values.sortItem,

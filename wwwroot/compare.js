@@ -417,6 +417,7 @@ function showPanel() {
   title.textContent = tab.title;
   head.append(title, exports);
 
+  parts.table.dataset.viewKey = `tab-${activeTab}`;
   panel.replaceChildren(head, toolbar, tabMessage, exportMessage, parts.description, parts.summary, parts.note, parts.table, parts.pager, parts.detail);
   if (state.report) render(tab, state, toolbar, tabMessage, parts);
   else load(tab, state, toolbar, tabMessage, parts);

@@ -162,6 +162,17 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
                 is_built_in boolean NOT NULL DEFAULT false,
                 created_at timestamptz NOT NULL DEFAULT clock_timestamp());
 
+            CREATE TABLE IF NOT EXISTS violation_panel.table_views (
+                id uuid PRIMARY KEY,
+                user_id uuid NOT NULL REFERENCES violation_panel.users (id) ON DELETE CASCADE,
+                table_key text NOT NULL,
+                name text NOT NULL,
+                config jsonb NOT NULL,
+                is_default boolean NOT NULL DEFAULT false,
+                updated_at timestamptz NOT NULL DEFAULT now());
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_table_views_name ON violation_panel.table_views (user_id, table_key, (lower(name)));
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_table_views_default ON violation_panel.table_views (user_id, table_key) WHERE is_default;
+
             -- Ended sessions are kept for a month for investigations, then removed.
             DELETE FROM violation_panel.sessions WHERE expires_at < now() - interval '30 days';
             """);

@@ -46,6 +46,7 @@ builder.Services.AddSingleton(authDataSource);
 builder.Services.AddSingleton(authOptions);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<PanelAuthStore>();
+builder.Services.AddSingleton<PanelTableViewStore>();
 builder.Services.AddSingleton<PanelSignInService>();
 builder.Services.AddSingleton<PanelPendingSignIn>();
 builder.Services.AddSingleton<Mt5ChangeLog>();

@@ -625,13 +625,16 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const serverFilter = tools ? options.filter : null;
   const filterKeyOf = column => column.filterKey ?? column.sortKey;
   const signature = allColumns.map(column => column.title).join('|');
+  const redraw = () => renderTable(container, allColumns, rows, onRowClick, options);
+  const viewKey = tools ? tableViewKey(container, options) : null;
   let state = gridStates.get(container);
   if (!state || state.signature !== signature) {
     state = {
       signature, sortIndex: -1, direction: 'Asc', filters: allColumns.map(() => ''), focusKey: null, filterSeq: 0,
-      hidden: loadHiddenColumns(container, signature, allColumns), pickerOpen: false,
+      hidden: standardHidden(allColumns), pickerOpen: false,
     };
     gridStates.set(container, state);
+    if (viewKey) initTableView(state, viewKey, allColumns, serverSort, redraw);
   }
   // Only the columns the user has not hidden are drawn; state is indexed by the full column list.
   const columns = tools ? allColumns.filter(column => !state.hidden.has(columnId(column))) : allColumns;
@@ -760,7 +763,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         state.sortIndex = index;
         state.direction = firstDirection(column, allRows);
       }
-      renderTable(container, allColumns, rows, onRowClick, options);
+      redraw();
     });
     headRow.append(th);
   });
@@ -823,17 +826,19 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
-  const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, () => renderTable(container, allColumns, rows, onRowClick, options)) : null;
+  const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, redraw) : null;
+  const views = viewKey ? viewsMenu(state, viewKey, allColumns, serverSort, redraw) : null;
   const exporter = options.export && allRows.length
     ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows)
     : null;
   container.replaceChildren(wrap, meta);
-  if (picker || exporter) {
+  if (picker || views || exporter) {
     const bar = document.createElement('div');
     bar.className = 'column-pickers';
-    bar.append(...[picker, exporter].filter(Boolean));
+    bar.append(...[picker, views, exporter].filter(Boolean));
     mountTools(container, bar);
   }
+  finishTableView(state, serverSort, container);
 }
 
 // The column menu goes into the bar above the table when the table has a pager (next to the rows-per-page choice and
@@ -851,26 +856,6 @@ function mountTools(container, tools) {
 // ---- column visibility: every table with tools lets the user hide and show its columns ----
 
 const columnId = column => `${column.group ?? ''}|${column.title}`;
-const hiddenColumnsKey = (container, signature) => `grid-columns:${location.pathname}:${container.id}:${signature}`;
-
-// The columns hidden for this table: the user's saved choice, or, before one was made, the columns marked hiddenByDefault.
-function loadHiddenColumns(container, signature, columns) {
-  const byDefault = () => new Set(columns.filter(column => column.hiddenByDefault).map(columnId));
-  try {
-    const saved = localStorage.getItem(hiddenColumnsKey(container, signature));
-    return saved === null ? byDefault() : new Set(JSON.parse(saved));
-  } catch {
-    return byDefault();
-  }
-}
-
-function saveHiddenColumns(container, signature, hidden) {
-  try {
-    localStorage.setItem(hiddenColumnsKey(container, signature), JSON.stringify([...hidden]));
-  } catch {
-    // The choice then only lasts until the page is left.
-  }
-}
 
 // A "Columns" menu with one checkbox per column; the last visible column cannot be hidden.
 function columnPicker(allColumns, state, container, redraw) {
@@ -894,7 +879,6 @@ function columnPicker(allColumns, state, container, redraw) {
     box.addEventListener('change', () => {
       if (box.checked) state.hidden.delete(id);
       else state.hidden.add(id);
-      saveHiddenColumns(container, state.signature, state.hidden);
       redraw();
     });
     label.append(box, ` ${column.group ? `${column.group}: ` : ''}${column.title}`);
@@ -906,7 +890,6 @@ function columnPicker(allColumns, state, container, redraw) {
   show.disabled = !hiddenCount;
   show.addEventListener('click', () => {
     state.hidden.clear();
-    saveHiddenColumns(container, state.signature, state.hidden);
     redraw();
   });
   menu.append(show);
