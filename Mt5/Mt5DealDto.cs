@@ -14,4 +14,5 @@ public sealed record Mt5DealDto(
     double Fee,
     ulong PositionId,
     ulong Order,
-    string Comment);
+    string Comment,
+    CIMTDeal.EnDealReason Reason);

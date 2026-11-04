@@ -68,6 +68,7 @@ public static class Mt5DealAnalyzer
         var closedVolume = outs.Sum(deal => deal.Volume);
         var isOpen = outs.Count == 0 || closedVolume + VolumeEpsilon < openedVolume;
 
+        var closedAt = isOpen || outs.Count == 0 ? (DateTime?)null : outs[^1].Time;
         return new Mt5PositionHistoryDto(
             group.Key,
             all[0].Symbol,
@@ -75,14 +76,17 @@ public static class Mt5DealAnalyzer
             openedVolume,
             opening[0].Time,
             WeightedPrice(ins),
-            isOpen || outs.Count == 0 ? null : outs[^1].Time,
+            closedAt,
             outs.Count == 0 ? null : WeightedPrice(outs),
             all.Sum(deal => deal.Profit),
             all.Sum(deal => deal.Commission),
             all.Sum(deal => deal.Swap),
             all.Sum(deal => deal.Fee),
             all.Sum(Result),
-            isOpen);
+            isOpen,
+            closedAt is { } closed ? (long)(closed - opening[0].Time).TotalSeconds : null,
+            all[^1].Reason,
+            opening[0].Comment);
     }
 
     private static double WeightedPrice(IReadOnlyList<Mt5DealDto> deals)

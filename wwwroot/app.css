@@ -86,7 +86,7 @@ body {
 a { color: var(--primary); text-decoration: none; }
 a:hover { color: var(--primary-hover); text-decoration: underline; }
 
-main { max-width: 1600px; margin: 0 auto; padding: 24px; }
+main { width: 100%; padding: 24px; }
 
 h2 { color: var(--text); }
 

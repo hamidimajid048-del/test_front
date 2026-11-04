@@ -15,4 +15,5 @@ public sealed record Mt5OrderDto(
     DateTime? DoneAt,
     DateTime? ExpiresAt,
     ulong PositionId,
-    string Comment);
+    string Comment,
+    CIMTOrder.EnOrderReason Reason);
