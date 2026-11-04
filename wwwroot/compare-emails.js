@@ -84,7 +84,7 @@ const sharedColumns = (valueTitle, extra) => () => [
 
 const ipExtra = [
   { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—', sortable: false, filterable: false },
-  { key: 'geo', title: 'Warnings', format: warningBadges, sortable: false, filterable: false },
+  { key: 'geo', title: 'Warnings', format: warningBadges, help: WARNINGS_HELP, sortable: false, filterable: false },
 ];
 
 const cidExtra = [

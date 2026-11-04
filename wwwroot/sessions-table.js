@@ -18,6 +18,8 @@ const WARNING_FLAGS = [
   { label: 'Bot', isSet: geo => geo.isBotAny || geo.isBotBotnet || geo.isBotFake },
 ];
 
+const WARNINGS_HELP = 'Risk flags for the IP: VPN, Proxy, Tor, Datacenter, Blacklisted, Bot. A flag only means the IP may hide the real user or location; it is not proof of a violation.';
+
 const GEO_FIELDS = [
   ['continent', 'Continent'], ['country', 'Country'], ['city', 'City'], ['region', 'Region'], ['province', 'Province'],
   ['latitude', 'Latitude'], ['longitude', 'Longitude'], ['asn', 'ASN'],
@@ -49,7 +51,10 @@ const SESSION_COLUMNS = [
   { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
   { key: 'geo', title: 'ISP', format: geo => geo?.isp || '—' },
   { key: 'geo', title: 'ASN', format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
-  { key: 'geo', title: 'Warnings', format: warningBadges },
+  {
+    key: 'geo', title: 'Warnings', format: warningBadges,
+    help: WARNINGS_HELP,
+  },
 ];
 
 // Shows every location field and flag of a session's geo record in `container`.

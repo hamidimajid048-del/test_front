@@ -60,7 +60,7 @@ const SHARED_IP_COLUMNS = [
   { key: 'geo', title: 'Country / city', format: geo => geo ? [geo.country, geo.city].filter(Boolean).join(' / ') : '—' },
   { key: 'geo', title: 'ISP', format: geo => geo?.isp ?? '—' },
   { key: 'geo', title: 'ASN', format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
-  { key: 'geo', title: 'Warnings', format: warningBadges },
+  { key: 'geo', title: 'Warnings', format: warningBadges, help: WARNINGS_HELP },
   ...SHARED_VALUE_COLUMNS,
 ];
 

@@ -264,6 +264,18 @@ async function downloadExport(path, params, button, messageElement) {
   }
 }
 
+// A "?" after a column title that explains the column on hover (column.help).
+function addColumnHelp(th, column) {
+  if (!column.help) return;
+  const mark = document.createElement('span');
+  mark.className = 'col-help';
+  mark.textContent = '?';
+  mark.title = column.help;
+  mark.setAttribute('role', 'img');
+  mark.setAttribute('aria-label', column.help);
+  th.append(mark);
+}
+
 // A small coloured label. kind: 'ok' | 'warn' | 'danger' | 'main' | 'compared' | 'muted'.
 function badge(text, kind = 'muted') {
   const element = document.createElement('span');
@@ -745,6 +757,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     const th = document.createElement('th');
     if (!canSort(column)) {
       th.textContent = column.title;
+      addColumnHelp(th, column);
       headRow.append(th);
       return;
     }
@@ -765,6 +778,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
       }
       redraw();
     });
+    addColumnHelp(th, column);
     headRow.append(th);
   });
 
