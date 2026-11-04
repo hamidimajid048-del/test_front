@@ -26,7 +26,7 @@ public static class Mt5AccountBalanceEndpoints
         try
         {
             var (code, dealId) = writer.Apply(request.Login, kind, amount, comment);
-            var succeeded = code == MTRetCode.MT_RET_OK;
+            var succeeded = code is MTRetCode.MT_RET_OK or MTRetCode.MT_RET_REQUEST_DONE;
             await changeLog.RecordAsync(request.Login, action, succeeded,
                 succeeded ? $"{amount:0.00}, deal {dealId}, {comment}" : $"{amount:0.00}, MetaTrader returned {code}, {comment}", context);
             if (code == MTRetCode.MT_RET_ERR_NOTFOUND)

@@ -169,14 +169,27 @@ function toQueryString(params) {
   return text ? `?${text}` : '';
 }
 
+// One console line per panel request, for finding why a call failed: failures as warnings (with what the server said),
+// successes at debug level. Request bodies are never logged (they can hold passwords).
+function logRequest(method, url, started, outcome, detail = '') {
+  const line = `[panel] ${method} ${url} -> ${outcome} (${Math.round(performance.now() - started)} ms)`;
+  const failed = typeof outcome === 'string' || outcome >= 400;
+  if (failed) console.warn(line, String(detail).slice(0, 300));
+  else console.debug(line);
+}
+
 // Calls GET /api/{path} and returns `result`, or throws ApiError with a Persian message.
 async function apiGet(path, params) {
   let response;
+  const url = API_PREFIX + path + toQueryString(params);
+  const started = performance.now();
   try {
-    response = await fetch(API_PREFIX + path + toQueryString(params), { headers: { Accept: 'application/json' } });
-  } catch {
+    response = await fetch(url, { headers: { Accept: 'application/json' } });
+  } catch (error) {
+    logRequest('GET', url, started, 'network error', error?.message);
     throw new ApiError(UNAVAILABLE_MESSAGE);
   }
+  logRequest('GET', url, started, response.status, response.ok ? '' : await response.clone().text().catch(() => ''));
 
   if (response.status === 401) {
     location.href = SESSION_EXPIRED_PAGE;
@@ -389,18 +402,22 @@ async function panelRequest(method, path, body) {
   const headers = { Accept: 'application/json', 'X-Panel-Request': '1' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   let response;
+  const url = `/panel-api/${path}`;
+  const started = performance.now();
   try {
-    response = await fetch(`/panel-api/${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-  } catch {
+    response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  } catch (error) {
+    logRequest(method, url, started, 'network error', error?.message);
     throw new ApiError(UNAVAILABLE_MESSAGE);
   }
+  logRequest(method, url, started, response.status, response.ok ? '' : await response.clone().text().catch(() => ''));
 
   if (response.status === 401) {
     location.href = SESSION_EXPIRED_PAGE;
     throw new ApiError('');
   }
   const result = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) throw new ApiError(result?.error ?? UNAVAILABLE_MESSAGE);
+  if (!response.ok) throw new ApiError(result?.error ?? `${UNAVAILABLE_MESSAGE} (HTTP ${response.status})`);
   return result;
 }
 

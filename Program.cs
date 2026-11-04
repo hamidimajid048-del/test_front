@@ -199,6 +199,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 if (!app.Environment.IsDevelopment())
     app.UseHsts();
 
+app.UseMiddleware<PanelRequestLogMiddleware>();
+
 app.Use(async (context, next) =>
 {
     // A state-changing request must come from the panel's own pages (browsers send Sec-Fetch-Site on every request).

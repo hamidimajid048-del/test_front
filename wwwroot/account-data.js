@@ -412,9 +412,10 @@ function passwordRow(type, title) {
     result.className = 'password-result';
     result.textContent = '';
     try {
-      return await panelRequest('POST', `mt5/account-password/${operation}`, { login: Number(login), type, password: input.value });
+      return await panelRequest('POST', `mt5/account-password/${operation}`, { login: Number(currentLogin), type, password: input.value });
     } catch (error) {
       result.className = 'password-result bad';
+      if (!(error instanceof ApiError)) console.error('[panel] password request failed', error);
       result.textContent = error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE;
       return undefined;
     }
