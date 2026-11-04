@@ -731,3 +731,14 @@ img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radi
 .platform-icon.web { color: #2f7de1; }
 .platform-icon.mobile { color: #1f9d6b; }
 .platform-icon.system { color: #7a5af8; }
+
+.device-type-button { min-width: 140px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; font-weight: 400; }
+.device-type-button.has-selection { border-color: var(--primary); }
+dialog.panel-dialog.device-type-dialog { width: min(460px, calc(100vw - 32px)); }
+.device-type-dialog > input[type="search"] { margin-bottom: 8px; }
+.device-type-quick { display: flex; gap: 8px; margin-bottom: 6px; }
+.device-type-count { margin: 0 0 8px; }
+.device-type-list { max-height: 320px; overflow: auto; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; }
+dialog.panel-dialog .device-type-row { display: flex; flex-direction: row; align-items: center; gap: 10px; margin: 0; padding: 7px 12px; color: var(--text); font-size: 13px; cursor: pointer; }
+dialog.panel-dialog .device-type-row:hover { background: var(--surface-2); }
+dialog.panel-dialog .device-type-row input { width: auto; }

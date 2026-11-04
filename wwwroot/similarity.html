@@ -32,7 +32,10 @@
       </label>
       <label>From day (UTC) <input name="fromUtc" type="date"></label>
       <label>To day (UTC) <input name="toUtc" type="date"></label>
-      <label>Device type <input name="deviceType" maxlength="200"></label>
+      <label>Device type
+        <input type="hidden" name="deviceType">
+        <button type="button" class="device-type-button">Any</button>
+      </label>
       <label>CID <input name="cid" maxlength="200"></label>
       <label>Related login <input name="relatedLogin" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"></label>
       <label>Sort by
@@ -115,6 +118,7 @@
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
   <script src="/platform-icons.js"></script>
+  <script src="/device-type-picker.js"></script>
   <script src="/table-views.js"></script>
   <script src="/range.js"></script>
   <script src="/accounts.js"></script>

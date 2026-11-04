@@ -11,7 +11,7 @@ const DEFAULT_PAGE_SIZE = 1000;
 const LEGACY_DETAILS_PREFIX = 'd_';
 const SUMMARY_TAB = 'summary';
 
-const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'deviceType', 'cid'];
+const COMMON_KEYS = ['type', 'fromUtc', 'toUtc', 'cid'];
 const SUMMARY_KEYS = [
   ...COMMON_KEYS, 'relatedLogin',
   'sortItem', 'sortDirection',
@@ -29,6 +29,7 @@ let activeTab = SUMMARY_TAB;
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]));
 
 const rangeControls = initRangeControls(form);
+const deviceTypePicker = initDeviceTypePicker(form, () => apiGet('similarity-reports/get-device-types'));
 
 // The account's data range comes from the login sessions report metadata, the only place the service exposes it.
 let accountRangeLogin = null;
@@ -67,7 +68,8 @@ form.elements.login.addEventListener('change', showAccountRange);
 
 function commonParams() {
   return {
-    login: filters.login, ...pick(filters, COMMON_KEYS), fromUtc: fromDayParam(filters.fromUtc), toUtc: toDayParam(filters.toUtc),
+    login: filters.login, ...pick(filters, COMMON_KEYS), deviceTypes: splitDeviceTypes(filters.deviceType),
+    fromUtc: fromDayParam(filters.fromUtc), toUtc: toDayParam(filters.toUtc),
   };
 }
 
@@ -341,6 +343,7 @@ form.addEventListener('submit', event => {
 // Restores a shared or refreshed report link.
 async function restoreFromQuery() {
   if (!fillFormFromQuery(form) || !form.elements.login.value) return;
+  deviceTypePicker.sync();
   rangeControls.restore();
   showAccountRange();
   const query = new URLSearchParams(location.search);

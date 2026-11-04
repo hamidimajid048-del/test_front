@@ -20,6 +20,7 @@ const ERROR_MESSAGES = {
   InvalidDirection: 'The direction is not valid',
   InvalidSignalSeverity: 'The signal severity is not valid',
   FilterTooLong: 'A filter is too long (200 characters at most)',
+  TooManyDeviceTypes: 'Too many device types are selected (100 at most)',
   TimeRangeIncomplete: 'Enter both the start and the end of the range, or neither',
   TimeRangeNotUtc: 'The range must be in UTC',
   TimeRangeReversed: 'The start of the range must not be after its end',
