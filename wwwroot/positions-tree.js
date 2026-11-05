@@ -521,6 +521,7 @@ function renderPositionsTree(container, kindKey, nodes, state) {
   wrap.className = 'table-wrap';
   wrap.append(table);
   container.replaceChildren(wrap);
+  stickHeader(table);
   mountTools(container, bar);
 }
 

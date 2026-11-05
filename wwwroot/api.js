@@ -15,15 +15,32 @@ const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
 
 // Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
 const MENU_ITEMS = [
-  { href: '/account-data.html', title: 'Account data', permission: 'account-data.view' },
-  { href: '/logins.html', title: 'Login history', permission: 'logins.view' },
-  { href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view' },
-  { href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view' },
-  { href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view' },
-  { href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view' },
-  { href: '/compare.html', title: 'Compare accounts', permission: 'compare.view' },
-  { href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view' },
+  { href: '/account-data.html', title: 'Account data', permission: 'account-data.view', description: "One account's status, start and current balance, net profit, growth chart, open positions and orders, deposits and withdrawals, and the position, order and deal histories." },
+  { href: '/logins.html', title: 'Login history', permission: 'logins.view', description: 'Sessions of a login with IP, CID, location and VPN/proxy warnings.' },
+  { href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view', description: 'Every login of an email (Manager and archive) with its IPs, CIDs and full login history in a date range.' },
+  { href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view', description: 'Logins that share an IP or CID, with details and Excel/CSV export.' },
+  { href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view', description: 'Every login that used a given CID or IP, with its login count and when it was first and last seen.' },
+  { href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
+  { href: '/compare.html', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, and a merged timeline.' },
+  { href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of two emails compared: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
 ];
+
+// The home page cards come from MENU_ITEMS, so a page added to the menu appears there too.
+function renderCards(container) {
+  for (const item of MENU_ITEMS) {
+    const card = document.createElement('a');
+    card.className = 'card';
+    card.href = item.href;
+    card.dataset.permission = item.permission;
+    const title = document.createElement('h3');
+    title.textContent = item.title;
+    const text = document.createElement('p');
+    text.textContent = item.description;
+    card.append(title, text);
+    container.append(card);
+  }
+}
+
 const USERS_PAGE = { href: '/users.html', title: 'Users', permission: 'users.view' };
 
 const TOAST_ICONS = {
@@ -292,6 +309,9 @@ function inline(...parts) {
   return row;
 }
 
+const NAV_TOGGLE_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>';
+
 const BRAND_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>';
 
@@ -343,10 +363,42 @@ function renderMenu() {
   actions.prepend(version);
   fetch('/version', { headers: { Accept: 'application/json' }, cache: 'no-store' })
     .then(response => response.ok ? response.json() : null)
-    .then(body => { if (body?.frontend) version.textContent = `v ${body.frontend}`; })
+    .then(body => { if (body?.frontend) { version.textContent = `v ${body.frontend}`; fitMenu(); } })
     .catch(() => {});
 
-  nav.replaceChildren(brand, ...links, actions);
+  const linkBox = document.createElement('div');
+  linkBox.className = 'nav-links';
+  linkBox.id = 'nav-links';
+  linkBox.append(...links);
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'nav-toggle';
+  toggle.title = 'Menu';
+  toggle.setAttribute('aria-label', 'Menu');
+  toggle.setAttribute('aria-controls', 'nav-links');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.innerHTML = NAV_TOGGLE_ICON;
+  const setOpen = open => {
+    nav.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  };
+  toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
+  nav.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && nav.classList.contains('open')) { setOpen(false); toggle.focus(); }
+  });
+  actions.append(toggle);
+
+  // The links collapse behind the menu button only when they no longer fit in one row.
+  const fitMenu = () => {
+    nav.classList.remove('compact');
+    if (nav.scrollWidth > nav.clientWidth) nav.classList.add('compact');
+    else setOpen(false);
+  };
+  window.addEventListener('resize', fitMenu);
+
+  nav.replaceChildren(brand, linkBox, actions);
+  fitMenu();
 
   currentAccount().then(me => {
     if (!me) return;
@@ -358,8 +410,9 @@ function renderMenu() {
       users.href = USERS_PAGE.href;
       users.textContent = USERS_PAGE.title;
       if (location.pathname === USERS_PAGE.href) users.classList.add('active');
-      actions.before(users);
+      linkBox.append(users);
     }
+    fitMenu();
     applyPermissions(me);
     guardPage(me);
     if (!me.twoFactor && location.pathname !== '/account.html') {
@@ -718,7 +771,11 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
       const tr = body.insertRow();
       if (onRowClick) {
         tr.classList.add('clickable');
+        tr.tabIndex = 0;
         tr.addEventListener('click', () => onRowClick(row));
+        tr.addEventListener('keydown', event => {
+          if (event.target === tr && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onRowClick(row); }
+        });
       }
       columns.forEach((column, position) => {
         const td = tr.insertCell();
@@ -855,6 +912,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows)
     : null;
   container.replaceChildren(wrap, meta);
+  stickHeader(table);
   if (picker || views || exporter) {
     const bar = document.createElement('div');
     bar.className = 'column-pickers';
@@ -862,6 +920,20 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     mountTools(container, bar);
   }
   finishTableView(state, serverSort, container);
+}
+
+// Keeps every header row (group titles, column titles, filter boxes) visible while the table scrolls: each row sticks
+// right under the one above it, so its offset is the height of the rows before it.
+function stickHeader(table) {
+  const place = () => {
+    let offset = 0;
+    for (const row of table.tHead.rows) {
+      for (const cell of row.cells) cell.style.top = `${offset}px`;
+      offset += row.offsetHeight;
+    }
+  };
+  place();
+  new ResizeObserver(place).observe(table.tHead);
 }
 
 // The column menu goes into the bar above the table when the table has a pager (next to the rows-per-page choice and
