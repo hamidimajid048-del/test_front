@@ -49,6 +49,8 @@ function renderBalanceChart(container, points, mode) {
   const y = number => CHART.top + (scale.high - number) / (scale.high - scale.low) * innerHeight;
 
   const svg = svgElement('svg', { viewBox: `0 0 ${CHART.width} ${CHART.height}`, class: 'balance-chart', role: 'img' });
+  const day = time => new Date(time).toISOString().slice(0, 10);
+  svg.setAttribute('aria-label', `Balance ${mode === 'percent' ? 'growth' : 'chart'}: ${usable.length} points, from ${format(value(usable[0]))} on ${day(firstTime)} to ${format(value(usable.at(-1)))} on ${day(lastTime)}, lowest ${format(scale.low)}, highest ${format(scale.high)}`);
   for (let tick = scale.low; tick <= scale.high + scale.step / 2; tick += scale.step) {
     svg.append(
       svgElement('line', { x1: CHART.left, x2: CHART.width - CHART.right, y1: y(tick), y2: y(tick), class: 'chart-grid' }),

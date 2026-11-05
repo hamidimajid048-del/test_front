@@ -10,16 +10,17 @@
 </head>
 <body class="login-page">
   <form class="login-box" id="login-form" method="post" action="/auth/login">
-    <div class="brand">
+    <h1 class="brand">
       <span class="brand-mark">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
       </span>
       Violation Panel
-    </div>
+    </h1>
     <p class="login-subtitle">Sign in to continue</p>
-    <p id="error" class="message error" hidden></p>
+    <p id="error" class="message error" role="alert" hidden></p>
     <label>Username <input name="username" autocomplete="username" maxlength="64" required autofocus></label>
     <label>Password <input name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
+    <label class="show-password"><input type="checkbox" id="show-password"> Show password</label>
     <div id="access-token" hidden>
       <label>Admin access token
         <textarea name="accessToken" rows="3" autocomplete="off" spellcheck="false" placeholder="Identity access token (admin-client_token)"></textarea>
@@ -28,22 +29,25 @@
     <button type="submit">Continue</button>
   </form>
   <form class="login-box" id="code-form" method="post" action="/auth/verify-code" hidden>
-    <div class="brand">
+    <h1 class="brand">
       <span class="brand-mark">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
       </span>
       Violation Panel
-    </div>
+    </h1>
     <p class="login-subtitle">Enter the authentication code</p>
-    <p id="code-error" class="message error" hidden></p>
+    <p id="code-error" class="message error" role="alert" hidden></p>
     <label>Authentication code
       <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="6-digit code" required>
     </label>
     <button type="submit">Sign in</button>
-    <a href="/login.html">Start again</a>
+    <a class="secondary-link" href="/login.html">Start again</a>
   </form>
   <script>
     document.body.append(createThemeToggle());
+    document.getElementById('show-password').addEventListener('change', event => {
+      document.querySelector('#login-form [name="password"]').type = event.target.checked ? 'text' : 'password';
+    });
     const messages = {
       invalid: 'Incorrect username or password',
       code: 'Incorrect code',

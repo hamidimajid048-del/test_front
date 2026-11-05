@@ -221,7 +221,7 @@ async function loadTab(tab) {
   if (!currentLogin || !loader || loaded.has(tab)) return;
   const current = request;
   clearMessages(form, message);
-  message.textContent = 'Loading...';
+  setLoading(message);
   try {
     await loader();
     if (current === request) loaded.add(tab);
@@ -533,7 +533,7 @@ async function search(login) {
   overview = null;
   loaded = new Set();
   currentLogin = login;
-  message.textContent = 'Loading...';
+  setLoading(message);
   me = await currentAccount();
   const [data, switches, status] = await Promise.all([
     panelRequest('GET', panelPath('')),

@@ -48,6 +48,7 @@ const TOAST_ICONS = {
   error: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
 };
 const TOAST_SECONDS = { success: 4, error: 8 };
+const TOAST_RESUME_SECONDS = 2;
 
 // A short notification in the corner: kind is 'success' or 'error'; detail is an optional second line.
 function toast(title, kind = 'success', detail = '') {
@@ -89,7 +90,14 @@ function toast(title, kind = 'success', detail = '') {
   close.addEventListener('click', dismiss);
   element.append(icon, text, close);
   stack.append(element);
-  setTimeout(dismiss, (TOAST_SECONDS[kind] ?? 4) * 1000);
+  // A notification stays while it is hovered or focused, so it can be read and its close button reached.
+  let timer = setTimeout(dismiss, (TOAST_SECONDS[kind] ?? 4) * 1000);
+  const pause = () => clearTimeout(timer);
+  const resume = () => { timer = setTimeout(dismiss, TOAST_RESUME_SECONDS * 1000); };
+  element.addEventListener('mouseenter', pause);
+  element.addEventListener('focusin', pause);
+  element.addEventListener('mouseleave', resume);
+  element.addEventListener('focusout', resume);
 }
 
 // Number fields are plain text boxes (no spinner arrows) that accept digits only (and one dot when data-numeric="decimal"),
@@ -281,15 +289,53 @@ async function downloadExport(path, params, button, messageElement) {
   }
 }
 
-// A "?" after a column title that explains the column on hover (column.help).
+// A "?" button after a column title that explains the column (column.help) on hover, on keyboard focus and on tap.
+// One tooltip element is shared by all of them and floats over the page, so a scrolling table cannot clip it.
+const HELP_TIP_ID = 'col-help-tip';
+let helpTip = null;
+let helpOwner = null;
+
+function hideHelpTip() {
+  if (helpTip) helpTip.hidden = true;
+  helpOwner?.removeAttribute('aria-describedby');
+  helpOwner = null;
+}
+
+function showHelpTip(button, text) {
+  if (!helpTip) {
+    helpTip = document.createElement('div');
+    helpTip.id = HELP_TIP_ID;
+    helpTip.className = 'col-help-tip';
+    helpTip.setAttribute('role', 'tooltip');
+    document.body.append(helpTip);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') hideHelpTip(); });
+    document.addEventListener('scroll', hideHelpTip, true);
+    document.addEventListener('pointerdown', event => { if (!event.target.closest?.('.col-help')) hideHelpTip(); }, true);
+  }
+  hideHelpTip();
+  helpTip.textContent = text;
+  helpTip.hidden = false;
+  const box = button.getBoundingClientRect();
+  const left = box.left + box.width / 2 - helpTip.offsetWidth / 2;
+  helpTip.style.left = `${Math.min(Math.max(8, left), window.innerWidth - helpTip.offsetWidth - 8)}px`;
+  helpTip.style.top = `${box.bottom + 6}px`;
+  button.setAttribute('aria-describedby', HELP_TIP_ID);
+  helpOwner = button;
+}
+
 function addColumnHelp(th, column) {
   if (!column.help) return;
-  const mark = document.createElement('span');
+  const mark = document.createElement('button');
+  mark.type = 'button';
   mark.className = 'col-help';
   mark.textContent = '?';
-  mark.title = column.help;
-  mark.setAttribute('role', 'img');
-  mark.setAttribute('aria-label', column.help);
+  mark.setAttribute('aria-label', `About ${column.title}`);
+  const show = () => showHelpTip(mark, column.help);
+  mark.addEventListener('mouseenter', show);
+  mark.addEventListener('focus', show);
+  mark.addEventListener('click', show);
+  mark.addEventListener('mouseleave', hideHelpTip);
+  mark.addEventListener('blur', hideHelpTip);
   th.append(mark);
 }
 
@@ -399,6 +445,15 @@ function renderMenu() {
 
   nav.replaceChildren(brand, linkBox, actions);
   fitMenu();
+
+  // Every page gets a visible h1 taken from its title ("Account data — Violation Panel").
+  const main = document.querySelector('main');
+  if (main && !main.querySelector('h1')) {
+    const heading = document.createElement('h1');
+    heading.className = 'page-title';
+    heading.textContent = document.title.split(' — ')[0];
+    main.prepend(heading);
+  }
 
   currentAccount().then(me => {
     if (!me) return;
@@ -559,11 +614,13 @@ async function guarded(container, action) {
   if (container.dataset.busy) return;
   container.dataset.busy = '1';
   container.classList.add('is-busy');
+  container.setAttribute('aria-busy', 'true');
   try {
     await action();
   } finally {
     delete container.dataset.busy;
     container.classList.remove('is-busy');
+    container.removeAttribute('aria-busy');
   }
 }
 
@@ -730,6 +787,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   }
 
   const compact = columns.map(column => isCompactColumn(column, allRows));
+  const numeric = columns.map(column => isNumberColumn(column, allRows));
   const body = table.createTBody();
   const meta = document.createElement('div');
   meta.className = 'grid-meta';
@@ -780,6 +838,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
       columns.forEach((column, position) => {
         const td = tr.insertCell();
         if (compact[position]) td.classList.add('compact-col');
+        if (numeric[position]) td.classList.add('num');
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';
@@ -903,6 +962,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     headRow.cells[position].classList.add('compact-col');
     filterCells?.[position].classList.add('compact-col');
   });
+  numeric.forEach((isNumber, position) => { if (isNumber) headRow.cells[position].classList.add('num'); });
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   wrap.append(table);
@@ -963,6 +1023,14 @@ function isCompactColumn(column, rows) {
     seen = true;
   }
   return seen;
+}
+
+// Numbers line up on the right. Identifiers (logins, tickets, ids) are numbers too but read as text, so they stay on the left.
+const IDENTIFIER_KEY = /login|ticket|id$|asn/i;
+
+function isNumberColumn(column, rows) {
+  if (column.align) return column.align === 'end';
+  return !IDENTIFIER_KEY.test(column.key ?? '') && isCompactColumn({ key: column.key }, rows);
 }
 
 const columnId = column => `${column.group ?? ''}|${column.title}`;
@@ -1177,8 +1245,15 @@ function writeQuery(values) {
 
 function clearMessages(form, messageElement) {
   form.querySelectorAll('.field-error').forEach(element => element.remove());
+  form.querySelectorAll('[aria-invalid]').forEach(element => element.removeAttribute('aria-invalid'));
   messageElement.textContent = '';
   messageElement.className = 'message';
+}
+
+// Shows the loading message with a spinner.
+function setLoading(messageElement) {
+  messageElement.className = 'message loading';
+  messageElement.textContent = 'Loading...';
 }
 
 // Shows an ApiError: field errors next to matching inputs, everything else in messageElement.
@@ -1193,6 +1268,9 @@ function showError(form, messageElement, error) {
     const note = document.createElement('small');
     note.className = 'field-error';
     note.textContent = messages.join(' ');
+    note.id = `${input.name}-error`;
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', note.id);
     input.after(note);
   }
   messageElement.className = 'message error';
@@ -1203,10 +1281,11 @@ function showError(form, messageElement, error) {
 async function withLoading(form, messageElement, load) {
   const submit = form.querySelector('button[type="submit"]');
   clearMessages(form, messageElement);
-  messageElement.textContent = 'Loading...';
+  setLoading(messageElement);
   if (submit) submit.disabled = true;
   try {
     await load();
+    messageElement.className = 'message';
     messageElement.textContent = '';
   } catch (error) {
     showError(form, messageElement, error instanceof ApiError ? error : new ApiError(UNAVAILABLE_MESSAGE));
@@ -1214,3 +1293,68 @@ async function withLoading(form, messageElement, load) {
     if (submit) submit.disabled = false;
   }
 }
+
+// ---- accessibility added to every page ----
+
+// Tabs: the buttons of a .tabs bar get the tab roles, follow the "active" class set by each page, and move with the
+// arrow keys. A tab that has a section with the same data-panel is tied to it.
+function syncTabs(tabs) {
+  const buttons = [...tabs.querySelectorAll(':scope > button, :scope > .tab > button:first-child')];
+  tabs.setAttribute('role', 'tablist');
+  const anyActive = buttons.some(button => button.classList.contains('active') || button.closest('.tab')?.classList.contains('active'));
+  buttons.forEach((button, index) => {
+    const active = button.classList.contains('active') || Boolean(button.closest('.tab')?.classList.contains('active'));
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active || (!anyActive && index === 0) ? 0 : -1;
+    const panel = button.dataset.tab ? document.querySelector(`[data-panel="${button.dataset.tab}"]`) : null;
+    if (panel) {
+      button.id ||= `tab-${button.dataset.tab}`;
+      panel.id ||= `panel-${button.dataset.tab}`;
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-labelledby', button.id);
+      button.setAttribute('aria-controls', panel.id);
+    }
+  });
+}
+
+document.addEventListener('keydown', event => {
+  const tab = event.target.closest?.('[role="tab"]');
+  if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = [...tab.closest('.tabs').querySelectorAll('[role="tab"]')];
+  const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+  const next = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs.at(-1) : tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
+  event.preventDefault();
+  next.focus();
+  next.click();
+});
+
+// Message areas are polite live regions, so errors and the loading text are announced.
+function enhance(root) {
+  if (!(root instanceof Element)) return;
+  const within = selector => [...(root.matches(selector) ? [root] : []), ...root.querySelectorAll(selector)];
+  within('.tabs').forEach(syncTabs);
+  within('p.message').forEach(element => {
+    if (!element.hasAttribute('role')) element.setAttribute('role', 'status');
+  });
+}
+
+// Column and view menus close on Escape and on a click elsewhere.
+document.addEventListener('pointerdown', event => {
+  for (const menu of document.querySelectorAll('details.column-picker[open]')) if (!menu.contains(event.target)) menu.open = false;
+}, true);
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  const menu = document.querySelector('details.column-picker[open]');
+  if (!menu) return;
+  menu.open = false;
+  menu.querySelector('summary').focus();
+});
+
+new MutationObserver(records => {
+  for (const record of records) {
+    if (record.type === 'attributes') enhance(record.target.closest('.tabs'));
+    else record.addedNodes.forEach(enhance);
+  }
+}).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+enhance(document.body);
