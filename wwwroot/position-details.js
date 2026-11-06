@@ -58,6 +58,7 @@ const grids = {
       column('ip', 'IP'),
       column('platform', 'Device', platformLabel),
       column('accessPoint', 'Access point'),
+      column('computerId', 'Computer ID'),
       column('dealer', 'Dealer'),
     ],
   }),
