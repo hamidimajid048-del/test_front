@@ -2,7 +2,7 @@ namespace Sgb.Trading.Violation.Panel.Mt5;
 
 public static partial class Mt5ReportTable
 {
-    public const int MaxPageSize = 5000;
+    public const int MaxPageSize = 50_000;
 
     private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>> Properties = new();
 

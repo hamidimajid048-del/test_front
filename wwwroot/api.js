@@ -740,9 +740,9 @@ function nextSort(current, item, natural) {
 // options.tools = false turns sorting and filtering off for small fixed tables. options.columnFilters = false turns off
 // only the row of filter boxes under the titles.
 //
-// options.export = { name, rows? } adds CSV and Excel buttons (table-export.js) for reports the panel builds itself: they
-// download the rows shown with the filters and sort applied (rows() gives all of them when the table is paged by the caller)
-// and the columns shown, except columns marked noExport.
+// options.export = { name, rows?, all? } adds CSV and Excel buttons (table-export.js): they download every row of the
+// report with the filters and sort applied (rows() gives all of them when the table is paged in the browser, all reads
+// every page of a report paged by the server) and the columns shown, except columns marked noExport.
 function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const tools = options.tools !== false;
   const serverSort = tools ? options.sort : null;
@@ -970,7 +970,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, redraw) : null;
   const views = viewKey ? viewsMenu(state, viewKey, allColumns, serverSort, redraw) : null;
   const exporter = options.export && allRows.length
-    ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows)
+    ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows, options.export.all)
     : null;
   container.replaceChildren(wrap, meta);
   stickHeader(table);

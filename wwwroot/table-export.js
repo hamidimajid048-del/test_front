@@ -129,16 +129,45 @@ function exportTable(columns, rows, name, format) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-// The CSV / Excel buttons for a table. rows() returns the rows to export, columns() the columns shown.
-function exportButtons(name, columns, rows) {
+const EXCEL_MAX_ROWS = 1048575;
+
+// The CSV / Excel buttons for a table: they download every row of the report, not only the page on screen. columns()
+// gives the columns shown. rows() gives the rows when the browser holds all of them; for a report paged by the server,
+// all = { total, read(onProgress(count)) } reads every page with the filters and sort applied.
+function exportButtons(name, columns, rows, all) {
   const bar = document.createElement('span');
   bar.className = 'table-export';
+  const total = all ? all.total : rows().length;
+  const buttons = [];
   for (const [format, text] of [['csv', 'CSV'], ['xlsx', 'Excel']]) {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = text;
-    button.title = `Download the ${rows().length.toLocaleString('en-US')} rows shown, with the filters and sort applied, as ${text}`;
-    button.addEventListener('click', () => exportTable(columns().filter(column => !column.noExport), rows(), name, format));
+    button.title = `Download all ${total.toLocaleString('en-US')} rows, with the filters and sort applied, as ${text}`;
+    button.addEventListener('click', async () => {
+      if (bar.dataset.busy) return;
+      if (format === 'xlsx' && total > EXCEL_MAX_ROWS) {
+        toast(`Excel holds at most ${EXCEL_MAX_ROWS.toLocaleString('en-US')} rows`, 'error', 'Download CSV, or narrow the report with the filters.');
+        return;
+      }
+      bar.dataset.busy = 'true';
+      for (const item of buttons) item.disabled = true;
+      try {
+        const data = all
+          ? await all.read(count => { button.textContent = `${text} ${Math.min(99, Math.floor((count * 100) / Math.max(total, 1)))}%`; })
+          : rows();
+        button.textContent = `${text}...`;
+        await new Promise(resolve => setTimeout(resolve));
+        exportTable(columns().filter(column => !column.noExport), data, name, format);
+      } catch (error) {
+        toast('The download failed', 'error', error instanceof ApiError && error.message ? error.message : 'Try again, or narrow the report with the filters.');
+      } finally {
+        delete bar.dataset.busy;
+        for (const item of buttons) item.disabled = false;
+        button.textContent = text;
+      }
+    });
+    buttons.push(button);
     bar.append(button);
   }
   hideUnlessAllowed(bar, 'reports.export');

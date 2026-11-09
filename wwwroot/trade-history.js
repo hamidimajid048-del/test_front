@@ -113,6 +113,7 @@ const grids = Object.fromEntries(KINDS.map(kind => [kind, createReportGrid({
   titleId: `${kind}-title`,
   title: TITLES[kind],
   exportName: `trade-history-${kind}`,
+  exportPageSize: 50000,
   read: params => panelRequest('GET', `mt5/trade-report${toQueryString(params)}`),
 })]));
 
