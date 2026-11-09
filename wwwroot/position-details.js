@@ -122,9 +122,15 @@ async function search({ login, position }) {
   document.getElementById('summary').replaceChildren();
   for (const grid of Object.values(grids)) grid.clear();
   message.textContent = 'Loading...';
-  const [detail, tracker] = await Promise.allSettled([
+  const [detail] = await Promise.allSettled([
     panelRequest('GET', `mt5/account-data/position${toQueryString({ login, position })}`),
-    apiGet('transaction-reports/get-position-transactions', { position }),
+  ]);
+  if (current !== request) return;
+  const orders = detail.status === 'fulfilled'
+    ? [...new Set(detail.value.deals.map(deal => deal.order).filter(order => order > 0))]
+    : [];
+  const [tracker] = await Promise.allSettled([
+    apiGet('transaction-reports/get-position-transactions', { position, orders }),
   ]);
   if (current !== request) return;
   if (detail.status === 'rejected' && tracker.status === 'rejected') throw detail.reason;
