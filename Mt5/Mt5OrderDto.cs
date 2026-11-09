@@ -1,6 +1,7 @@
 namespace Sgb.Trading.Violation.Panel.Mt5;
 
 public sealed record Mt5OrderDto(
+    ulong Login,
     ulong Order,
     string Symbol,
     CIMTOrder.EnOrderType Type,

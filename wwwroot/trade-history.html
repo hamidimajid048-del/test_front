@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Trade history — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Report
+        <select name="kind">
+          <option value="positions">Positions</option>
+          <option value="orders">Orders</option>
+          <option value="deals">Deals</option>
+        </select>
+      </label>
+      <label>Date range
+        <select name="range">
+          <option value="day">Last day</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date" required></label>
+      <label>To day (UTC) <input name="toUtc" type="date" required></label>
+      <button type="submit">Search</button>
+    </form>
+    <p class="message" id="message"></p>
+    <div class="summary" id="metadata"></div>
+
+    <section data-panel="positions" hidden>
+      <h3 id="positions-title">Positions</h3>
+      <div id="positions"></div>
+      <div id="positions-pager"></div>
+    </section>
+    <section data-panel="orders" hidden>
+      <h3 id="orders-title">Orders</h3>
+      <div id="orders"></div>
+      <div id="orders-pager"></div>
+    </section>
+    <section data-panel="deals" hidden>
+      <h3 id="deals-title">Deals</h3>
+      <div id="deals"></div>
+      <div id="deals-pager"></div>
+    </section>
+
+    <ul class="help">
+      <li>Every account on the MetaTrader server, read from the Manager. The range is whole UTC days and can be at most 3 days long.</li>
+      <li><strong>Positions:</strong> positions opened in the range, with their closing deals even when they closed after it. <strong>Orders:</strong> history orders of the range and the active orders placed in it. <strong>Deals:</strong> every deal of the range.</li>
+      <li>Sorting, column filters and paging apply to all rows. Numbers and dates also accept &gt;, &lt;, &gt;=, &lt;= and =. The CSV and Excel buttons download the rows of the page shown.</li>
+    </ul>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/table-views.js"></script>
+  <script src="/table-export.js"></script>
+  <script src="/range.js"></script>
+  <script src="/mt5-format.js"></script>
+  <script src="/report-grid.js"></script>
+  <script src="/trade-history.js"></script>
+</body>
+</html>

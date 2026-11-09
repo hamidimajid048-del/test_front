@@ -4,8 +4,9 @@
 const DEFAULT_PAGE_SIZE = 1000;
 
 // options: { path, columns (array, or a function returning it), sort: { item, direction }, containerId, pagerId,
-// titleId?, title?, onRowClick?, onRendered?(report) }
-function createReportGrid({ path, columns, sort, containerId, pagerId, titleId, title, onRowClick, onRendered }) {
+// titleId?, title?, onRowClick?, onRendered?(report), read?(params) (defaults to the service API), exportName? (adds
+// CSV / Excel buttons for the rows of the page shown) }
+function createReportGrid({ path, columns, sort, containerId, pagerId, titleId, title, onRowClick, onRendered, read = params => apiGet(path, params), exportName }) {
   const container = document.getElementById(containerId);
   const pagerContainer = document.getElementById(pagerId);
   const titleElement = titleId ? document.getElementById(titleId) : null;
@@ -16,7 +17,7 @@ function createReportGrid({ path, columns, sort, containerId, pagerId, titleId, 
 
   async function load(page = 1, size = pageSize) {
     pageSize = size;
-    const report = await apiGet(path, {
+    const report = await read({
       ...params, sortItem: sortState.item, sortDirection: sortState.direction,
       ...columnFilterParams(filters), currentPage: page, pageSize,
     });
@@ -37,6 +38,7 @@ function createReportGrid({ path, columns, sort, containerId, pagerId, titleId, 
           return load(1);
         },
       },
+      ...(exportName ? { export: { name: exportName } } : {}),
     });
     renderPager(pagerContainer, paging, load);
     if (titleElement) titleElement.textContent = `${title} (${(paging?.totalRecords ?? report.items.length).toLocaleString('en-US')})`;

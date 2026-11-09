@@ -3,6 +3,7 @@ namespace Sgb.Trading.Violation.Panel.Auth;
 public static class PanelPermissions
 {
     public const string AccountDataView = "account-data.view";
+    public const string TradeHistoryView = "trade-history.view";
     public const string SwitchAccount = "account-data.switch-account";
     public const string SwitchTrading = "account-data.switch-trading";
     public const string SwitchStopOut = "account-data.switch-stop-out";
@@ -34,6 +35,7 @@ public static class PanelPermissions
     public static readonly IReadOnlyList<PanelPermission> All =
     [
         new(AccountDataView, ReportsGroup, "Account data", "One account's status, balance, trades and histories."),
+        new(TradeHistoryView, ReportsGroup, "Trade history", "Positions, orders or deals of every account in a date range."),
         new(LoginsView, ReportsGroup, "Login history", "Sessions of a login with IP, CID and location."),
         new(EmailLoginsView, ReportsGroup, "Email logins", "Every login of an email with its IPs, CIDs and sessions."),
         new(SimilarityView, ReportsGroup, "IP/CID similarity", "Logins that share an IP or CID."),

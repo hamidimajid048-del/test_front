@@ -70,6 +70,7 @@ public static class Mt5DealAnalyzer
 
         var closedAt = isOpen || outs.Count == 0 ? (DateTime?)null : outs[^1].Time;
         return new Mt5PositionHistoryDto(
+            all[0].Login,
             group.Key,
             all[0].Symbol,
             direction,

@@ -16,6 +16,7 @@ const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
 // Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
 const MENU_ITEMS = [
   { href: '/account-data.html', title: 'Account data', permission: 'account-data.view', description: "One account's status, start and current balance, net profit, growth chart, open positions and orders, deposits and withdrawals, and the position, order and deal histories." },
+  { href: '/trade-history.html', title: 'Trade history', permission: 'trade-history.view', description: 'Positions, orders or deals of every account in a range of days, with the login of each row.' },
   { href: '/logins.html', title: 'Login history', permission: 'logins.view', description: 'Sessions of a login with IP, CID, location and VPN/proxy warnings.' },
   { href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view', description: 'Every login of an email (Manager and archive) with its IPs, CIDs and full login history in a date range.' },
   { href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view', description: 'Logins that share an IP or CID, with details and Excel/CSV export.' },
