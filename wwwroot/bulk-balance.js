@@ -200,7 +200,7 @@ const fileBox = filePicker.querySelector('.file-box');
 function showChosenFile() {
   const file = fileForm.elements.file.files[0];
   filePicker.classList.toggle('has-file', Boolean(file));
-  filePicker.querySelector('.file-name').textContent = file ? file.name : 'No file chosen, or drop it here';
+  filePicker.querySelector('.file-name').textContent = file ? file.name : 'No file chosen';
 }
 
 fileForm.elements.file.addEventListener('change', showChosenFile);
