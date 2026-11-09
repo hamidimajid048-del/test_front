@@ -133,8 +133,9 @@ const EXCEL_MAX_ROWS = 1048575;
 
 // The CSV / Excel buttons for a table: they download every row of the report, not only the page on screen. columns()
 // gives the columns shown. rows() gives the rows when the browser holds all of them; for a report paged by the server,
-// all = { total, read(onProgress(count)) } reads every page with the filters and sort applied.
-function exportButtons(name, columns, rows, all) {
+// all = { total, read(onProgress(count)) } reads every page with the filters and sort applied. permission is the one
+// that shows the buttons (report export, unless the table is the result of an operation the account may run).
+function exportButtons(name, columns, rows, all, permission = 'reports.export') {
   const bar = document.createElement('span');
   bar.className = 'table-export';
   const total = all ? all.total : rows().length;
@@ -170,6 +171,6 @@ function exportButtons(name, columns, rows, all) {
     buttons.push(button);
     bar.append(button);
   }
-  hideUnlessAllowed(bar, 'reports.export');
+  hideUnlessAllowed(bar, permission);
   return bar;
 }

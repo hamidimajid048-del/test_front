@@ -2,8 +2,8 @@ namespace Sgb.Trading.Violation.Panel.Mt5;
 
 public static class Mt5AccountBalanceEndpoints
 {
-    private const decimal MaximumAmount = 1_000_000_000m;
-    private const int MaximumCommentLength = 32;
+    internal const decimal MaximumAmount = 1_000_000_000m;
+    internal const int MaximumCommentLength = 32;
 
     public static void MapMt5AccountBalanceEndpoints(this RouteGroupBuilder mt5) =>
         mt5.MapPost("/account-balance", ApplyAsync).RequirePermission(PanelPermissions.AccountBalance);

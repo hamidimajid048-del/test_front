@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Bulk deposit / withdraw — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="file-form" autocomplete="off">
+      <label>CSV file <input name="file" type="file" accept=".csv,text/csv" required></label>
+      <button type="submit">Check file</button>
+      <button type="button" id="sample">Download a sample</button>
+    </form>
+    <p class="message" id="message"></p>
+    <div class="summary" id="summary"></div>
+    <div class="actions" id="apply-bar" hidden>
+      <button type="button" id="apply"></button>
+      <button type="button" id="start-over">Choose another file</button>
+    </div>
+    <section id="rows-section" hidden>
+      <h3 id="rows-title">Rows</h3>
+      <div id="rows"></div>
+    </section>
+
+    <ul class="help">
+      <li>The file has three columns: <strong>login</strong>, <strong>amount</strong> and <strong>comment</strong>, one operation per line. A positive amount is a deposit, a negative amount a withdrawal (for example <code>-250.50</code>). Amounts take at most two decimals, with a dot for decimals and no thousands separators (<code>1000.50</code>, not <code>1,000.50</code>). The comment is required, 1 to 32 characters, and is written on the deal.</li>
+      <li>A first line with titles is skipped. Commas or semicolons separate the columns. Save the file from Excel as <strong>CSV UTF-8</strong> so non-English comments stay readable. At most 5,000 lines.</li>
+      <li><strong>Check file</strong> changes nothing: it shows every line with the account found on MetaTrader and its balance, and marks lines that cannot be sent. Only the lines marked Ready are sent, after you confirm.</li>
+      <li>The result shows for every line whether it was done (with its deal number), failed (with the reason) or was not sent. Download it with the CSV or Excel buttons. Every deposit and withdrawal is also written to the account change log.</li>
+      <li>If the connection drops while sending, send the remaining lines again from the same page: lines already done are not sent twice. A line marked Unknown got no answer from MetaTrader; check that account's deals before sending it again.</li>
+    </ul>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/table-views.js"></script>
+  <script src="/table-export.js"></script>
+  <script src="/mt5-format.js"></script>
+  <script src="/bulk-balance.js"></script>
+</body>
+</html>

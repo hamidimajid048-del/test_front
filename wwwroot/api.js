@@ -24,6 +24,7 @@ const MENU_ITEMS = [
   { href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
   { href: '/compare.html', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, and a merged timeline.' },
   { href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of two emails compared: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
+  { href: '/bulk-balance.html', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
 ];
 
 // The home page cards come from MENU_ITEMS, so a page added to the menu appears there too.
@@ -740,7 +741,7 @@ function nextSort(current, item, natural) {
 // options.tools = false turns sorting and filtering off for small fixed tables. options.columnFilters = false turns off
 // only the row of filter boxes under the titles.
 //
-// options.export = { name, rows?, all? } adds CSV and Excel buttons (table-export.js): they download every row of the
+// options.export = { name, rows?, all?, permission? } adds CSV and Excel buttons (table-export.js): they download every row of the
 // report with the filters and sort applied (rows() gives all of them when the table is paged in the browser, all reads
 // every page of a report paged by the server) and the columns shown, except columns marked noExport.
 function renderTable(container, allColumns, rows, onRowClick, options = {}) {
@@ -970,7 +971,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const picker = tools && allColumns.length > 1 ? columnPicker(allColumns, state, container, redraw) : null;
   const views = viewKey ? viewsMenu(state, viewKey, allColumns, serverSort, redraw) : null;
   const exporter = options.export && allRows.length
-    ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows, options.export.all)
+    ? exportButtons(options.export.name, () => columns, options.export.rows ?? visibleRows, options.export.all, options.export.permission)
     : null;
   container.replaceChildren(wrap, meta);
   stickHeader(table);

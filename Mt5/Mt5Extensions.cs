@@ -31,6 +31,7 @@ public static class Mt5Extensions
         builder.Services.AddSingleton<Mt5AccountRightsWriter>();
         builder.Services.AddSingleton<Mt5AccountPasswordWriter>();
         builder.Services.AddSingleton<Mt5AccountBalanceWriter>();
+        builder.Services.AddSingleton<Mt5BulkBalanceService>();
         builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     }
 
@@ -58,6 +59,7 @@ public static class Mt5Extensions
         mt5.MapMt5TradeReportEndpoints();
         mt5.MapMt5AccountPasswordEndpoints();
         mt5.MapMt5AccountBalanceEndpoints();
+        mt5.MapMt5BulkBalanceEndpoints();
     }
 
     private static async Task<IResult> ReadAccountChanges(string? login, Mt5ChangeLog changeLog, CancellationToken cancellationToken) =>
