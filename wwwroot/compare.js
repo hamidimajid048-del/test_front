@@ -19,19 +19,6 @@ const states = {};
 
 // ---- formatting ----
 
-// 3725 -> "1h 2m 5s"
-function formatSpan(totalSeconds) {
-  let remaining = Math.round(Math.abs(totalSeconds));
-  const hours = Math.floor(remaining / 3600);
-  remaining %= 3600;
-  const minutes = Math.floor(remaining / 60);
-  const parts = [];
-  if (hours) parts.push(`${hours}h`);
-  if (hours || minutes) parts.push(`${minutes}m`);
-  parts.push(`${remaining % 60}s`);
-  return parts.join(' ');
-}
-
 // The compared login's time minus the main login's: negative when the compared one came first.
 const formatGap = seconds => `${seconds < 0 ? '-' : '+'}${formatSpan(seconds)}`;
 
@@ -105,7 +92,7 @@ const OVERLAP_COLUMNS = [
   { key: 'otherCid', title: 'CID', group: 'Compared', filterKey: 'OtherCid' },
   { ...utcColumn('overlapStartUtc', 'From'), group: 'Overlap', filterKey: 'OverlapStartUtc' },
   { ...utcColumn('overlapEndUtc', 'To'), group: 'Overlap', filterKey: 'OverlapEndUtc' },
-  { key: 'overlapSeconds', title: 'Duration', group: 'Overlap', format: formatSpan, sortKey: 'OverlapSeconds' },
+  { key: 'overlapSeconds', title: 'Duration', group: 'Overlap', format: seconds => formatSpan(seconds), sortKey: 'OverlapSeconds' },
   { key: 'sameIp', title: 'Same IP', format: same => yesBadge(same, 'danger'), filterKey: 'SameIp' },
   { key: 'sameCid', title: 'Same CID', format: same => yesBadge(same, 'warn'), filterKey: 'SameCid' },
 ];
@@ -204,7 +191,7 @@ const TABS = [
       },
       direction('Asc', ['Descending', 'Ascending']),
     ],
-    describe: c => `Logins of the two accounts that started within ${formatSpan(c.windowSeconds)} of each other with a matching address (${MATCH_PHRASES[c.match]}).`,
+    describe: c => `Logins of the two accounts that started within ${formatSpan(c.windowSeconds, true)} of each other with a matching address (${MATCH_PHRASES[c.match]}).`,
     empty: 'No logins of the two accounts started close to each other with a matching address',
   },
   {
@@ -587,7 +574,7 @@ function renderOverview(report) {
       metric: 'Near logins',
       main: '',
       other: '',
-      shared: `${shared.nearLoginPairCount} pairs within ${formatSpan(report.metadata.windowSeconds)} (${MATCH_PHRASES[report.metadata.matchLevel]})`,
+      shared: `${shared.nearLoginPairCount} pairs within ${formatSpan(report.metadata.windowSeconds, true)} (${MATCH_PHRASES[report.metadata.matchLevel]})`,
     },
     { metric: 'Overlapping sessions', main: '', other: '', shared: String(shared.overlappingSessionCount) },
   ];

@@ -64,7 +64,7 @@ public static partial class Mt5ReportTable
     private static string Text(object? value) => value switch
     {
         null => string.Empty,
-        DateTime time => time.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+        DateTime time => time.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture),
         Enum item => item.ToString().Replace('_', ' '),
         IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
         _ => value.ToString() ?? string.Empty

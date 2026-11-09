@@ -11,4 +11,8 @@ public static class Mt5Reads
     public static DateTime FromUnix(long seconds) => DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
 
     public static DateTime? FromUnixOrNull(long seconds) => seconds > 0 ? FromUnix(seconds) : null;
+
+    public static DateTime FromUnixMs(long milliseconds) => DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).UtcDateTime;
+
+    public static DateTime? FromUnixMsOrNull(long milliseconds) => milliseconds > 0 ? FromUnixMs(milliseconds) : null;
 }

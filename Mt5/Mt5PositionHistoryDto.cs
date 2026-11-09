@@ -16,6 +16,6 @@ public sealed record Mt5PositionHistoryDto(
     double Fee,
     double NetProfit,
     bool IsOpen,
-    long? DurationSeconds,
+    double? DurationSeconds,
     CIMTDeal.EnDealReason Reason,
     string Comment);

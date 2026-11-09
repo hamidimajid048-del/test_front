@@ -619,16 +619,37 @@ async function panelRequest(method, path, body) {
   return result;
 }
 
-// Formats an ISO timestamp as "yyyy-MM-dd HH:mm:ss" in UTC.
+// Formats an ISO timestamp as "yyyy-MM-dd HH:mm:ss.fff" in UTC.
 function formatUtc(value) {
   if (!value) return '';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString().replace('T', ' ').slice(0, 19);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString().replace('T', ' ').slice(0, 23);
 }
 
-// Column definition for a UTC timestamp field.
-function utcColumn(key, title) {
-  return { key, title: `${title} (UTC)`, format: formatUtc };
+// Formats an ISO timestamp as "yyyy-MM-dd HH:mm:ss" in UTC, for sources that keep whole seconds only.
+function formatUtcSeconds(value) {
+  return formatUtc(value).slice(0, 19);
+}
+
+// Column definition for a UTC timestamp field; wholeSeconds for sources without milliseconds.
+function utcColumn(key, title, wholeSeconds = false) {
+  return { key, title: `${title} (UTC)`, format: wholeSeconds ? formatUtcSeconds : formatUtc };
+}
+
+// A number of seconds as "1d 2h 3m 4.567s", with the milliseconds; wholeSeconds leaves them out for set values such
+// as a window typed in seconds.
+function formatSpan(totalSeconds, wholeSeconds = false) {
+  const totalMs = Math.round(Math.abs(totalSeconds) * 1000);
+  const days = Math.floor(totalMs / 86400000);
+  const hours = Math.floor((totalMs % 86400000) / 3600000);
+  const minutes = Math.floor((totalMs % 3600000) / 60000);
+  const rest = (totalMs % 60000) / 1000;
+  const parts = [];
+  if (days) parts.push(`${days}d`);
+  if (days || hours) parts.push(`${hours}h`);
+  if (days || hours || minutes) parts.push(`${minutes}m`);
+  parts.push(wholeSeconds ? `${Math.round(rest)}s` : `${rest.toFixed(3)}s`);
+  return parts.join(' ');
 }
 
 // Column that merges a first/last timestamp pair into one cell (first on top, last below). Sorting and filtering use the

@@ -72,7 +72,7 @@ const COLUMNS = {
     sorted(priceColumn('priceTp', 'TP'), 'PriceTp'),
     sorted(utcColumn('setupAt', 'Placed'), 'SetupAt'),
     sorted(utcColumn('doneAt', 'Done'), 'DoneAt'),
-    sorted(utcColumn('expiresAt', 'Expires'), 'ExpiresAt'),
+    sorted(utcColumn('expiresAt', 'Expires', true), 'ExpiresAt'),
     sorted(column('positionId', 'Position', value => value || '—'), 'PositionId'),
     sorted(labelColumn('reason', 'Reason'), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),

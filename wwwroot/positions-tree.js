@@ -93,27 +93,11 @@ function price(value) {
   return value === null || value === undefined ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 5 });
 }
 
-// 3725 -> "1h 2m 5s"; 0.4 -> "0.4s"
-function duration(totalSeconds) {
-  if (totalSeconds === null || totalSeconds === undefined) return '—';
-  const value = Math.abs(totalSeconds);
-  if (value < 10) return `${Number(value.toFixed(1))}s`;
-  let remaining = Math.round(value);
-  const days = Math.floor(remaining / 86400);
-  remaining %= 86400;
-  const hours = Math.floor(remaining / 3600);
-  remaining %= 3600;
-  const minutes = Math.floor(remaining / 60);
-  const parts = [];
-  if (days) parts.push(`${days}d`);
-  if (days || hours) parts.push(`${hours}h`);
-  if (days || hours || minutes) parts.push(`${minutes}m`);
-  if (!days) parts.push(`${remaining % 60}s`);
-  return parts.join(' ');
-}
+// 3725.25 -> "1h 2m 5.250s"
+const duration = totalSeconds => (totalSeconds === null || totalSeconds === undefined ? '—' : formatSpan(totalSeconds));
 
 const signedDuration = seconds =>
-  seconds === null || seconds === undefined ? '—' : seconds === 0 ? '0s' : `${seconds < 0 ? '-' : '+'}${duration(seconds)}`;
+  seconds === null || seconds === undefined ? '—' : seconds === 0 ? formatSpan(0) : `${seconds < 0 ? '-' : '+'}${duration(seconds)}`;
 
 const signedMoney = value => `${value > 0 ? '+' : ''}${money(value)}`;
 

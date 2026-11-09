@@ -85,7 +85,7 @@ public static class Mt5DealAnalyzer
             all.Sum(deal => deal.Fee),
             all.Sum(Result),
             isOpen,
-            closedAt is { } closed ? (long)(closed - opening[0].Time).TotalSeconds : null,
+            closedAt is { } closed ? Math.Round((closed - opening[0].Time).TotalSeconds, 3) : null,
             all[^1].Reason,
             opening[0].Comment);
     }

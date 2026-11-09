@@ -177,7 +177,7 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
     internal static Mt5DealDto ToDto(CIMTDeal deal) => new(
         deal.Login(),
         deal.Deal(),
-        Mt5Reads.FromUnix(deal.Time()),
+        Mt5Reads.FromUnixMs(deal.TimeMsc()),
         (CIMTDeal.EnDealAction)deal.Action(),
         (CIMTDeal.EnEntryFlag)deal.Entry(),
         deal.Symbol(),
@@ -203,7 +203,7 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
         position.PriceTP(),
         position.Profit(),
         position.Storage(),
-        Mt5Reads.FromUnix(position.TimeCreate()),
+        Mt5Reads.FromUnixMs(position.TimeCreateMsc()),
         position.Comment());
 
     internal static Mt5OrderDto ToDto(CIMTOrder order) => new(
@@ -218,8 +218,8 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
         order.PriceTrigger(),
         order.PriceSL(),
         order.PriceTP(),
-        Mt5Reads.FromUnix(order.TimeSetup()),
-        Mt5Reads.FromUnixOrNull(order.TimeDone()),
+        Mt5Reads.FromUnixMs(order.TimeSetupMsc()),
+        Mt5Reads.FromUnixMsOrNull(order.TimeDoneMsc()),
         Mt5Reads.FromUnixOrNull(order.TimeExpiration()),
         order.PositionID(),
         order.Comment(),

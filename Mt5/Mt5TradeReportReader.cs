@@ -77,7 +77,7 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
             var rows = await Task.Run(() => mt5.RunManager(manager => kind switch
             {
                 Mt5TradeReportKindEnum.Positions => Positions(manager, groups, symbols, from, to, now.ToUnixTimeSeconds()),
-                Mt5TradeReportKindEnum.Orders => Orders(manager, groups, symbols, from, to),
+                Mt5TradeReportKindEnum.Orders => Orders(manager, groups, symbols, from, to, fromUtc, toUtc),
                 _ => (IReadOnlyList<object>)[.. Deals(manager, groups, symbols, from, to)]
             }), cancellationToken);
             _cached = new Mt5TradeReportCacheModel(kind, fromUtc, toUtc, groups, symbols, now, rows);
@@ -121,7 +121,7 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
         return [.. positions];
     }
 
-    private static IReadOnlyList<object> Orders(CIMTManagerAPI manager, string groups, string symbols, long from, long to)
+    private static IReadOnlyList<object> Orders(CIMTManagerAPI manager, string groups, string symbols, long from, long to, DateTime fromUtc, DateTime toUtc)
     {
         using var history = manager.OrderCreateArray();
         Mt5Reads.EnsureRead(symbols == All
@@ -132,12 +132,10 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
             ? manager.OrderRequestByGroup(groups, open)
             : manager.OrderRequestByGroupSymbol(groups, symbols, open));
 
-        var fromTime = Mt5Reads.FromUnix(from);
-        var toTime = Mt5Reads.FromUnix(to);
         return
         [
             .. history.ToArray().Select(Mt5AccountDataReader.ToDto)
-                .Concat(open.ToArray().Select(Mt5AccountDataReader.ToDto).Where(order => order.SetupAt >= fromTime && order.SetupAt <= toTime))
+                .Concat(open.ToArray().Select(Mt5AccountDataReader.ToDto).Where(order => order.SetupAt >= fromUtc && order.SetupAt <= toUtc))
                 .DistinctBy(order => order.Order)
         ];
     }

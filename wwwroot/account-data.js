@@ -83,7 +83,7 @@ const orderColumns = [
   priceColumn('priceTp', 'TP'),
   utcColumn('setupAt', 'Placed'),
   utcColumn('doneAt', 'Done'),
-  utcColumn('expiresAt', 'Expires'),
+  utcColumn('expiresAt', 'Expires', true),
   column('positionId', 'Position', value => value || '—'),
   labelColumn('reason', 'Reason'),
   column('comment', 'Comment'),
@@ -509,7 +509,7 @@ function renderOverview(data, switches, status) {
     ['Withdrawals', money(data.totalWithdrawals)],
     ['Deals', data.dealCount.toLocaleString('en-US')],
     ['Leverage', data.leverage ? `1:${data.leverage}` : '—'],
-    ['Registered (UTC)', data.registeredAt ? formatUtc(data.registeredAt) : '—'],
+    ['Registered (UTC)', data.registeredAt ? formatUtcSeconds(data.registeredAt) : '—'],
   ]);
   document.getElementById('comment').textContent = data.comment ? `Comment: ${data.comment}` : '';
   renderBalanceChart(document.getElementById('chart'), data.chart, chartMode);

@@ -34,7 +34,7 @@ const grids = {
     sort: { item: 'Time (UTC)', direction: 'Asc' },
     columns: [
       column('recordNo', 'Record'),
-      utcColumn('time', 'Time'),
+      utcColumn('time', 'Time', true),
       codeColumn('actionText', 'Action', 'action'),
       codeColumn('typeText', 'Type', 'type'),
       codeColumn('entryText', 'Entry', 'entry'),
