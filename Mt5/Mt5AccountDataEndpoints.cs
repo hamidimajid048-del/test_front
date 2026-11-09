@@ -15,12 +15,16 @@ public static class Mt5AccountDataEndpoints
                 : Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Enter a valid position number."));
         data.MapGet("/orders", (string? login, Mt5AccountDataReader reader) => Read(login, reader.OrderHistory));
         data.MapGet("/deals", (string? login, Mt5AccountDataReader reader) => Read(login, reader.Deals));
+        data.MapGet("/find-login", (string? kind, string? ticket, Mt5AccountDataReader reader) =>
+            Enum.TryParse<Mt5TicketKindEnum>(kind, true, out var parsedKind) && Enum.IsDefined(parsedKind)
+                ? Read(ticket, number => reader.FindLogin(parsedKind, number), $"Enter a valid {parsedKind.ToString().ToLowerInvariant()} number.")
+                : Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Choose a position, order or deal number."));
     }
 
-    private static IResult Read(string? login, Func<ulong, object?> read)
+    private static IResult Read(string? login, Func<ulong, object?> read, string invalidMessage = "Enter a valid account number.")
     {
         if (!ulong.TryParse(login, out var parsed) || parsed == 0)
-            return Mt5Extensions.Error(StatusCodes.Status400BadRequest, "Enter a valid account number.");
+            return Mt5Extensions.Error(StatusCodes.Status400BadRequest, invalidMessage);
 
         try
         {

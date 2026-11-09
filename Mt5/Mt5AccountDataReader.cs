@@ -75,6 +75,53 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
         return (IReadOnlyList<Mt5OrderDto>)[.. orders.ToArray().Select(ToDto).OrderByDescending(order => order.SetupAt).ThenByDescending(order => order.Order)];
     });
 
+    public Mt5LoginLookupDto? FindLogin(Mt5TicketKindEnum kind, ulong ticket)
+    {
+        var login = mt5.RunManager(manager => kind switch
+        {
+            Mt5TicketKindEnum.Deal => DealLogin(manager, ticket),
+            Mt5TicketKindEnum.Order => OpenOrderLogin(manager, ticket) ?? HistoryOrderLogin(manager, ticket, _ => true),
+            _ => OpenPositionLogin(manager, ticket) ?? HistoryOrderLogin(manager, ticket, order => order.PositionID() == ticket)
+        });
+        return login is { } found ? new Mt5LoginLookupDto(found) : null;
+    }
+
+    private static ulong? DealLogin(CIMTManagerAPI manager, ulong ticket)
+    {
+        using var deal = manager.DealCreate();
+        var result = manager.DealRequest(ticket, deal);
+        if (result == MTRetCode.MT_RET_ERR_NOTFOUND)
+            return null;
+
+        Mt5Reads.EnsureRead(result);
+        return deal.Login();
+    }
+
+    private static ulong? OpenOrderLogin(CIMTManagerAPI manager, ulong ticket)
+    {
+        using var order = manager.OrderCreate();
+        var result = manager.OrderRequest(ticket, order);
+        if (result == MTRetCode.MT_RET_ERR_NOTFOUND)
+            return null;
+
+        Mt5Reads.EnsureRead(result);
+        return order.Login();
+    }
+
+    private static ulong? HistoryOrderLogin(CIMTManagerAPI manager, ulong ticket, Func<CIMTOrder, bool> matches)
+    {
+        using var orders = manager.OrderCreateArray();
+        Mt5Reads.EnsureRead(manager.HistoryRequestByTickets([ticket], orders));
+        return orders.ToArray().FirstOrDefault(order => order.Order() == ticket && matches(order))?.Login();
+    }
+
+    private static ulong? OpenPositionLogin(CIMTManagerAPI manager, ulong ticket)
+    {
+        using var positions = manager.PositionCreateArray();
+        Mt5Reads.EnsureRead(manager.PositionRequestByTickets([ticket], positions));
+        return positions.ToArray().FirstOrDefault(position => position.Position() == ticket)?.Login();
+    }
+
     private Mt5AccountFactsModel? ReadArchivedFacts(ulong login)
     {
         try

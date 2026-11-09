@@ -786,6 +786,11 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 @keyframes toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 
 dialog.panel-dialog.confirm-dialog { width: min(400px, calc(100vw - 32px)); }
+dialog.panel-dialog.login-lookup-dialog { width: min(400px, calc(100vw - 32px)); }
+.login-lookup-field { display: flex; gap: var(--space-6); }
+form.filters .login-lookup-field input { flex: 1; min-width: 0; }
+.login-lookup-button { flex: none; padding-inline: var(--space-10); font-weight: 700; }
+.login-lookup-button[hidden] { display: none; }
 dialog.panel-dialog.confirm-dialog h3 { margin-bottom: var(--space-8); font-size: var(--font-size-lg); }
 button.confirm { color: var(--primary-text); background: var(--primary); border-color: var(--primary); min-width: 96px; }
 button.confirm:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
