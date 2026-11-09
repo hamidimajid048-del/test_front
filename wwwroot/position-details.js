@@ -35,6 +35,11 @@ const grids = {
     columns: [
       column('recordNo', 'Record'),
       utcColumn('time', 'Time', true),
+      {
+        key: 'timeDifference', title: 'Time difference',
+        help: 'Time since the record before it, in time order. The tracker keeps whole seconds, so this is to the second.',
+        format: seconds => (seconds === null ? '—' : formatSpan(seconds, true)),
+      },
       codeColumn('actionText', 'Action', 'action'),
       codeColumn('typeText', 'Type', 'type'),
       codeColumn('entryText', 'Entry', 'entry'),
@@ -73,6 +78,15 @@ function codeColumn(key, title, codeKey) {
     cell.title = row[codeKey]?.description ?? '';
     return cell;
   });
+}
+
+// The records in time order (record number breaks ties), each with the seconds since the one before it.
+function transactionRows(items) {
+  const ordered = [...items].sort((a, b) => Date.parse(a.time) - Date.parse(b.time) || a.recordNo - b.recordNo);
+  return ordered.map((item, index) => ({
+    ...transactionRow(item),
+    timeDifference: index === 0 ? null : (Date.parse(item.time) - Date.parse(ordered[index - 1].time)) / 1000,
+  }));
 }
 
 function transactionRow(item) {
@@ -135,7 +149,7 @@ async function search({ login, position }) {
   if (current !== request) return;
   if (detail.status === 'rejected' && tracker.status === 'rejected') throw detail.reason;
   if (detail.status === 'fulfilled') renderPosition(login, detail.value);
-  if (tracker.status === 'fulfilled') grids.transactions.setRows(tracker.value.map(transactionRow));
+  if (tracker.status === 'fulfilled') grids.transactions.setRows(transactionRows(tracker.value));
   const failure = [detail, tracker].find(result => result.status === 'rejected');
   const back = document.getElementById('back');
   back.href = `/account-data.html?login=${encodeURIComponent(login)}&tab=positions`;
