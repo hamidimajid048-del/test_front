@@ -1,6 +1,6 @@
 // A usage timeline for the CIDs or IPs of one login: one row per value with a bar from its first to its last sign-in
-// (the tracker records sign-ins only, never sign-outs, so a bar is the span of use, not a session). CID bars are
-// coloured by device type; IP rows carry no device, so their bars share one colour.
+// (the tracker records sign-ins only, never sign-outs, so a bar is the span of use, not a session). Bars are
+// coloured by device type; an IP row also carries the location, ISP and risk flags of its latest sign-in.
 
 const TIMELINE_KINDS = {
   mobile: { label: 'Mobile', className: 'ut-mobile' },
@@ -54,11 +54,27 @@ function tickLabel({ time, unit }) {
   return unit === 'hour' ? `${day.slice(5)} ${date.toISOString().slice(11, 16)}` : day;
 }
 
-// rows: [{ value, firstSeen, lastSeen, sessionCount, deviceType? }]. options.kind is 'cid' or 'ip'; options.onSelect(row)
-// makes the rows clickable.
+// The risk flag labels of a geo record ("VPN", "Datacenter"); empty without a record.
+const riskFlags = geo => geo ? WARNING_FLAGS.filter(flag => flag.isSet(geo)).map(flag => flag.label) : [];
+
+// Tooltip lines for the latest geo record of an IP.
+function geoLines(geo) {
+  if (!geo) return ['Location: not recorded'];
+  const risks = riskFlags(geo);
+  const known = text => text && text.toLowerCase() !== 'unknown' ? text : null;
+  return [
+    `Location: ${[...new Set([geo.city, geo.region, geo.province, geo.country].map(known).filter(Boolean))].join(', ') || '—'}`,
+    `ISP: ${geo.isp || geo.ispOrganization || '—'}`,
+    geo.asn > 0 ? `ASN: ${geo.asn}${geo.asnOrganization ? ` · ${geo.asnOrganization}` : ''}` : null,
+    `Risk flags: ${risks.length ? risks.join(', ') : 'none'}`,
+  ];
+}
+
+// rows: [{ value, firstSeen, lastSeen, sessionCount, deviceType?, geo? }]. options.kind is 'cid' or 'ip';
+// options.onSelect(row) makes the rows clickable.
 function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
   const items = rows
-    .map(row => ({ ...row, from: Date.parse(row.firstSeen), to: Date.parse(row.lastSeen), kind: kind === 'cid' ? timelineKind(row.deviceType) : null }))
+    .map(row => ({ ...row, from: Date.parse(row.firstSeen), to: Date.parse(row.lastSeen), kind: timelineKind(row.deviceType) }))
     .filter(item => Number.isFinite(item.from) && Number.isFinite(item.to))
     .sort((a, b) => a.from - b.from || a.to - b.to);
   if (!items.length) {
@@ -80,19 +96,17 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
   const root = document.createElement('div');
   root.className = 'usage-timeline';
 
-  if (kind === 'cid') {
-    const legend = document.createElement('div');
-    legend.className = 'ut-legend';
-    const used = new Set(items.map(item => item.kind));
-    for (const key of ['mobile', 'system', 'web', 'mixed', 'unknown'].filter(key => used.has(key))) {
-      const entry = document.createElement('span');
-      const swatch = document.createElement('span');
-      swatch.className = `ut-swatch ${TIMELINE_KINDS[key].className}`;
-      entry.append(swatch, TIMELINE_KINDS[key].label);
-      legend.append(entry);
-    }
-    root.append(legend);
+  const legend = document.createElement('div');
+  legend.className = 'ut-legend';
+  const used = new Set(items.map(item => item.kind));
+  for (const key of ['mobile', 'system', 'web', 'mixed', 'unknown'].filter(key => used.has(key))) {
+    const entry = document.createElement('span');
+    const swatch = document.createElement('span');
+    swatch.className = `ut-swatch ${TIMELINE_KINDS[key].className}`;
+    entry.append(swatch, TIMELINE_KINDS[key].label);
+    legend.append(entry);
   }
+  root.append(legend);
 
   const chart = document.createElement('div');
   chart.className = 'ut-chart';
@@ -139,7 +153,8 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
   const showTip = (item, x, y) => {
     tip.replaceChildren(...[
       item.value,
-      item.kind ? `${TIMELINE_KINDS[item.kind].label}${item.deviceType ? ` · ${item.deviceType}` : ''}` : null,
+      `${TIMELINE_KINDS[item.kind].label}${item.deviceType ? ` · ${item.deviceType}` : ''}`,
+      ...(kind === 'ip' ? geoLines(item.geo) : []),
       `First sign-in: ${formatUtc(item.firstSeen)}`,
       `Last sign-in: ${formatUtc(item.lastSeen)}`,
       `Sign-ins: ${Number(item.sessionCount).toLocaleString('en-US')}`,
@@ -172,13 +187,19 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
     label.className = 'ut-label';
     const shortValue = kind === 'cid' && item.value.length > 10 ? `${item.value.slice(0, 8)}…` : item.value;
     const logins = Number(item.sessionCount);
-    const parts = [shortValue, item.kind ? TIMELINE_KINDS[item.kind].label : null, `${logins.toLocaleString('en-US')} ${logins === 1 ? 'login' : 'logins'}`];
+    const parts = [
+      shortValue,
+      TIMELINE_KINDS[item.kind].label,
+      kind === 'ip' ? item.geo?.country || null : null,
+      `${logins.toLocaleString('en-US')} ${logins === 1 ? 'login' : 'logins'}`,
+      ...(kind === 'ip' ? riskFlags(item.geo).map(flag => `⚠ ${flag}`) : []),
+    ];
     label.textContent = parts.filter(Boolean).join(' | ');
 
     const track = document.createElement('span');
     track.className = 'ut-track';
     const bar = document.createElement('span');
-    bar.className = `ut-bar ${item.kind ? TIMELINE_KINDS[item.kind].className : 'ut-mobile'}`;
+    bar.className = `ut-bar ${TIMELINE_KINDS[item.kind].className}`;
     const left = percent(item.from);
     bar.style.left = `min(${left}%, calc(100% - 6px))`;
     bar.style.width = `${Math.max(percent(item.to) - left, 0)}%`;
