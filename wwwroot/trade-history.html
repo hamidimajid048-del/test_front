@@ -27,6 +27,18 @@
       </label>
       <label>From day (UTC) <input name="fromUtc" type="date" required></label>
       <label>To day (UTC) <input name="toUtc" type="date" required></label>
+      <div class="device-type-field" id="symbols-field">
+        <span>Symbols</span>
+        <input type="hidden" name="symbols">
+        <button type="button" class="device-type-button">All</button>
+      </div>
+      <div class="device-type-field" id="groups-field">
+        <span>Groups</span>
+        <input type="hidden" name="groups">
+        <button type="button" class="device-type-button">All</button>
+      </div>
+      <label>Volume from (lots) <input name="volumeFrom" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" step="0.01"></label>
+      <label>Volume to (lots) <input name="volumeTo" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" step="0.01"></label>
       <button type="submit">Search</button>
     </form>
     <p class="message" id="message"></p>
@@ -51,6 +63,7 @@
     <ul class="help">
       <li>Every account on the MetaTrader server, read from the Manager. The range is whole UTC days and can be at most 3 days long.</li>
       <li><strong>Positions:</strong> positions opened in the range, with their closing deals even when they closed after it. <strong>Orders:</strong> history orders of the range and the active orders placed in it. <strong>Deals:</strong> every deal of the range.</li>
+      <li><strong>Symbols</strong> and <strong>Groups</strong> take one or more choices; none chosen means all. <strong>Volume</strong> (lots) is optional: leave it empty for any volume, or fill in From, To or both. For orders it is the placed volume.</li>
       <li>Sorting, column filters and paging apply to all rows. Numbers and dates also accept &gt;, &lt;, &gt;=, &lt;= and =. The CSV and Excel buttons download the rows of the page shown.</li>
     </ul>
   </main>
@@ -61,6 +74,7 @@
   <script src="/range.js"></script>
   <script src="/mt5-format.js"></script>
   <script src="/report-grid.js"></script>
+  <script src="/multi-picker.js"></script>
   <script src="/trade-history.js"></script>
 </body>
 </html>

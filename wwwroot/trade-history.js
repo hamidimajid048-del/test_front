@@ -8,7 +8,20 @@ const MAX_RANGE_DAYS = 3;
 const DAY_MS = 86400000;
 
 const rangeControls = initRangeControls(form);
+const symbolPicker = initMultiPicker(document.getElementById('symbols-field'));
+const groupPicker = initMultiPicker(document.getElementById('groups-field'));
 let request = 0;
+
+async function loadPickerChoices() {
+  try {
+    const options = await panelRequest('GET', 'mt5/trade-report/options');
+    symbolPicker.setChoices(options.symbols ?? []);
+    groupPicker.setChoices(options.groups ?? []);
+  } catch {
+    symbolPicker.setChoices([]);
+    groupPicker.setChoices([]);
+  }
+}
 
 const accountLink = login => {
   const link = actionLink(String(login), `/account-data.html?login=${encodeURIComponent(login)}`);
@@ -112,6 +125,18 @@ function validateTradeRange(values) {
   validateRange(values);
   const days = (Date.parse(values.toUtc) - Date.parse(values.fromUtc)) / DAY_MS + 1;
   if (days > MAX_RANGE_DAYS) throw new ApiError(`Choose a range of at most ${MAX_RANGE_DAYS} days`, { toUtc: [`At most ${MAX_RANGE_DAYS} days`] });
+  if (values.volumeFrom && values.volumeTo && Number(values.volumeFrom) > Number(values.volumeTo)) {
+    throw new ApiError('Volume from must not be more than volume to', { volumeTo: ['Must not be less than From'] });
+  }
+}
+
+const pickedSummary = names => names.length === 0 ? 'All' : names.length <= 3 ? names.join(', ') : `${names.length} selected`;
+
+function volumeSummary(values) {
+  if (!values.volumeFrom && !values.volumeTo) return 'Any';
+  if (!values.volumeTo) return `≥ ${values.volumeFrom}`;
+  if (!values.volumeFrom) return `≤ ${values.volumeTo}`;
+  return `${values.volumeFrom} — ${values.volumeTo}`;
 }
 
 async function search(values) {
@@ -125,11 +150,24 @@ async function search(values) {
   writeQuery(values);
   setLoading(message);
 
-  const report = await grids[kind].start({ kind, fromUtc: fromDayParam(values.fromUtc), toUtc: toDayParam(values.toUtc) });
+  const symbols = splitPicked(values.symbols);
+  const groups = splitPicked(values.groups);
+  const report = await grids[kind].start({
+    kind,
+    fromUtc: fromDayParam(values.fromUtc),
+    toUtc: toDayParam(values.toUtc),
+    volumeFrom: values.volumeFrom,
+    volumeTo: values.volumeTo,
+    symbols,
+    groups,
+  });
   if (current !== request) return;
   renderSummary(document.getElementById('metadata'), [
     ['Report', TITLES[kind]],
     ['Range (UTC)', `${values.fromUtc} — ${values.toUtc}`],
+    ['Symbols', pickedSummary(symbols)],
+    ['Groups', pickedSummary(groups)],
+    ['Volume (lots)', volumeSummary(values)],
     ['Rows', (pagingOf(report.paging)?.totalRecords ?? report.items.length).toLocaleString('en-US')],
   ]);
   message.textContent = '';
@@ -158,5 +196,8 @@ form.addEventListener('submit', event => {
 renderMenu();
 const hasQuery = fillFormFromQuery(form);
 rangeControls.restore();
+symbolPicker.sync();
+groupPicker.sync();
+loadPickerChoices();
 if (!form.elements.fromUtc.value) rangeControls.apply();
 if (hasQuery && form.elements.fromUtc.value) submit();

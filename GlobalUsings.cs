@@ -7,6 +7,7 @@ global using Microsoft.AspNetCore.DataProtection;
 global using Microsoft.AspNetCore.HttpOverrides;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.Extensions.FileProviders;
+global using Microsoft.Extensions.Primitives;
 global using Npgsql;
 global using QRCoder;
 global using Sgb.Trading.Violation.Panel.AccountActivation;

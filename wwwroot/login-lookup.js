@@ -1,95 +1,39 @@
-// Adds a "find" button beside every login field: a dialog finds the account of a position, order or deal number
-// (/panel-api/mt5/account-data/find-login), puts it in the field and runs the search.
+// A "search by" dropdown in front of every login field: Login (the default), Position, Order or Deal. For a position,
+// order or deal number the account is found first (/panel-api/mt5/account-data/find-login), put in the field, and the
+// page's own search runs with it.
 
-const LOGIN_LOOKUP_KINDS = [['position', 'Position'], ['order', 'Order'], ['deal', 'Deal']];
-
-function createLoginLookupDialog() {
-  const dialog = document.createElement('dialog');
-  dialog.className = 'panel-dialog login-lookup-dialog';
-  const form = document.createElement('form');
-  form.method = 'dialog';
-  const heading = document.createElement('h3');
-  heading.textContent = 'Find the account';
-  const text = document.createElement('p');
-  text.textContent = 'Find the account of a position, order or deal number.';
-
-  const kindLabel = document.createElement('label');
-  kindLabel.textContent = 'Search by ';
-  const kind = document.createElement('select');
-  kind.name = 'kind';
-  for (const [value, title] of LOGIN_LOOKUP_KINDS) kind.add(new Option(title, value));
-  kindLabel.append(kind);
-
-  const ticketLabel = document.createElement('label');
-  ticketLabel.textContent = 'Number ';
-  const ticket = document.createElement('input');
-  ticket.name = 'ticket';
-  ticket.type = 'text';
-  ticket.inputMode = 'numeric';
-  ticket.dataset.numeric = 'integer';
-  ticket.autocomplete = 'off';
-  ticket.required = true;
-  ticketLabel.append(ticket);
-
-  const error = document.createElement('p');
-  error.className = 'message error';
-  const buttons = document.createElement('div');
-  buttons.className = 'dialog-buttons';
-  const cancel = document.createElement('button');
-  cancel.type = 'button';
-  cancel.textContent = 'Cancel';
-  const find = document.createElement('button');
-  find.type = 'submit';
-  find.textContent = 'Find';
-  buttons.append(cancel, find);
-
-  form.append(heading, text, kindLabel, ticketLabel, error, buttons);
-  dialog.append(form);
-  document.body.append(dialog);
-  return { dialog, form, kind, ticket, error, cancel, find };
-}
+const LOGIN_LOOKUP_KINDS = [['login', 'Login'], ['position', 'Position'], ['order', 'Order'], ['deal', 'Deal']];
 
 function attachLoginLookup(input) {
-  const parts = createLoginLookupDialog();
+  const form = input.form;
+  const kind = document.createElement('select');
+  kind.className = 'login-lookup-kind';
+  kind.setAttribute('aria-label', 'Search by');
+  for (const [value, title] of LOGIN_LOOKUP_KINDS) kind.add(new Option(title, value));
+  hideUnlessAllowed(kind, 'account-data.view');
+
   const row = document.createElement('div');
   row.className = 'login-lookup-field';
-  const open = document.createElement('button');
-  open.type = 'button';
-  open.className = 'login-lookup-button';
-  open.textContent = '⋯';
-  open.title = 'Find the account by a position, order or deal number';
-  open.setAttribute('aria-label', open.title);
   input.replaceWith(row);
-  row.append(input, open);
-  hideUnlessAllowed(open, 'account-data.view');
+  row.append(kind, input);
 
-  open.addEventListener('click', () => {
-    parts.error.textContent = '';
-    parts.ticket.value = '';
-    parts.dialog.showModal();
-    parts.ticket.focus();
-  });
-  parts.cancel.addEventListener('click', () => parts.dialog.close());
-
-  parts.form.addEventListener('submit', async event => {
+  form.addEventListener('submit', async event => {
+    if (kind.value === 'login') return;
     event.preventDefault();
-    const kind = parts.kind.value;
-    const ticket = parts.ticket.value.trim();
-    parts.error.textContent = '';
-    parts.find.disabled = true;
+    event.stopImmediatePropagation();
+    const message = document.getElementById('message');
+    const ticket = input.value.trim();
+    clearMessages(form, message);
     try {
-      const found = await panelRequest('GET', `mt5/account-data/find-login${toQueryString({ kind, ticket })}`);
-      parts.dialog.close();
+      const found = await panelRequest('GET', `mt5/account-data/find-login${toQueryString({ kind: kind.value, ticket })}`);
+      if (kind.value === 'position' && form.elements.position) form.elements.position.value = ticket;
       input.value = String(found.login);
-      const host = input.form;
-      if (kind === 'position' && host?.elements.position) host.elements.position.value = ticket;
-      host?.requestSubmit();
+      kind.value = 'login';
+      form.requestSubmit();
     } catch (error) {
-      parts.error.textContent = error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE;
-    } finally {
-      parts.find.disabled = false;
+      showError(form, message, error instanceof ApiError && error.message ? error : new ApiError(UNAVAILABLE_MESSAGE));
     }
-  });
+  }, true);
 }
 
 for (const input of document.querySelectorAll('form.filters input[name="login"]')) attachLoginLookup(input);

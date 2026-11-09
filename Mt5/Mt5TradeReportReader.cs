@@ -3,7 +3,7 @@ namespace Sgb.Trading.Violation.Panel.Mt5;
 public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider timeProvider)
 {
     public const int MaxRangeDays = 3;
-    private const string AllGroups = "*";
+    private const string All = "*";
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromMinutes(2);
 
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -11,7 +11,14 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
 
     public async Task<Mt5TradeReportDto> ReadAsync(Mt5TradeReportInput input, CancellationToken cancellationToken)
     {
-        var rows = await RowsAsync(input.Kind, input.FromUtc, input.ToUtc, cancellationToken);
+        var rows = await RowsAsync(input.Kind, input.FromUtc, input.ToUtc, Mask(input.Groups), Mask(input.Symbols), cancellationToken);
+        if (input.VolumeFrom is not null || input.VolumeTo is not null)
+        {
+            var from = input.VolumeFrom ?? double.MinValue;
+            var to = input.VolumeTo ?? double.MaxValue;
+            rows = [.. rows.Where(row => VolumeOf(row) is var volume && volume >= from && volume <= to)];
+        }
+
         var defaultSort = input.Kind switch
         {
             Mt5TradeReportKindEnum.Positions => nameof(Mt5PositionHistoryDto.OpenedAt),
@@ -21,13 +28,47 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
         return Mt5ReportTable.Page(rows, input, defaultSort);
     }
 
-    private async Task<IReadOnlyList<object>> RowsAsync(Mt5TradeReportKindEnum kind, DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken)
+    public Mt5TradeReportOptionsDto Options() => mt5.RunManager(manager =>
+    {
+        List<string> groups = [];
+        using (var group = manager.GroupCreate())
+        {
+            for (uint position = 0, total = manager.GroupTotal(); position < total; position++)
+                if (manager.GroupNext(position, group) == MTRetCode.MT_RET_OK)
+                    groups.Add(group.Group());
+        }
+
+        List<string> symbols = [];
+        using (var symbol = manager.SymbolCreate())
+        {
+            for (uint position = 0, total = manager.SymbolTotal(); position < total; position++)
+                if (manager.SymbolNext(position, symbol) == MTRetCode.MT_RET_OK)
+                    symbols.Add(symbol.Symbol());
+        }
+
+        return new Mt5TradeReportOptionsDto(
+            [.. groups.Distinct().Order(StringComparer.OrdinalIgnoreCase)],
+            [.. symbols.Distinct().Order(StringComparer.OrdinalIgnoreCase)]);
+    });
+
+    private static string Mask(IReadOnlyList<string> names) => names.Count == 0 ? All : string.Join(',', names);
+
+    private static double VolumeOf(object row) => row switch
+    {
+        Mt5PositionHistoryDto position => position.Volume,
+        Mt5OrderDto order => order.VolumeInitial,
+        Mt5DealDto deal => deal.Volume,
+        _ => 0
+    };
+
+    private async Task<IReadOnlyList<object>> RowsAsync(Mt5TradeReportKindEnum kind, DateTime fromUtc, DateTime toUtc, string groups, string symbols, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
         {
             var now = timeProvider.GetUtcNow();
-            if (_cached is { } cached && cached.Kind == kind && cached.FromUtc == fromUtc && cached.ToUtc == toUtc && now - cached.LoadedAt < CacheLifetime)
+            if (_cached is { } cached && cached.Kind == kind && cached.FromUtc == fromUtc && cached.ToUtc == toUtc
+                && cached.GroupMask == groups && cached.SymbolMask == symbols && now - cached.LoadedAt < CacheLifetime)
                 return cached.Rows;
 
             _cached = null;
@@ -35,11 +76,11 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
             var to = new DateTimeOffset(toUtc).ToUnixTimeSeconds();
             var rows = await Task.Run(() => mt5.RunManager(manager => kind switch
             {
-                Mt5TradeReportKindEnum.Positions => Positions(manager, from, to, now.ToUnixTimeSeconds()),
-                Mt5TradeReportKindEnum.Orders => Orders(manager, from, to),
-                _ => (IReadOnlyList<object>)[.. Deals(manager, from, to)]
+                Mt5TradeReportKindEnum.Positions => Positions(manager, groups, symbols, from, to, now.ToUnixTimeSeconds()),
+                Mt5TradeReportKindEnum.Orders => Orders(manager, groups, symbols, from, to),
+                _ => (IReadOnlyList<object>)[.. Deals(manager, groups, symbols, from, to)]
             }), cancellationToken);
-            _cached = new Mt5TradeReportCacheModel(kind, fromUtc, toUtc, now, rows);
+            _cached = new Mt5TradeReportCacheModel(kind, fromUtc, toUtc, groups, symbols, now, rows);
             return rows;
         }
         finally
@@ -48,16 +89,18 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
         }
     }
 
-    private static List<Mt5DealDto> Deals(CIMTManagerAPI manager, long from, long to)
+    private static List<Mt5DealDto> Deals(CIMTManagerAPI manager, string groups, string symbols, long from, long to)
     {
         using var deals = manager.DealCreateArray();
-        Mt5Reads.EnsureRead(manager.DealRequestByGroup(AllGroups, from, to, deals));
+        Mt5Reads.EnsureRead(symbols == All
+            ? manager.DealRequestByGroup(groups, from, to, deals)
+            : manager.DealRequestByGroupSymbol(groups, symbols, from, to, deals));
         return [.. deals.ToArray().Select(Mt5AccountDataReader.ToDto)];
     }
 
-    private static IReadOnlyList<object> Positions(CIMTManagerAPI manager, long from, long to, long now)
+    private static IReadOnlyList<object> Positions(CIMTManagerAPI manager, string groups, string symbols, long from, long to, long now)
     {
-        var inRange = Deals(manager, from, to);
+        var inRange = Deals(manager, groups, symbols, from, to);
         var opened = inRange
             .Where(deal => deal.PositionId != 0 && deal.Entry == CIMTDeal.EnEntryFlag.ENTRY_IN)
             .Select(deal => deal.PositionId)
@@ -78,12 +121,16 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
         return [.. positions];
     }
 
-    private static IReadOnlyList<object> Orders(CIMTManagerAPI manager, long from, long to)
+    private static IReadOnlyList<object> Orders(CIMTManagerAPI manager, string groups, string symbols, long from, long to)
     {
         using var history = manager.OrderCreateArray();
-        Mt5Reads.EnsureRead(manager.HistoryRequestByGroup(AllGroups, from, to, history));
+        Mt5Reads.EnsureRead(symbols == All
+            ? manager.HistoryRequestByGroup(groups, from, to, history)
+            : manager.HistoryRequestByGroupSymbol(groups, symbols, from, to, history));
         using var open = manager.OrderCreateArray();
-        Mt5Reads.EnsureRead(manager.OrderRequestByGroup(AllGroups, open));
+        Mt5Reads.EnsureRead(symbols == All
+            ? manager.OrderRequestByGroup(groups, open)
+            : manager.OrderRequestByGroupSymbol(groups, symbols, open));
 
         var fromTime = Mt5Reads.FromUnix(from);
         var toTime = Mt5Reads.FromUnix(to);
