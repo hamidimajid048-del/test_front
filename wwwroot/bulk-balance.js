@@ -121,7 +121,10 @@ fileForm.addEventListener('submit', async event => {
   if (sending) return;
   clearMessages(fileForm, message);
   const file = fileForm.elements.file.files[0];
-  if (!file) return;
+  if (!file) {
+    showError(fileForm, message, new ApiError('Choose a CSV file first.'));
+    return;
+  }
   reset();
   const submitButton = fileForm.querySelector('button[type="submit"]');
   submitButton.disabled = true;
@@ -191,10 +194,34 @@ applyButton.addEventListener('click', async () => {
   }
 });
 
+const filePicker = fileForm.querySelector('.file-picker');
+const fileBox = filePicker.querySelector('.file-box');
+
+function showChosenFile() {
+  const file = fileForm.elements.file.files[0];
+  filePicker.classList.toggle('has-file', Boolean(file));
+  filePicker.querySelector('.file-name').textContent = file ? file.name : 'No file chosen, or drop it here';
+}
+
+fileForm.elements.file.addEventListener('change', showChosenFile);
+fileBox.addEventListener('dragover', event => {
+  event.preventDefault();
+  fileBox.classList.add('dragging');
+});
+fileBox.addEventListener('dragleave', () => fileBox.classList.remove('dragging'));
+fileBox.addEventListener('drop', event => {
+  event.preventDefault();
+  fileBox.classList.remove('dragging');
+  if (sending || !event.dataTransfer?.files?.length) return;
+  fileForm.elements.file.files = event.dataTransfer.files;
+  showChosenFile();
+});
+
 document.getElementById('start-over').addEventListener('click', () => {
   if (sending) return;
   clearMessages(fileForm, message);
   fileForm.reset();
+  showChosenFile();
   reset();
 });
 

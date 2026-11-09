@@ -13,34 +13,60 @@ const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
 const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
 
-// Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
-const MENU_ITEMS = [
-  { href: '/account-data.html', title: 'Account data', permission: 'account-data.view', description: "One account's status, start and current balance, net profit, growth chart, open positions and orders, deposits and withdrawals, and the position, order and deal histories." },
-  { href: '/trade-history.html', title: 'Trade history', permission: 'trade-history.view', description: 'Positions, orders or deals of every account in a range of days, with the login of each row.' },
-  { href: '/logins.html', title: 'Login history', permission: 'logins.view', description: 'Sessions of a login with IP, CID, location and VPN/proxy warnings.' },
-  { href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view', description: 'Every login of an email (Manager and archive) with its IPs, CIDs and full login history in a date range.' },
-  { href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view', description: 'Logins that share an IP or CID, with details and Excel/CSV export.' },
-  { href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view', description: 'Every login that used a given CID or IP, with its login count and when it was first and last seen.' },
-  { href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
-  { href: '/compare.html', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, and a merged timeline.' },
-  { href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of two emails compared: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
-  { href: '/bulk-balance.html', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
+// The menu groups, in the order shown; each page of MENU_ITEMS names its group.
+const MENU_GROUPS = [
+  { key: 'accounts', title: 'Accounts & trades' },
+  { key: 'logins', title: 'Logins, IP & CID' },
+  { key: 'compare', title: 'Comparison' },
+  { key: 'operations', title: 'Operations' },
 ];
 
-// The home page cards come from MENU_ITEMS, so a page added to the menu appears there too.
+// Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
+const MENU_ITEMS = [
+  { group: 'accounts', href: '/account-data.html', title: 'Account data', permission: 'account-data.view', description: "One account's status, start and current balance, net profit, growth chart, open positions and orders, deposits and withdrawals, and the position, order and deal histories." },
+  { group: 'accounts', href: '/trade-history.html', title: 'Trade history', permission: 'trade-history.view', description: 'Positions, orders or deals of every account in a range of days, with the login of each row.' },
+  { group: 'logins', href: '/logins.html', title: 'Login history', permission: 'logins.view', description: 'Sessions of a login with IP, CID, location and VPN/proxy warnings.' },
+  { group: 'logins', href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view', description: 'Every login of an email (Manager and archive) with its IPs, CIDs and full login history in a date range.' },
+  { group: 'logins', href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view', description: 'Logins that share an IP or CID, with details and Excel/CSV export.' },
+  { group: 'logins', href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view', description: 'Every login that used a given CID or IP, with its login count and when it was first and last seen.' },
+  { group: 'compare', href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
+  { group: 'compare', href: '/compare.html', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, and a merged timeline.' },
+  { group: 'compare', href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of two emails compared: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
+  { group: 'operations', href: '/bulk-balance.html', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
+];
+
+// The home page cards come from MENU_ITEMS, grouped like the menu, so a page added to the menu appears there too.
+// A group whose pages the account may not open is hidden.
 function renderCards(container) {
-  for (const item of MENU_ITEMS) {
-    const card = document.createElement('a');
-    card.className = 'card';
-    card.href = item.href;
-    card.dataset.permission = item.permission;
-    const title = document.createElement('h3');
-    title.textContent = item.title;
-    const text = document.createElement('p');
-    text.textContent = item.description;
-    card.append(title, text);
-    container.append(card);
-  }
+  container.className = 'card-groups';
+  const sections = MENU_GROUPS.map(group => {
+    const section = document.createElement('section');
+    section.className = 'card-group';
+    section.hidden = true;
+    const heading = document.createElement('h2');
+    heading.textContent = group.title;
+    const grid = document.createElement('div');
+    grid.className = 'cards';
+    const items = MENU_ITEMS.filter(item => item.group === group.key);
+    grid.append(...items.map(item => {
+      const card = document.createElement('a');
+      card.className = 'card';
+      card.href = item.href;
+      card.dataset.permission = item.permission;
+      const title = document.createElement('h3');
+      title.textContent = item.title;
+      const text = document.createElement('p');
+      text.textContent = item.description;
+      card.append(title, text);
+      return card;
+    }));
+    section.append(heading, grid);
+    return { section, items };
+  });
+  container.replaceChildren(...sections.map(({ section }) => section));
+  currentAccount().then(me => {
+    for (const { section, items } of sections) section.hidden = !items.some(item => can(me, item.permission));
+  });
 }
 
 const USERS_PAGE = { href: '/users.html', title: 'Users', permission: 'users.view' };
@@ -374,14 +400,53 @@ function renderMenu() {
   mark.innerHTML = BRAND_ICON;
   brand.append(mark, 'Violation Panel');
 
-  const links = MENU_ITEMS.map(item => {
-    const link = document.createElement('a');
-    link.className = 'nav-link';
-    link.href = item.href;
-    link.textContent = item.title;
-    link.hidden = true;
-    if (location.pathname === item.href) link.classList.add('active');
-    return link;
+  // One dropdown per group; a group shows once the account may open one of its pages.
+  const closeGroups = except => {
+    for (const other of nav.querySelectorAll('.nav-group.open')) {
+      if (other === except) continue;
+      other.classList.remove('open');
+      other.querySelector('.nav-group-button').setAttribute('aria-expanded', 'false');
+    }
+  };
+  const groups = MENU_GROUPS.map(group => {
+    const items = MENU_ITEMS.filter(item => item.group === group.key);
+    const element = document.createElement('div');
+    element.className = 'nav-group';
+    element.hidden = true;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'nav-group-button';
+    button.textContent = group.title;
+    button.setAttribute('aria-haspopup', 'true');
+    button.setAttribute('aria-expanded', 'false');
+    if (items.some(item => item.href === location.pathname)) button.classList.add('active');
+    const panel = document.createElement('div');
+    panel.className = 'nav-group-menu';
+    const links = items.map(item => {
+      const link = document.createElement('a');
+      link.className = 'nav-item';
+      link.href = item.href;
+      link.hidden = true;
+      if (location.pathname === item.href) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
+      }
+      link.textContent = item.title;
+      link.title = item.description;
+      return link;
+    });
+    panel.append(...links);
+    button.addEventListener('click', () => {
+      const open = !element.classList.contains('open');
+      closeGroups(element);
+      element.classList.toggle('open', open);
+      button.setAttribute('aria-expanded', String(open));
+    });
+    element.append(button, panel);
+    return { element, items, links };
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!event.target.closest?.('.nav-group')) closeGroups(null);
   });
 
   const logout = document.createElement('form');
@@ -417,7 +482,7 @@ function renderMenu() {
   const linkBox = document.createElement('div');
   linkBox.className = 'nav-links';
   linkBox.id = 'nav-links';
-  linkBox.append(...links);
+  linkBox.append(...groups.map(group => group.element));
 
   const toggle = document.createElement('button');
   toggle.type = 'button';
@@ -433,7 +498,15 @@ function renderMenu() {
   };
   toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
   nav.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && nav.classList.contains('open')) { setOpen(false); toggle.focus(); }
+    if (event.key !== 'Escape') return;
+    const group = nav.querySelector('.nav-group.open');
+    if (group) {
+      closeGroups(null);
+      group.querySelector('.nav-group-button').focus();
+    } else if (nav.classList.contains('open')) {
+      setOpen(false);
+      toggle.focus();
+    }
   });
   actions.append(toggle);
 
@@ -460,7 +533,10 @@ function renderMenu() {
   currentAccount().then(me => {
     if (!me) return;
     signedInAs.textContent = me.username;
-    MENU_ITEMS.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
+    for (const { element, items, links } of groups) {
+      items.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
+      element.hidden = links.every(link => link.hidden);
+    }
     if (can(me, USERS_PAGE.permission)) {
       const users = document.createElement('a');
       users.className = 'nav-link';
