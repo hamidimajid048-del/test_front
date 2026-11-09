@@ -930,6 +930,9 @@ form.filters .device-type-menu input[type="checkbox"] { width: auto; }
 .multi-picker-more { margin: 0; padding: var(--space-6) var(--space-8); color: var(--text-muted); font-size: var(--font-size-sm); }
 
 th.compact-col, td.compact-col { width: 1%; }
+th.fill-col, td.fill-col { width: 100%; padding: 0; }
+td .actions { flex-wrap: nowrap; }
+#overview .fill-col { display: none; }
 thead tr.filter-row th.compact-col input { min-width: 52px; }
 
 @media (prefers-reduced-motion: reduce) {

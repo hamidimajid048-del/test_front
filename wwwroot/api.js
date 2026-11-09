@@ -920,7 +920,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     const shown = visibleRows();
     if (!shown.length) {
       const cell = body.insertRow().insertCell();
-      cell.colSpan = columns.length;
+      cell.colSpan = columns.length + 1;
       cell.className = 'empty';
       cell.textContent = allRows.length || serverFiltered() ? 'No rows match the filters' : 'No data found';
     }
@@ -942,6 +942,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';
       });
+      tr.append(fillerCell('td'));
     }
     const filtered = serverFilter ? serverFiltered() : state.filters.some(query => query.trim());
     meta.replaceChildren();
@@ -1054,6 +1055,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     });
   }
 
+  for (const row of head.rows) row.append(fillerCell('th'));
   fill();
   const filterCells = table.querySelector('tr.filter-row')?.cells;
   compact.forEach((isCompact, position) => {
@@ -1112,11 +1114,22 @@ function mountTools(container, tools) {
 // A column whose values are all numbers is kept as narrow as its content, so a short number does not take a wide column.
 const NUMBER_TEXT = /^-?\d+(\.\d+)?$/;
 
+// The last, empty cell of every row: it takes the width the columns do not need, so a table wider than its columns
+// keeps each column as wide as its content instead of stretching one of them.
+function fillerCell(tag) {
+  const cell = document.createElement(tag);
+  cell.className = 'fill-col';
+  cell.setAttribute('aria-hidden', 'true');
+  return cell;
+}
+
+// A column of short numbers is kept narrow. What is judged is the text shown, so a column whose key is a number but
+// whose cells show something else (buttons, links with words) is not taken for one.
 function isCompactColumn(column, rows) {
   if (column.compact !== undefined) return column.compact;
   let seen = false;
-  for (const row of rows) {
-    const value = row[column.key];
+  for (const row of rows.slice(0, 200)) {
+    const value = column.format ? cellText(column, row) : row[column.key];
     if (value === null || value === undefined || value === '') continue;
     if (typeof value !== 'number' && !(typeof value === 'string' && value.length <= 18 && NUMBER_TEXT.test(value))) return false;
     seen = true;

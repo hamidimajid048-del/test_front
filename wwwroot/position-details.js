@@ -36,9 +36,9 @@ const grids = {
       column('recordNo', 'Record'),
       utcColumn('time', 'Time', true),
       {
-        key: 'timeDifference', title: 'Time difference',
-        help: 'Time since the record before it, in time order. The tracker keeps whole seconds, so this is to the second.',
-        format: seconds => (seconds === null ? '—' : formatSpan(seconds, true)),
+        key: 'timeDifference', title: 'Time difference (s)',
+        help: 'Seconds since the record before it, in time order. The tracker keeps whole seconds, so this is to the second.',
+        format: seconds => (seconds === null ? '—' : String(seconds)),
       },
       codeColumn('actionText', 'Action', 'action'),
       codeColumn('typeText', 'Type', 'type'),
