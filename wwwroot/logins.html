@@ -22,6 +22,7 @@
     <div class="tabs" id="tabs">
       <button type="button" data-tab="summary">Summary</button>
       <button type="button" data-tab="details">Details</button>
+      <button type="button" data-tab="timeline">Timeline</button>
     </div>
 
     <section data-panel="summary">
@@ -41,6 +42,16 @@
       <div id="sessions-pager"></div>
       <div id="geo-details"></div>
     </section>
+    <section data-panel="timeline" hidden>
+      <div class="section-head">
+        <h3 id="timeline-title">CID usage timeline</h3>
+        <div class="toggle" id="timeline-kind">
+          <button type="button" data-kind="cid" aria-pressed="true">CID</button>
+          <button type="button" data-kind="ip" aria-pressed="false">IP</button>
+        </div>
+      </div>
+      <div id="timeline"></div>
+    </section>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
@@ -49,6 +60,7 @@
   <script src="/table-views.js"></script>
   <script src="/country-flags.js"></script>
   <script src="/sessions-table.js"></script>
+  <script src="/usage-timeline.js"></script>
   <script src="/logins.js"></script>
 </body>
 </html>

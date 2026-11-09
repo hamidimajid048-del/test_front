@@ -14,6 +14,9 @@ const ACCOUNT_REASONS = new Set([
 
 let currentLogin = null;
 let currentTab = 'summary';
+// The IP and CID mappings of the last search, drawn by the timeline tab; 'cid' or 'ip' is the one shown.
+const mappings = { ip: null, cid: null };
+let timelineSource = 'cid';
 // Sort and column filters of the sessions table; the service applies them to every page.
 let sessionSort = { item: 'LoginAt', direction: 'Desc' };
 let sessionFilters = {};
@@ -27,7 +30,7 @@ const mappingColumns = (key, title, extra = []) => [
 
 function showTab(tab) {
   // Older links name the IP and CID tabs (now the summary) and the sessions tab (now the details).
-  currentTab = ({ sessions: 'details', ips: 'summary', cids: 'summary' })[tab] ?? (['summary', 'details'].includes(tab) ? tab : 'summary');
+  currentTab = ({ sessions: 'details', ips: 'summary', cids: 'summary' })[tab] ?? (['summary', 'details', 'timeline'].includes(tab) ? tab : 'summary');
   for (const button of document.querySelectorAll('#tabs button')) {
     button.classList.toggle('active', button.dataset.tab === currentTab);
   }
@@ -115,6 +118,38 @@ function renderMapping(containerId, tab, label, key, outcome) {
   }
 }
 
+// Draws the usage timeline of the CIDs or the IPs. Clicking a CID opens its sessions; an IP is not, because the
+// sessions filter matches text inside a value and one IP can be part of another.
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  document.getElementById('timeline-title').textContent = `${timelineSource === 'cid' ? 'CID' : 'IP'} usage timeline`;
+  for (const button of document.querySelectorAll('#timeline-kind button'))
+    button.setAttribute('aria-pressed', String(button.dataset.kind === timelineSource));
+  const outcome = mappings[timelineSource];
+  if (!outcome) {
+    container.replaceChildren();
+    return;
+  }
+  if (outcome.status === 'rejected') {
+    const error = document.createElement('p');
+    error.className = 'message error';
+    error.textContent = outcome.reason?.message || UNAVAILABLE_MESSAGE;
+    container.replaceChildren(error);
+    return;
+  }
+  const rows = (outcome.value ?? []).map(row => ({ ...row, value: String(row[timelineSource]) }));
+  renderUsageTimeline(container, rows, {
+    kind: timelineSource,
+    onSelect: timelineSource === 'cid'
+      ? row => {
+        sessionFilters = { Cid: row.value };
+        showTab('details');
+        loadSessionsPage(1, DEFAULT_PAGE_SIZE);
+      }
+      : undefined,
+  });
+}
+
 // Reads a page of sessions in the account's data range; without a usable range, of all recorded sessions.
 // accountNote is null when the account range was used, otherwise why it could not be.
 async function sessionsRequest(page, pageSize) {
@@ -140,6 +175,8 @@ async function loadReport(login, page, pageSize) {
     ]);
     renderMapping('ips', 'ips', 'IP', 'ip', ips);
     renderMapping('cids', 'cids', 'CID', 'cid', cids);
+    Object.assign(mappings, { ip: ips, cid: cids });
+    renderTimeline();
     if (sessions.status === 'rejected') {
       clearSessions();
       updateQuery();
@@ -161,6 +198,13 @@ document.getElementById('tabs').addEventListener('click', event => {
   if (currentLogin) {
     writeQuery({ ...Object.fromEntries(query), tab: currentTab });
   }
+});
+
+document.getElementById('timeline-kind').addEventListener('click', event => {
+  const kind = event.target.closest('button')?.dataset.kind;
+  if (!kind || kind === timelineSource) return;
+  timelineSource = kind;
+  renderTimeline();
 });
 
 form.addEventListener('submit', event => {
