@@ -1,6 +1,6 @@
-// A usage timeline for the CIDs or IPs of one login: one row per value with a bar from its first to its last sign-in
-// (the tracker records sign-ins only, never sign-outs, so a bar is the span of use, not a session). Bars are
-// coloured by device type; an IP row also carries the location, ISP and risk flags of its latest sign-in.
+// A usage timeline of CIDs or IPs: one row per value with a bar from its first to its last sign-in (the tracker
+// records sign-ins only, never sign-outs, so a bar is the span of use, not a session). For one login the bars are
+// coloured by device type; when two logins are compared each row has a bar per login and a band where both spans meet.
 
 const TIMELINE_KINDS = {
   mobile: { label: 'Mobile', className: 'ut-mobile' },
@@ -14,7 +14,7 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const HOUR_MS = 3600000;
 const DAY_MS = 24 * HOUR_MS;
 
-// The device kind of a CID from its platforms ("Client Android build 5440, Client build 6062").
+// The device kind of a CID from its platforms ("Client Android, Client").
 function timelineKind(deviceType) {
   const kinds = new Set(String(deviceType ?? '').split(',').map(platformKind).filter(Boolean));
   if (kinds.size === 0) return 'unknown';
@@ -70,17 +70,39 @@ function geoLines(geo) {
   ];
 }
 
-// rows: [{ value, firstSeen, lastSeen, sessionCount, deviceType?, geo? }]. options.kind is 'cid' or 'ip';
-// options.onSelect(row) makes the rows clickable.
-function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
+const loginsText = count => `${Number(count).toLocaleString('en-US')} ${Number(count) === 1 ? 'login' : 'logins'}`;
+
+// The use of a value by one login with its times parsed; null when the login never used it or its dates are invalid.
+function parseUse(use) {
+  if (!use) return null;
+  const from = Date.parse(use.firstSeen);
+  const to = Date.parse(use.lastSeen);
+  return Number.isFinite(from) && Number.isFinite(to) ? { ...use, from, to, kind: timelineKind(use.deviceType) } : null;
+}
+
+// rows for one login: [{ value, firstSeen, lastSeen, sessionCount, deviceType?, geo? }].
+// rows for two logins (options.sides = [{ name, login }, { name, login }]): [{ value, geo?, uses: [use|null, use|null] }],
+// where a use is { firstSeen, lastSeen, sessionCount, deviceType? }.
+// options.kind is 'cid' or 'ip'; options.onSelect(row) makes the rows clickable; options.empty replaces the empty text.
+function renderUsageTimeline(container, rows, { kind, onSelect, sides, empty: emptyText } = {}) {
   const items = rows
-    .map(row => ({ ...row, from: Date.parse(row.firstSeen), to: Date.parse(row.lastSeen), kind: timelineKind(row.deviceType) }))
-    .filter(item => Number.isFinite(item.from) && Number.isFinite(item.to))
-    .sort((a, b) => a.from - b.from || a.to - b.to);
+    .map(row => {
+      const uses = (sides ? row.uses : [row]).map(parseUse);
+      const present = uses.filter(Boolean);
+      return {
+        ...row,
+        uses,
+        from: Math.min(...present.map(use => use.from)),
+        to: Math.max(...present.map(use => use.to)),
+        shared: present.length > 1,
+      };
+    })
+    .filter(item => item.uses.some(Boolean))
+    .sort((a, b) => b.shared - a.shared || a.from - b.from || a.to - b.to);
   if (!items.length) {
     const empty = document.createElement('p');
     empty.className = 'hint';
-    empty.textContent = `No ${kind === 'cid' ? 'CID' : 'IP'} was recorded for this login.`;
+    empty.textContent = emptyText ?? `No ${kind === 'cid' ? 'CID' : 'IP'} was recorded for this login.`;
     container.replaceChildren(empty);
     return;
   }
@@ -92,24 +114,39 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
   end += pad;
   const percent = time => ((time - start) / (end - start)) * 100;
   const ticks = timelineTicks(start, end);
+  // The time both logins used a value: from the later first sign-in to the earlier last one.
+  const together = item => {
+    if (!item.shared) return null;
+    const from = Math.max(...item.uses.map(use => use.from));
+    const to = Math.min(...item.uses.map(use => use.to));
+    return from <= to ? { from, to } : null;
+  };
 
   const root = document.createElement('div');
   root.className = 'usage-timeline';
 
   const legend = document.createElement('div');
   legend.className = 'ut-legend';
-  const used = new Set(items.map(item => item.kind));
-  for (const key of ['mobile', 'system', 'web', 'mixed', 'unknown'].filter(key => used.has(key))) {
+  const legendEntry = (className, text) => {
     const entry = document.createElement('span');
     const swatch = document.createElement('span');
-    swatch.className = `ut-swatch ${TIMELINE_KINDS[key].className}`;
-    entry.append(swatch, TIMELINE_KINDS[key].label);
+    swatch.className = `ut-swatch ${className}`;
+    entry.append(swatch, text);
     legend.append(entry);
+  };
+  if (sides) {
+    sides.forEach((side, index) => legendEntry(`ut-side-${index}`, `${side.name} · ${side.login}`));
+    if (items.some(together)) legendEntry('ut-together', 'Both logins in the same period');
+  } else {
+    const used = new Set(items.map(item => item.uses[0].kind));
+    for (const key of ['mobile', 'system', 'web', 'mixed', 'unknown'].filter(key => used.has(key))) {
+      legendEntry(TIMELINE_KINDS[key].className, TIMELINE_KINDS[key].label);
+    }
   }
   root.append(legend);
 
   const chart = document.createElement('div');
-  chart.className = 'ut-chart';
+  chart.className = sides ? 'ut-chart ut-compare' : 'ut-chart';
   chart.setAttribute('role', 'list');
   chart.setAttribute('aria-label', `${kind === 'cid' ? 'CID' : 'IP'} usage timeline: ${items.length} values`);
 
@@ -147,19 +184,40 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
   }
   chart.append(grid);
 
+  const deviceText = use => `${TIMELINE_KINDS[use.kind].label}${use.deviceType ? ` · ${use.deviceType}` : ''}`;
+  const tooltipLines = item => {
+    if (!sides) {
+      const use = item.uses[0];
+      return [
+        item.value,
+        deviceText(use),
+        ...(kind === 'ip' ? geoLines(item.geo) : []),
+        `First sign-in: ${formatUtc(use.firstSeen)}`,
+        `Last sign-in: ${formatUtc(use.lastSeen)}`,
+        `Sign-ins: ${Number(use.sessionCount).toLocaleString('en-US')}`,
+      ];
+    }
+    const both = together(item);
+    return [
+      item.value,
+      ...(kind === 'ip' ? geoLines(item.geo) : []),
+      ...item.uses.flatMap((use, index) => use
+        ? [`${sides[index].name} ${sides[index].login}: ${loginsText(use.sessionCount)} · ${deviceText(use)}`,
+          `  ${formatUtc(use.firstSeen)} → ${formatUtc(use.lastSeen)}`]
+        : [`${sides[index].name} ${sides[index].login}: never used it`]),
+      item.shared
+        ? both
+          ? `Both in the same period: ${formatUtc(new Date(both.from).toISOString())} → ${formatUtc(new Date(both.to).toISOString())}`
+          : `Used by both, ${formatSpan((Math.max(...item.uses.map(use => use.from)) - Math.min(...item.uses.map(use => use.to))) / 1000)} apart`
+        : null,
+    ];
+  };
+
   const tip = document.createElement('div');
   tip.className = 'ut-tip';
   tip.hidden = true;
   const showTip = (item, x, y) => {
-    tip.replaceChildren(...[
-      item.value,
-      `${TIMELINE_KINDS[item.kind].label}${item.deviceType ? ` · ${item.deviceType}` : ''}`,
-      ...(kind === 'ip' ? geoLines(item.geo) : []),
-      `First sign-in: ${formatUtc(item.firstSeen)}`,
-      `Last sign-in: ${formatUtc(item.lastSeen)}`,
-      `Sign-ins: ${Number(item.sessionCount).toLocaleString('en-US')}`,
-      onSelect ? 'Click to see its sessions' : null,
-    ].filter(Boolean).map((text, index) => {
+    tip.replaceChildren(...[...tooltipLines(item), onSelect ? 'Click to see its sessions' : null].filter(Boolean).map((text, index) => {
       const line = document.createElement(index === 0 ? 'strong' : 'span');
       line.textContent = text;
       return line;
@@ -168,6 +226,15 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
     const box = tip.getBoundingClientRect();
     tip.style.left = `${Math.min(x + 14, window.innerWidth - box.width - 8)}px`;
     tip.style.top = `${Math.min(y + 14, window.innerHeight - box.height - 8)}px`;
+  };
+
+  const span = (from, to, className) => {
+    const element = document.createElement('span');
+    element.className = className;
+    const left = percent(from);
+    element.style.left = `min(${left}%, calc(100% - 6px))`;
+    element.style.width = `${Math.max(percent(to) - left, 0)}%`;
+    return element;
   };
 
   items.forEach((item, index) => {
@@ -186,30 +253,33 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
     const label = document.createElement('span');
     label.className = 'ut-label';
     const shortValue = kind === 'cid' && item.value.length > 10 ? `${item.value.slice(0, 8)}…` : item.value;
-    const logins = Number(item.sessionCount);
+    const counts = sides
+      ? item.uses.map((use, side) => `${sides[side].name} ${use ? Number(use.sessionCount).toLocaleString('en-US') : 0}`).join(' · ')
+      : loginsText(item.uses[0].sessionCount);
     const parts = [
       shortValue,
-      TIMELINE_KINDS[item.kind].label,
+      sides ? null : TIMELINE_KINDS[item.uses[0].kind].label,
       kind === 'ip' ? item.geo?.country || null : null,
-      `${logins.toLocaleString('en-US')} ${logins === 1 ? 'login' : 'logins'}`,
+      counts,
       ...(kind === 'ip' ? riskFlags(item.geo).map(flag => `⚠ ${flag}`) : []),
     ];
     label.textContent = parts.filter(Boolean).join(' | ');
 
     const track = document.createElement('span');
     track.className = 'ut-track';
-    const bar = document.createElement('span');
-    bar.className = `ut-bar ${TIMELINE_KINDS[item.kind].className}`;
-    const left = percent(item.from);
-    bar.style.left = `min(${left}%, calc(100% - 6px))`;
-    bar.style.width = `${Math.max(percent(item.to) - left, 0)}%`;
-    track.append(bar);
+    const both = together(item);
+    if (both) track.append(span(both.from, both.to, 'ut-band'));
+    item.uses.forEach((use, side) => {
+      if (!use) return;
+      const className = sides ? `ut-side-${side} ut-lane-${side}` : TIMELINE_KINDS[use.kind].className;
+      track.append(span(use.from, use.to, `ut-bar ${className}`));
+    });
 
-    row.setAttribute('aria-label', `${item.value}, ${parts.slice(1).join(', ')}, from ${formatUtc(item.firstSeen)} to ${formatUtc(item.lastSeen)}`);
+    row.setAttribute('aria-label', tooltipLines(item).filter(Boolean).join(', '));
     row.addEventListener('pointermove', event => showTip(item, event.clientX, event.clientY));
     row.addEventListener('pointerleave', () => { tip.hidden = true; });
     row.addEventListener('focus', () => {
-      const box = bar.getBoundingClientRect();
+      const box = track.getBoundingClientRect();
       showTip(item, box.left, box.bottom);
     });
     row.addEventListener('blur', () => { tip.hidden = true; });
@@ -223,7 +293,9 @@ function renderUsageTimeline(container, rows, { kind, onSelect } = {}) {
 
   const caption = document.createElement('p');
   caption.className = 'hint';
-  caption.textContent = 'Each bar runs from the first to the last sign-in with that value (UTC). The tracker records sign-ins only, so gaps inside a bar are not shown.';
+  caption.textContent = sides
+    ? 'Each bar runs from the first to the last sign-in of a login with that value (UTC); values used by both logins come first. The tracker records sign-ins only, so a shared period means both used the value in that stretch of time, not that their sessions were open at the same moment.'
+    : 'Each bar runs from the first to the last sign-in with that value (UTC). The tracker records sign-ins only, so gaps inside a bar are not shown.';
 
   root.append(chart, caption, tip);
   container.replaceChildren(root);

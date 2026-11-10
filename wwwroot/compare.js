@@ -227,6 +227,12 @@ const TABS = [
     empty: 'No sessions in this range',
   },
   {
+    key: 'usage-chart',
+    title: 'Usage chart',
+    chart: true,
+    controls: [],
+  },
+  {
     key: 'sessions-main',
     title: 'Sessions (main)',
     path: 'login-reports/get-login-sessions',
@@ -338,9 +344,128 @@ function selectTab(key) {
   writeState();
 }
 
+// ---- usage chart ----
+
+const MAPPING_PAGE_SIZE = 2000;
+
+// Every IP or CID mapping of the two logins in the compared range, all pages of the service report.
+async function readMappings(kind) {
+  const rows = [];
+  for (let page = 1; ; page++) {
+    const report = await apiGet(`login-reports/get-logins-${kind}-mappings`, {
+      logins: [context.login, context.other], ...rangeParams(context),
+      sortItem: 'FirstSeen', sortDirection: 'Asc', currentPage: page, pageSize: MAPPING_PAGE_SIZE,
+    });
+    rows.push(...(report.items ?? []));
+    if (page >= (pagingOf(report.paging)?.totalPages ?? 1)) return rows;
+  }
+}
+
+// One row per value with the use of each login: [main, compared], null for a login that never used it.
+function usageRows(kind, mappings) {
+  const byValue = new Map();
+  for (const mapping of mappings) {
+    const value = String(mapping[kind]);
+    const row = byValue.get(value) ?? { value, geo: null, uses: [null, null] };
+    row.uses[String(mapping.login) === String(context.login) ? 0 : 1] = mapping;
+    row.geo ??= mapping.geo ?? null;
+    byValue.set(value, row);
+  }
+  return [...byValue.values()];
+}
+
+function showChart(tab) {
+  const state = stateOf(tab);
+  state.chart ??= { kind: 'cid', sharedOnly: true, rows: {} };
+  const chartState = state.chart;
+  const panel = document.getElementById('tab-panel');
+
+  const head = document.createElement('div');
+  head.className = 'section-head';
+  const title = document.createElement('h2');
+  const toggle = document.createElement('div');
+  toggle.className = 'toggle';
+  head.append(title, toggle);
+
+  const toolbar = document.createElement('form');
+  toolbar.className = 'filters';
+  const sharedLabel = document.createElement('label');
+  sharedLabel.className = 'check';
+  const shared = document.createElement('input');
+  shared.type = 'checkbox';
+  shared.checked = chartState.sharedOnly;
+  sharedLabel.append('Only values used by both logins', shared);
+  toolbar.append(sharedLabel);
+
+  const description = document.createElement('p');
+  description.className = 'hint';
+  description.textContent = 'When each login used each CID or IP in the compared range: one bar per login, and a band where both used it in the same period.';
+  const chartMessage = document.createElement('p');
+  chartMessage.className = 'message';
+  const chart = document.createElement('div');
+
+  const draw = () => {
+    const label = chartState.kind === 'cid' ? 'CID' : 'IP';
+    title.textContent = `${label} usage chart`;
+    for (const button of toggle.children) button.setAttribute('aria-pressed', String(button.dataset.kind === chartState.kind));
+    const rows = chartState.rows[chartState.kind];
+    if (!rows) {
+      chart.replaceChildren();
+      return;
+    }
+    const shown = chartState.sharedOnly ? rows.filter(row => row.uses[0] && row.uses[1]) : rows;
+    renderUsageTimeline(chart, shown, {
+      kind: chartState.kind,
+      sides: [{ name: 'Main', login: context.login }, { name: 'Compared', login: context.other }],
+      empty: chartState.sharedOnly
+        ? `The two logins used no ${label} in common in this range. Clear "Only values used by both logins" to see every ${label}.`
+        : `Neither login has a recorded ${label} in this range.`,
+    });
+  };
+
+  const load = async () => {
+    const kind = chartState.kind;
+    if (chartState.rows[kind]) return draw();
+    const token = context;
+    draw();
+    await withLoading(toolbar, chartMessage, async () => {
+      const rows = usageRows(kind, await readMappings(kind));
+      if (token !== context) return;
+      chartState.rows[kind] = rows;
+      if (activeTab === tab.key && chartState.kind === kind) draw();
+    });
+  };
+
+  for (const [kind, text] of [['cid', 'CID'], ['ip', 'IP']]) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.kind = kind;
+    button.textContent = text;
+    button.addEventListener('click', () => {
+      if (chartState.kind === kind) return;
+      chartState.kind = kind;
+      load();
+    });
+    toggle.append(button);
+  }
+  shared.addEventListener('change', () => {
+    chartState.sharedOnly = shared.checked;
+    draw();
+  });
+  toolbar.addEventListener('submit', event => event.preventDefault());
+
+  panel.replaceChildren(head, toolbar, chartMessage, description, chart);
+  load();
+}
+
 // Builds the active tab's toolbar and result area, and loads its data when it has none yet.
 function showPanel() {
   const tab = tabByKey(activeTab);
+  if (tab.chart) {
+    showChart(tab);
+    writeState();
+    return;
+  }
   const state = stateOf(tab);
   const panel = document.getElementById('tab-panel');
 
