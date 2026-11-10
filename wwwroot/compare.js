@@ -113,6 +113,29 @@ const TIMELINE_COLUMNS = [
   { key: 'sharedCid', title: 'Shared CID', format: shared => shared ? badge('CID', 'warn') : '', filterKey: 'SharedCid' },
 ];
 
+const codeLabel = name => name ? label(name) : '—';
+
+const TRANSACTION_COLUMNS = [
+  TIMELINE_COLUMNS[0],
+  { ...utcColumn('time', 'Time', true), sortKey: 'Time' },
+  { key: 'action', title: 'Action', format: codeLabel, filterKey: 'Action' },
+  { key: 'type', title: 'Type', format: codeLabel, filterKey: 'Type' },
+  { key: 'entry', title: 'Entry', format: codeLabel, filterKey: 'Entry' },
+  { key: 'symbol', title: 'Symbol', filterKey: 'Symbol' },
+  { key: 'lots', title: 'Volume', format: value => value === null ? '—' : lots(value), filterKey: 'Lots' },
+  { key: 'price', title: 'Price', format: price, filterKey: 'Price' },
+  { key: 'profit', title: 'Profit', format: amount, filterKey: 'Profit' },
+  { key: 'order', title: 'Order', filterKey: 'Order' },
+  { key: 'deal', title: 'Deal', filterKey: 'Deal' },
+  { key: 'position', title: 'Position', filterKey: 'Position' },
+  { key: 'retcode', title: 'Result', format: codeLabel, filterKey: 'Retcode' },
+  { key: 'ip', title: 'IP', filterKey: 'Ip' },
+  { key: 'computerId', title: 'Computer ID', filterKey: 'ComputerId' },
+  { key: 'platform', title: 'Device', filterKey: 'Platform', format: platformLabel },
+  { key: 'sharedIp', title: 'Shared IP', format: shared => shared ? badge('IP', 'danger') : '', filterKey: 'SharedIp' },
+  { key: 'sharedCid', title: 'Shared CID', format: shared => shared ? badge('CID', 'warn') : '', filterKey: 'SharedCid' },
+];
+
 // ---- tabs ----
 
 const direction = (value, labels = ['Descending', 'Ascending']) => ({
@@ -225,6 +248,17 @@ const TABS = [
     ],
     describe: () => 'Every session of both accounts in one list.',
     empty: 'No sessions in this range',
+  },
+  {
+    key: 'shared-transactions',
+    title: 'Shared transactions',
+    path: `${COMPARE_PATH}/get-shared-transactions`,
+    params: compareParams,
+    columns: TRANSACTION_COLUMNS,
+    timeSortKey: 'Time',
+    controls: [direction('Desc', ['Newest first', 'Oldest first'])],
+    describe: () => 'Transaction tracker records of either account made from an IP or a computer ID (CID) that the other account also used in this range.',
+    empty: 'Neither account made a transaction from an IP or computer ID of the other one in this range',
   },
   {
     key: 'usage-chart',
@@ -561,7 +595,7 @@ function tabSort(tab, state, toolbar, tabMessage, parts) {
   if (!hasDirection) return null;
   const hasItem = tab.controls.some(control => control.name === 'sortItem');
   return {
-    item: hasItem ? state.controls.sortItem : 'LoginAt',
+    item: hasItem ? state.controls.sortItem : tab.timeSortKey ?? 'LoginAt',
     direction: state.controls.sortDirection,
     onChange: (item, direction) => {
       if (hasItem) state.controls.sortItem = item;
