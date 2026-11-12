@@ -27,6 +27,9 @@ const DETAIL_SIGNINS_HELP = 'How many times the related account signed in from t
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
 let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
+let summaryColumnFilters = {};
+// Hides the related logins whose email equals the searched login's email; the service applies it to every page.
+let differentEmailOnly = false;
 // The details tabs opened from the summary, by "Type:login"; an account already open is selected, not opened twice.
 const detailsTabs = new Map();
 let activeTab = SUMMARY_TAB;
@@ -82,13 +85,19 @@ function summaryParams() {
   return {
     ...pick(filters, SUMMARY_KEYS),
     ...commonParams(),
+    ...columnFilterParams(summaryColumnFilters),
+    ...(differentEmailOnly ? { differentEmailOnly: true } : {}),
     currentPage: summaryPaging.currentPage,
     pageSize: summaryPaging.pageSize,
   };
 }
 
 function writeState() {
-  const state = { ...filters, currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize };
+  const state = {
+    ...filters, ...columnFilterState(summaryColumnFilters),
+    ...(differentEmailOnly ? { differentEmailOnly: true } : {}),
+    currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize,
+  };
   if (detailsTabs.size) {
     state.tabs = [...detailsTabs.keys()].join(',');
     if (activeTab !== SUMMARY_TAB) state.tab = activeTab;
@@ -113,10 +122,22 @@ function compareHref(row) {
   return `/compare.html?${query}`;
 }
 
-const accountsDirectory = createAccountDirectory(document.getElementById('accounts-message'));
-const sameEmail = createSameEmailToggle(
-  accountsDirectory, document.getElementById('different-email'), document.getElementById('accounts-message'),
-  () => Number(filters.login));
+const differentEmailButton = document.getElementById('different-email');
+
+differentEmailButton.addEventListener('click', () => {
+  differentEmailOnly = !differentEmailOnly;
+  summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
+  withLoading(form, message, loadSummary);
+});
+
+function renderDifferentEmail(metadata) {
+  const known = Boolean(metadata.loginEmail);
+  differentEmailButton.disabled = !known;
+  differentEmailButton.setAttribute('aria-pressed', String(differentEmailOnly && known));
+  document.getElementById('accounts-message').textContent = known
+    ? ''
+    : `The email of login ${metadata.login} is unknown, so rows cannot be compared.`;
+}
 
 function detailsButton(row) {
   const button = document.createElement('button');
@@ -130,10 +151,7 @@ const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
-  { ...accountsDirectory.column('Name', 'name', 'relatedLogin'), hiddenByDefault: true },
-  { ...accountsDirectory.column('Group', 'group', 'relatedLogin'), hiddenByDefault: true },
-  accountsDirectory.column('Email', 'email', 'relatedLogin'),
-  { ...accountsDirectory.column('Balance', 'balance', 'relatedLogin'), hiddenByDefault: true },
+  ...accountColumns(['name', 'group', 'balance']),
   {
     key: 'relatedLogin',
     title: 'Actions',
@@ -165,8 +183,7 @@ async function loadSummary() {
   const paging = pagingOf(report.paging);
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
-  accountsDirectory.reset();
-  sameEmail.reset();
+  renderDifferentEmail(report.metadata);
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, undefined, {
     sort: {
       item: filters.sortItem,
@@ -178,7 +195,14 @@ async function loadSummary() {
         return withLoading(form, message, loadSummary);
       },
     },
-    columnFilters: false,
+    filter: {
+      values: summaryColumnFilters,
+      onChange: values => {
+        summaryColumnFilters = values;
+        summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
+        return withLoading(form, message, loadSummary);
+      },
+    },
   });
   renderPager(document.getElementById('summary-pager'), paging, (page, pageSize) => {
     summaryPaging = { currentPage: page, pageSize };
@@ -186,7 +210,6 @@ async function loadSummary() {
   });
   summarySection.hidden = activeTab !== SUMMARY_TAB;
   writeState();
-  sameEmail.load(report.items.map(item => item.relatedLogin));
 }
 
 function makeTab(label, { onSelect, onClose }) {
@@ -340,6 +363,7 @@ form.addEventListener('submit', event => {
     const values = formValues(form);
     validateRange(values);
     filters = values;
+    summaryColumnFilters = {};
     summaryPaging = { currentPage: 1, pageSize: summaryPaging.pageSize };
     closeAllDetails();
     await loadSummary();
@@ -354,6 +378,8 @@ async function restoreFromQuery() {
   showAccountRange();
   const query = new URLSearchParams(location.search);
   filters = formValues(form);
+  summaryColumnFilters = readColumnFilters(query);
+  differentEmailOnly = query.get('differentEmailOnly') === 'true';
   summaryPaging = {
     currentPage: Number(query.get('currentPage')) || 1,
     pageSize: Number(query.get('pageSize')) || DEFAULT_PAGE_SIZE,

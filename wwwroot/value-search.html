@@ -39,6 +39,10 @@
           <option value="Login">Login</option>
           <option value="FirstSeenUtc">First seen</option>
           <option value="LastSeenUtc">Last seen</option>
+          <option value="Name">Name</option>
+          <option value="Group">Group</option>
+          <option value="Email">Email</option>
+          <option value="Balance">Balance</option>
         </select>
       </label>
       <label>Direction
@@ -64,12 +68,11 @@
       </div>
       <p class="message" id="summary-export-message"></p>
       <div class="summary" id="summary-metadata"></div>
-      <p class="message" id="accounts-message"></p>
       <div id="summary"></div>
       <div id="summary-pager"></div>
       <ul class="help">
         <li><strong>Logins:</strong> the recorded logins of that login on the searched value, over the applied range.</li>
-        <li><strong>Name, Group, Email, Balance:</strong> read from MetaTrader after the table loads. Active accounts come from the Manager; deleted accounts, marked "(deleted)", from the Administrator archive.</li>
+        <li><strong>Name, Group, Email, Balance:</strong> come with the report from the MetaTrader backup and can be sorted, filtered and exported like the other columns. Deleted accounts are marked "(deleted)"; "Not found" means the login is not in the backup yet.</li>
         <li>Click a row to see that login's own sessions, or open the <strong>Details</strong> tab for every session of every login at once.</li>
       </ul>
     </section>
@@ -93,7 +96,7 @@
   <script src="/platform-icons.js"></script>
   <script src="/table-views.js"></script>
   <script src="/range.js"></script>
-  <script src="/accounts.js"></script>
+  <script src="/account-columns.js"></script>
   <script src="/country-flags.js"></script>
   <script src="/sessions-table.js"></script>
   <script src="/value-search.js"></script>

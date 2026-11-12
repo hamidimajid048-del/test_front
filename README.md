@@ -43,8 +43,10 @@ serialise the native calls. The panel is built for x64; the MetaQuotes libraries
 `GET /panel-api/mt5/accounts?logins=1,2,3` (1 to 500 logins) returns each account's name, group, email and balance.
 Active accounts are read from the Manager; a login the Manager does not have is looked up in the Administrator
 archive (deleted accounts). `source` is `Manager`, `Archive`, `NotFound`, or `Unavailable` when the archive cannot be
-read. It answers 503 when the Manager is not connected or `Mt5:Enabled` is `false`. The Similarity page calls it for
-the related logins after the summary table has loaded and fills the Name, Group, Email and Balance columns.
+read. It answers 503 when the Manager is not connected or `Mt5:Enabled` is `false`. The Copy trade & hedge page calls it
+after its table has loaded and fills the Name, Group, Email and Balance columns. The IP/CID similarity and CID/IP search
+reports do not: the service returns those columns (from `mt5_backup.mt5_users`) and sorts, filters and exports them, and
+applies **Different email only** on the similarity summary (`differentEmailOnly=true`).
 
 `GET /panel-api/mt5/logins-by-email?email=` returns `{ accounts, archiveAvailable }`: every account whose email equals
 the given one (case-insensitive), active ones from the Manager (`UserRequestArray`) and deleted ones from the

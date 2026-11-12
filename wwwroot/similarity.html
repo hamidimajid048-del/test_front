@@ -44,6 +44,10 @@
           <option value="RelatedLoginCount">Shared sign-ins</option>
           <option value="RelatedLogin">Related login</option>
           <option value="Type">Type</option>
+          <option value="Name">Name</option>
+          <option value="Group">Group</option>
+          <option value="Email">Email</option>
+          <option value="Balance">Balance</option>
         </select>
       </label>
       <label>Direction
@@ -73,8 +77,8 @@
       <div id="summary-pager"></div>
       <ul class="help">
         <li><strong>Shared sign-ins:</strong> how many times the related login signed in from the shared IPs or CIDs (as the filters select). The higher it is, the more likely the two accounts belong to one person; a value of 1-2 is often a coincidence.</li>
-        <li><strong>Name, Group, Email, Balance:</strong> read from MetaTrader after the table loads. Active accounts come from the Manager; deleted accounts, marked "(deleted)", from the Administrator archive.</li>
-        <li><strong>Different email only</strong> hides the rows on this page whose email equals the searched login's email. Rows whose email is unknown stay visible.</li>
+        <li><strong>Name, Group, Email, Balance:</strong> come with the report from the MetaTrader backup and can be sorted, filtered and exported like the other columns. Deleted accounts are marked "(deleted)"; "Not found" means the login is not in the backup yet.</li>
+        <li><strong>Different email only</strong> removes the rows whose email equals the searched login's email from the whole report (every page and the export). Rows whose email is unknown stay.</li>
         <li><strong>Details</strong> opens the shared values of that account in its own tab; an account that is already open is selected instead of opened again. Close a tab with ×.</li>
       </ul>
     </section>
@@ -122,7 +126,7 @@
   <script src="/device-type-picker.js"></script>
   <script src="/table-views.js"></script>
   <script src="/range.js"></script>
-  <script src="/accounts.js"></script>
+  <script src="/account-columns.js"></script>
   <script src="/similarity.js"></script>
 </body>
 </html>
