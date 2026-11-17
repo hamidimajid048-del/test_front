@@ -188,6 +188,11 @@ function showTab(tab) {
 
 const panelPath = suffix => `mt5/account-data${suffix}?login=${encodeURIComponent(currentLogin)}`;
 
+// MetaTrader keeps no history for an archived account, so its tabs are read from the service's backup.
+const historyRows = (suffix, backupAction) => overview?.source === 'Archive'
+  ? apiGet(`account-data/${backupAction}`, { login: currentLogin })
+  : panelRequest('GET', panelPath(suffix));
+
 const TAB_LOADERS = {
   async open() {
     const open = await panelRequest('GET', panelPath('/open'));
@@ -197,7 +202,7 @@ const TAB_LOADERS = {
     document.getElementById('open-orders-title').textContent = `Active orders (${open.orders.length})`;
   },
   async transfers() {
-    const transfers = await panelRequest('GET', panelPath('/transfers'));
+    const transfers = await historyRows('/transfers', 'get-transfers');
     grids.transfers.setRows(transfers);
     renderSummary(document.getElementById('transfer-totals'), [
       ['Deposits', money(overview?.totalDeposits)],
@@ -206,16 +211,16 @@ const TAB_LOADERS = {
     ]);
   },
   async positions() {
-    grids.positions.setRows(await panelRequest('GET', panelPath('/positions')));
+    grids.positions.setRows(await historyRows('/positions', 'get-positions'));
   },
   async orders() {
-    grids.orders.setRows(await panelRequest('GET', panelPath('/orders')));
+    grids.orders.setRows(await historyRows('/orders', 'get-orders'));
   },
   async changes() {
     grids.changes.setRows(await panelRequest('GET', `mt5/account-changes?login=${encodeURIComponent(currentLogin)}`));
   },
   async deals() {
-    grids.deals.setRows(await panelRequest('GET', panelPath('/deals')));
+    grids.deals.setRows(await historyRows('/deals', 'get-deals'));
   },
 };
 

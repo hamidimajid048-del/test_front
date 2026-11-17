@@ -140,9 +140,14 @@ async function search({ login, position }) {
   document.getElementById('summary').replaceChildren();
   for (const grid of Object.values(grids)) grid.clear();
   message.textContent = 'Loading...';
-  const [detail] = await Promise.allSettled([
+  let [detail] = await Promise.allSettled([
     panelRequest('GET', `mt5/account-data/position${toQueryString({ login, position })}`),
   ]);
+  // An archived account's position is no longer in MetaTrader; the service's backup still has it.
+  if (detail.status === 'rejected') {
+    const [backup] = await Promise.allSettled([apiGet('account-data/get-position', { login, position })]);
+    if (backup.status === 'fulfilled') detail = backup;
+  }
   if (current !== request) return;
   const orders = detail.status === 'fulfilled'
     ? [...new Set(detail.value.deals.map(deal => deal.order).filter(order => order > 0))]

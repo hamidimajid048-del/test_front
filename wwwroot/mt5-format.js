@@ -1,7 +1,7 @@
 // Formatters and column helpers for MetaTrader data (account data and position details pages).
 
 const label = value => {
-  const text = String(value).replace(/^(DEAL_REASON_|ORDER_REASON_|DEAL_|POSITION_|OP_|ORDER_STATE_|ENTRY_|ACTION_|TYPE_|MT_RET_)/, '').replaceAll('_', ' ').toLowerCase();
+  const text = String(value).replace(/^(DEAL_REASON_|ORDER_REASON_|REASON_|DEAL_|POSITION_|OP_|ORDER_STATE_|ENTRY_|ACTION_|TYPE_|MT_RET_)/, '').replaceAll('_', ' ').toLowerCase();
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 const money = value => value === null || value === undefined
@@ -43,7 +43,7 @@ const SOURCE_LABELS = {
 const SOURCE_PLATFORMS = { CLIENT: 'system', FIRST: 'system', MOBILE: 'mobile', WEB: 'web' };
 
 const source = value => {
-  const code = String(value ?? '').replace(/^(DEAL|ORDER|POSITION)_REASON_/, '');
+  const code = String(value ?? '').replace(/^((DEAL|ORDER|POSITION)_)?REASON_/, '');
   if (!code) return '—';
   const text = SOURCE_LABELS[code] ?? label(code);
   if (!SOURCE_PLATFORMS[code] || typeof platformIcon !== 'function') return text;
@@ -59,6 +59,6 @@ const sourceColumn = (key, title) => column(key, title, source);
 const closedBy = (row, pattern, reason, commentKey) =>
   pattern.test(row[commentKey] ?? '') || String(row.reason ?? '').endsWith(reason);
 const stopColumns = (commentKey = 'comment', sorted = false) => [
-  { ...priceColumn('priceSl', 'SL'), ...(sorted ? { sortKey: 'PriceSl' } : {}), cellClass: row => closedBy(row, /\bsl\b/i, '_REASON_SL', commentKey) ? 'hit-sl' : '' },
-  { ...priceColumn('priceTp', 'TP'), ...(sorted ? { sortKey: 'PriceTp' } : {}), cellClass: row => closedBy(row, /\btp\b/i, '_REASON_TP', commentKey) ? 'hit-tp' : '' },
+  { ...priceColumn('priceSl', 'SL'), ...(sorted ? { sortKey: 'PriceSl' } : {}), cellClass: row => closedBy(row, /\bsl\b/i, 'REASON_SL', commentKey) ? 'hit-sl' : '' },
+  { ...priceColumn('priceTp', 'TP'), ...(sorted ? { sortKey: 'PriceTp' } : {}), cellClass: row => closedBy(row, /\btp\b/i, 'REASON_TP', commentKey) ? 'hit-tp' : '' },
 ];
