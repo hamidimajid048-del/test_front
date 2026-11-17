@@ -823,13 +823,22 @@ button[aria-pressed="true"] { font-weight: 600; color: var(--primary); backgroun
 .toggle button:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
 .toggle button:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-inline-start: -1px; }
 .toggle button[aria-pressed="true"] { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
-.balance-chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart-frame { position: relative; margin-block: var(--space-8) var(--space-16); padding: var(--space-16) var(--space-12) var(--space-8); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.balance-chart { width: 100%; height: auto; display: block; overflow: visible; touch-action: pan-y; font-variant-numeric: tabular-nums; }
 .chart-grid { stroke: var(--border); stroke-width: 1; }
-.chart-zero { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 4 3; }
-.chart-label { fill: var(--text-muted); font-size: var(--font-size-2xs); }
-.chart-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; }
+.chart-zero { stroke: var(--border-strong); stroke-width: 1; }
+.chart-label { fill: var(--text-faint); font-size: var(--font-size-2xs); }
+.chart-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-wash-top { stop-color: var(--primary); stop-opacity: 0.18; }
+.chart-wash-bottom { stop-color: var(--primary); stop-opacity: 0; }
+.chart-end-label { fill: var(--text); font-size: var(--font-size-xs); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .chart-cursor { stroke: var(--border-strong); stroke-width: 1; }
 .chart-dot { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
+.chart-tip { position: absolute; z-index: 5; display: flex; flex-direction: column; gap: 2px; padding: var(--space-8) var(--space-10); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-md); pointer-events: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chart-tip[hidden] { display: none; }
+.chart-tip-time { color: var(--text-muted); font-size: var(--font-size-2xs); }
+.chart-tip strong { color: var(--text); font-size: var(--font-size-sm); }
+.chart-tip-change { font-size: var(--font-size-xs); font-weight: 600; }
 /* Usage timeline (login history) */
 .usage-timeline { display: flex; flex-direction: column; gap: var(--space-12); }
 .ut-legend { display: flex; flex-wrap: wrap; gap: var(--space-16); color: var(--text-muted); font-size: var(--font-size-sm); }
@@ -862,7 +871,6 @@ button.ut-row { cursor: pointer; }
 .ut-tip { position: fixed; z-index: 60; display: flex; flex-direction: column; gap: 2px; max-width: 360px; padding: var(--space-8) var(--space-12); color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-md); font-size: var(--font-size-sm); pointer-events: none; overflow-wrap: anywhere; }
 .ut-tip[hidden] { display: none; }
 .ut-tip span { color: var(--text-muted); }
-.chart-tip {fill: var(--text); font-size: var(--font-size-xs); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
 
 /* ---------- Access editor (Users page) ---------- */
 
