@@ -177,6 +177,7 @@ async function loadList() {
   ]);
   accountsDirectory.reset();
   sameEmail.reset();
+  showRelatedPages({ login: report.metadata.login });
   renderTable(document.getElementById('list'), LIST_COLUMNS, report.items, row => openPositions(row.relatedLogin), {
     sort: {
       item: search.sortItem,

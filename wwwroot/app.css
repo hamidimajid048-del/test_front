@@ -437,6 +437,12 @@ section form.filters { padding: 0; border: 0; box-shadow: none; background: none
 }
 .summary strong { color: var(--text); font-weight: 600; }
 
+.related-pages { display: flex; flex-direction: column; gap: var(--space-8); margin: 0 0 var(--space-14); }
+.related-pages:empty { display: none; }
+.related-group { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; }
+.related-label { color: var(--text-muted); font-size: var(--font-size-sm); font-weight: 600; margin-inline-end: var(--space-4); }
+.related-label:not(:first-child) { margin-inline-start: var(--space-12); }
+
 .help {
   margin: var(--space-14) 0 0;
   padding: var(--space-12) var(--space-16) var(--space-12) var(--space-12);

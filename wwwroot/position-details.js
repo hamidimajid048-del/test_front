@@ -154,6 +154,7 @@ async function search({ login, position }) {
   const back = document.getElementById('back');
   back.href = `/account-data.html?login=${encodeURIComponent(login)}&tab=positions`;
   back.hidden = false;
+  showRelatedPages({ login });
   writeState(login, position);
   message.textContent = '';
   if (failure) throw failure.reason;

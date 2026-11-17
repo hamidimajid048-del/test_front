@@ -809,6 +809,7 @@ async function run(page, pageSize) {
       matchLevel: context.match,
     });
     renderOverview(overview);
+    showRelatedPages({ login: context.login }, { login: context.other });
     document.getElementById('tabs-section').hidden = false;
     renderTabs();
     showPanel();

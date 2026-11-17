@@ -53,6 +53,7 @@ function updateQuery(paging) {
 
 function renderMetadata(result) {
   const { metadata } = result.report;
+  showRelatedPages({ login: metadata.login });
   if (result.accountNote === null) {
     renderSummary(document.getElementById('metadata'), [
       ['Login', metadata.login],

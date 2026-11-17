@@ -91,7 +91,7 @@ and asks the service for the reports of all those logins together (`login-report
 `get-logins-cid-mappings` and `get-logins-sessions`, at most 100 logins): the summary lists the IPs and CIDs per login
 with first/last sign-in and session count, the details list every session with its location and warnings. Sorting,
 column filters and paging are done by the service.
-The page has three tabs: **Logins** (the accounts of the email, each with buttons that open its login history or similarity report in a new browser tab), **Summary** (IPs and CIDs per login) and **Details** (every session).
+The page has three tabs: **Logins** (the accounts of the email, each with buttons that open its account data, login history, similarity, copy trade, hedge or compare page in a new browser tab), **Summary** (IPs and CIDs per login) and **Details** (every session).
 
 The **Compare emails** page (`compare-emails.html`) takes two emails and an optional UTC day range, finds the logins of
 each email as above, and compares the two groups through `group-compare-reports/*` of the service (at most 100 logins per
@@ -101,7 +101,7 @@ email): `get-overview` (per-email totals, the shared IPs and CIDs with their sha
 a valid shared CID or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter, *Medium* for a shared IP that is not,
 *Weak* when only such IPs or invalid CIDs are shared, and *None* otherwise. A row of the shared tables opens its
 sessions in the Details tab.
-The page has six tabs: **Overview** (evidence and the side-by-side totals), **Logins** (the accounts of both emails, with buttons that open a login's history or similarity report in a new browser tab), **Linked pairs**, **Shared IPs**, **Shared CIDs** and **Details**; the last three tabs show their row counts.
+The page has six tabs: **Overview** (evidence and the side-by-side totals), **Logins** (the accounts of both emails, with the same buttons for each login), **Linked pairs**, **Shared IPs**, **Shared CIDs** and **Details**; the last three tabs show their row counts.
 
 ## Run
 
@@ -130,3 +130,12 @@ The panel listens on `http://localhost:5180`.
 > `PanelAccess:Enabled: true` and the same key. The code is tagged `TEMPORARY-PANEL-ACCESS`.
 
 Configuration, security constraints, how to turn it off and the removal checklist: [`../docs/temporary-panel-access.md`](../docs/temporary-panel-access.md).
+
+## Related pages
+
+Every page that searches a login (Account data, Login history, IP/CID similarity, Copy trade & hedge, Compare accounts,
+Position details) shows, once the search has run, a row of buttons that open the same login on the other pages:
+Account data, Login history, IP/CID similarity, Copy trade, Hedge (window 5 s, min share 1, hedge tolerance 10 %) and
+Compare accounts (main login filled in). The email of the login is read from the user directory (`mt5/accounts`) and adds
+Email logins and Compare emails (Email A filled in). The email pages (Email logins, Compare emails) show the email
+buttons. Only pages the account may open are shown; the links are built in `related-pages.js`.

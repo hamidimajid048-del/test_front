@@ -21,11 +21,7 @@ const inNewTab = link => {
 
 const loginTabLink = login => inNewTab(loginLink(login));
 
-const loginActions = login => inline(
-  inNewTab(actionLink('Login history', `/logins.html?login=${encodeURIComponent(login)}`)),
-  inNewTab(actionLink('Similarity', `/similarity.html?login=${encodeURIComponent(login)}`)));
-
-const actionsColumn = { key: 'login', title: 'Actions', format: loginActions, sortable: false, filterable: false };
+const actionsColumn = { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false };
 
 const loginColumn = { key: 'login', title: 'Login', format: loginTabLink, sortKey: 'Login' };
 
@@ -82,6 +78,7 @@ async function search(values) {
   if (current !== request) return;
   const accounts = found.accounts;
   writeState(values);
+  showRelatedPages({ email: values.email });
 
   if (!accounts.length) {
     renderSummary(document.getElementById('metadata'), [['Email', values.email], ['Logins', 0]]);

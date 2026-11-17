@@ -36,10 +36,6 @@ const inNewTab = link => {
   return link;
 };
 
-const loginActions = login => inline(
-  inNewTab(actionLink('Login history', `/logins.html?login=${encodeURIComponent(login)}`)),
-  inNewTab(actionLink('Similarity', `/similarity.html?login=${encodeURIComponent(login)}`)));
-
 const accountColumns = [
   { key: 'login', title: 'Login', format: login => inNewTab(loginLink(login)) },
   { key: 'source', title: 'Status', format: source => SOURCE_LABELS[source] ?? source },
@@ -52,7 +48,7 @@ const accountColumns = [
       ? '—'
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
-  { key: 'login', title: 'Actions', format: loginActions, sortable: false, filterable: false },
+  { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false },
 ];
 
 const sideColumns = () => [
@@ -252,6 +248,7 @@ async function search(values) {
     ...other.accounts.map(account => [account.login, 'other']),
   ]);
   writeState(values);
+  showRelatedPages({ email: values.email }, { email: values.otherEmail });
 
   showAccounts('main', values.email, main.accounts);
   showAccounts('other', values.otherEmail, other.accounts);

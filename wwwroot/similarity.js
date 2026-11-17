@@ -184,6 +184,7 @@ async function loadSummary() {
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
   renderMetadata(report.metadata);
   renderDifferentEmail(report.metadata);
+  showRelatedPages({ login: report.metadata.login });
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, undefined, {
     sort: {
       item: filters.sortItem,

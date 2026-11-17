@@ -530,6 +530,7 @@ function clearResults() {
 async function search(login) {
   const current = ++request;
   clearResults();
+  clearRelatedPages();
   overview = null;
   loaded = new Set();
   currentLogin = login;
@@ -543,6 +544,7 @@ async function search(login) {
   if (current !== request) return;
   overview = data;
   renderOverview(data, switches, status);
+  showRelatedPages({ login: data.login, email: data.email });
   writeState();
   message.textContent = '';
   await loadTab(currentTab);
