@@ -238,6 +238,15 @@ function writeState() {
   writeQuery({ login: currentLogin, tab: currentTab });
 }
 
+const ARCHIVED_TITLE = 'An archived account cannot be changed';
+
+function lockForArchive(container, archived) {
+  for (const element of container.querySelectorAll('input, select, button')) {
+    element.disabled = archived;
+    element.title = archived ? ARCHIVED_TITLE : '';
+  }
+}
+
 function switchRow(data, last, status, definition) {
   const enabled = definition.state(data, last, status);
   const locked = definition.enableOnly && enabled === true;
@@ -260,7 +269,7 @@ function switchRow(data, last, status, definition) {
   toggle.setAttribute('aria-checked', String(enabled === true));
   toggle.setAttribute('aria-label', definition.title);
   toggle.disabled = !allowed;
-  toggle.title = data.source === 'Archive' ? 'A deleted account cannot be changed'
+  toggle.title = data.source === 'Archive' ? ARCHIVED_TITLE
     : locked ? 'This can only be enabled, not disabled'
     : allowed ? '' : 'You do not have permission to change this';
   toggle.append(document.createElement('span'));
@@ -497,9 +506,11 @@ function renderOverview(data, switches, status) {
   ]);
 
   document.getElementById('status').replaceChildren(
-    ...(data.source === 'Archive' ? [badge('Deleted account (archive)', 'warn')] : []));
+    ...(data.source === 'Archive' ? [badge('Archived', 'warn')] : []));
   renderControls(data, switches, status);
   renderPasswords();
+  lockForArchive(document.getElementById('password-rows'), data.source === 'Archive');
+  lockForArchive(balanceForm, data.source === 'Archive');
 
   renderSummary(document.getElementById('figures'), [
     ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance)],
@@ -522,6 +533,7 @@ function clearResults() {
   document.getElementById('stop-out-reason').textContent = '';
   document.getElementById('passwords').hidden = true;
   document.getElementById('password-rows').replaceChildren();
+  lockForArchive(balanceForm, false);
   for (const id of ['identity', 'status', 'controls', 'stop-out-status', 'figures', 'chart', 'transfer-totals'])
     document.getElementById(id).replaceChildren();
   document.getElementById('comment').textContent = '';
