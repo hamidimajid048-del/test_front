@@ -477,8 +477,10 @@ section form.filters { padding: 0; border: 0; box-shadow: none; background: none
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+/* The table fills its box and the browser shares the spare width among the columns by the length of their content, so a
+   long column gets more and a short one less; columns of short numbers stay as narrow as their content (compact-col). */
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: var(--space-10) var(--space-14); text-align: start; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
+th, td { padding: var(--space-10) var(--space-14); text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
 th {
   color: var(--text-muted);
   background: var(--surface-2);
@@ -489,10 +491,8 @@ th {
 thead th { position: sticky; top: 0; z-index: 2; box-shadow: inset 0 -1px 0 var(--border); }
 thead tr:first-child th[data-group] { text-align: center; color: var(--text); background: var(--surface-3); }
 thead tr:first-child th[data-group=""] { background: var(--surface-2); }
-th.num, td.num { text-align: end; }
 td.hit-sl { color: var(--danger); background: color-mix(in srgb, var(--danger) 22%, transparent); font-weight: 600; }
 td.hit-tp { color: var(--success); background: color-mix(in srgb, var(--success) 22%, transparent); font-weight: 600; }
-th.num .sort-button { justify-content: flex-end; }
 .pos::before, .pnl-pos::before { content: "+"; }
 tbody tr:nth-child(even) { background: var(--row-stripe); }
 tbody tr:last-child td { border-bottom: 0; }
@@ -584,9 +584,9 @@ td.empty { padding: var(--space-32); text-align: center; color: var(--text-faint
 /* Sortable headers and the filter row of every table. */
 th.sortable { padding: 0; }
 th .sort-button {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: var(--space-8); width: 100%;
   padding: var(--space-10) var(--space-14); height: auto; border: 0; border-radius: 0; background: transparent;
-  color: inherit; font: inherit; text-align: start; cursor: pointer;
+  color: inherit; font: inherit; text-align: center; cursor: pointer;
 }
 th .sort-button:hover:not(:disabled) { color: var(--text); background: var(--surface-3); border: 0; }
 th .sort-button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; box-shadow: none; }
@@ -987,9 +987,7 @@ form.filters .device-type-menu input[type="checkbox"] { width: auto; }
 .multi-picker-more { margin: 0; padding: var(--space-6) var(--space-8); color: var(--text-muted); font-size: var(--font-size-sm); }
 
 th.compact-col, td.compact-col { width: 1%; }
-th.fill-col, td.fill-col { width: 100%; padding: 0; }
-td .actions { flex-wrap: nowrap; }
-#overview .fill-col { display: none; }
+td .actions { flex-wrap: nowrap; justify-content: center; }
 thead tr.filter-row th.compact-col input { min-width: 52px; }
 
 @media (prefers-reduced-motion: reduce) {
