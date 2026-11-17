@@ -1,4 +1,4 @@
-// Trade history page: the positions, orders or deals of every MetaTrader account in a range of UTC days
+// Trade history page: the positions, orders or deals of every MetaTrader account in a UTC range set to the millisecond
 // (/panel-api/mt5/trade-report). Sorting, column filters and paging are done by the panel over the whole result.
 
 const form = document.getElementById('filters');
@@ -124,11 +124,13 @@ function showKind(kind) {
   for (const panel of document.querySelectorAll('[data-panel]')) panel.hidden = panel.dataset.panel !== kind;
 }
 
+// A datetime-local value ("yyyy-MM-ddTHH:mm[:ss[.fff]]") is UTC on this page.
+const utcParam = value => `${value}Z`;
+
 function validateTradeRange(values) {
   if (!values.fromUtc || !values.toUtc) throw new ApiError('Fill in both From and To', values.fromUtc ? { toUtc: ['Fill in To'] } : { fromUtc: ['Fill in From'] });
   validateRange(values);
-  const days = (Date.parse(values.toUtc) - Date.parse(values.fromUtc)) / DAY_MS + 1;
-  if (days > MAX_RANGE_DAYS) throw new ApiError(`Choose a range of at most ${MAX_RANGE_DAYS} days`, { toUtc: [`At most ${MAX_RANGE_DAYS} days`] });
+  if (Date.parse(utcParam(values.toUtc)) - Date.parse(utcParam(values.fromUtc)) > MAX_RANGE_DAYS * DAY_MS) throw new ApiError(`Choose a range of at most ${MAX_RANGE_DAYS} days`, { toUtc: [`At most ${MAX_RANGE_DAYS} days`] });
   if (values.volumeFrom && values.volumeTo && Number(values.volumeFrom) > Number(values.volumeTo)) {
     throw new ApiError('Volume from must not be more than volume to', { volumeTo: ['Must not be less than From'] });
   }
@@ -158,8 +160,8 @@ async function search(values) {
   const groups = splitPicked(values.groups);
   const report = await grids[kind].start({
     kind,
-    fromUtc: fromDayParam(values.fromUtc),
-    toUtc: toDayParam(values.toUtc),
+    fromUtc: utcParam(values.fromUtc),
+    toUtc: utcParam(values.toUtc),
     volumeFrom: values.volumeFrom,
     volumeTo: values.volumeTo,
     symbols,
@@ -168,7 +170,7 @@ async function search(values) {
   if (current !== request) return;
   renderSummary(document.getElementById('metadata'), [
     ['Report', TITLES[kind]],
-    ['Range (UTC)', `${values.fromUtc} — ${values.toUtc}`],
+    ['Range (UTC)', `${values.fromUtc.replace('T', ' ')} — ${values.toUtc.replace('T', ' ')}`],
     ['Symbols', pickedSummary(symbols)],
     ['Groups', pickedSummary(groups)],
     ['Volume (lots)', volumeSummary(values)],

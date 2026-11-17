@@ -76,9 +76,9 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
             var to = new DateTimeOffset(toUtc).ToUnixTimeSeconds();
             var rows = await Task.Run(() => mt5.RunManager(manager => kind switch
             {
-                Mt5TradeReportKindEnum.Positions => Positions(manager, groups, symbols, from, to, now.ToUnixTimeSeconds()),
+                Mt5TradeReportKindEnum.Positions => Positions(manager, groups, symbols, from, to, fromUtc, toUtc, now.ToUnixTimeSeconds()),
                 Mt5TradeReportKindEnum.Orders => Orders(manager, groups, symbols, from, to, fromUtc, toUtc),
-                _ => (IReadOnlyList<object>)[.. Deals(manager, groups, symbols, from, to)]
+                _ => (IReadOnlyList<object>)[.. Deals(manager, groups, symbols, from, to).Where(deal => deal.Time >= fromUtc && deal.Time <= toUtc)]
             }), cancellationToken);
             _cached = new Mt5TradeReportCacheModel(kind, fromUtc, toUtc, groups, symbols, now, rows);
             return rows;
@@ -98,14 +98,20 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
         return [.. deals.ToArray().Select(Mt5AccountDataReader.ToDto)];
     }
 
-    private static IReadOnlyList<object> Positions(CIMTManagerAPI manager, string groups, string symbols, long from, long to, long now)
+    private static IReadOnlyList<object> Positions(
+        CIMTManagerAPI manager, string groups, string symbols, long from, long to, DateTime fromUtc, DateTime toUtc, long now)
     {
-        var inRange = Deals(manager, groups, symbols, from, to);
+        var read = Deals(manager, groups, symbols, from, to);
+        var inRange = read.Where(deal => deal.Time >= fromUtc && deal.Time <= toUtc).ToList();
         var opened = inRange
             .Where(deal => deal.PositionId != 0 && deal.Entry == CIMTDeal.EnEntryFlag.ENTRY_IN)
             .Select(deal => deal.PositionId)
             .ToHashSet();
-        List<Mt5DealDto> deals = [.. inRange.Where(deal => opened.Contains(deal.PositionId) || Mt5DealAnalyzer.IsTransfer(deal.Action))];
+        List<Mt5DealDto> deals =
+        [
+            .. read.Where(deal => opened.Contains(deal.PositionId)),
+            .. inRange.Where(deal => Mt5DealAnalyzer.IsTransfer(deal.Action))
+        ];
         var positions = Mt5DealAnalyzer.PositionHistory(deals);
 
         var unfinished = positions.Where(position => position.IsOpen).ToList();
@@ -135,7 +141,8 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
         return
         [
             .. history.ToArray().Select(Mt5AccountDataReader.ToDto)
-                .Concat(open.ToArray().Select(Mt5AccountDataReader.ToDto).Where(order => order.SetupAt >= fromUtc && order.SetupAt <= toUtc))
+                .Concat(open.ToArray().Select(Mt5AccountDataReader.ToDto))
+                .Where(order => order.SetupAt >= fromUtc && order.SetupAt <= toUtc)
                 .DistinctBy(order => order.Order)
         ];
     }

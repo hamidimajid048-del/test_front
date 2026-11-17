@@ -1,5 +1,6 @@
-// Date range controls shared by the pages that filter by a UTC day range (a preset or a custom range of whole days).
-// The form needs the fields: range (select), fromUtc and toUtc (date inputs).
+// Date range controls shared by the pages that filter by a UTC range (a preset or a custom range): of whole days with
+// date inputs, or to the millisecond with datetime-local inputs.
+// The form needs the fields: range (select), fromUtc and toUtc (date or datetime-local inputs).
 
 // Quick ranges ending now (UTC); each moves the start date back.
 const RANGE_PRESETS = {
@@ -13,6 +14,9 @@ const RANGE_PRESETS = {
 
 // Date input value ("yyyy-MM-dd") of a Date, in UTC.
 const toDayValue = date => date.toISOString().slice(0, 10);
+
+// The value of a range input for a Date, in UTC: the day, or the time to the millisecond for a datetime-local input.
+const rangeInputValue = (input, date) => (input.type === 'datetime-local' ? date.toISOString().slice(0, 23) : toDayValue(date));
 
 // The range is whole UTC days ("yyyy-MM-dd"): from the start of the first day to the end of the last day.
 const fromDayParam = day => (day ? `${day}T00:00:00Z` : undefined);
@@ -40,7 +44,7 @@ function initRangeControls(form) {
     const custom = form.elements.range.value === 'custom';
     for (const name of ['fromUtc', 'toUtc']) {
       form.elements[name].readOnly = !custom;
-      form.elements[name].title = custom ? '' : 'Select the "Custom" range to pick days';
+      form.elements[name].title = custom ? '' : 'Select the "Custom" range to pick the range';
     }
   }
 
@@ -55,7 +59,7 @@ function initRangeControls(form) {
     const to = new Date();
     const from = new Date(to);
     RANGE_PRESETS[preset](from);
-    setRange(toDayValue(from), toDayValue(to));
+    setRange(rangeInputValue(form.elements.fromUtc, from), rangeInputValue(form.elements.toUtc, to));
   }
 
   // A link that carries day inputs but no preset (an older or hand-made link) is a custom range.

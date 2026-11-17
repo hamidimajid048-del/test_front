@@ -25,8 +25,8 @@
           <option value="custom">Custom</option>
         </select>
       </label>
-      <label>From day (UTC) <input name="fromUtc" type="date" required></label>
-      <label>To day (UTC) <input name="toUtc" type="date" required></label>
+      <label>From (UTC) <input name="fromUtc" type="datetime-local" step="0.001" required></label>
+      <label>To (UTC) <input name="toUtc" type="datetime-local" step="0.001" required></label>
       <div class="device-type-field" id="symbols-field">
         <span>Symbols</span>
         <input type="hidden" name="symbols">
@@ -61,7 +61,7 @@
     </section>
 
     <ul class="help">
-      <li>Every account on the MetaTrader server, read from the Manager. The range is whole UTC days and can be at most 3 days long.</li>
+      <li>Every account on the MetaTrader server, read from the Manager. The range is in UTC to the millisecond, both ends included, and can be at most 3 days long.</li>
       <li><strong>Positions:</strong> positions opened in the range, with their closing deals even when they closed after it. <strong>Orders:</strong> history orders of the range and the active orders placed in it. <strong>Deals:</strong> every deal of the range.</li>
       <li><strong>Symbols</strong> and <strong>Groups</strong> take one or more choices; none chosen means all. <strong>Volume</strong> (lots) is optional: leave it empty for any volume, or fill in From, To or both. For orders it is the placed volume.</li>
       <li>Sorting, column filters and paging apply to all rows. Numbers and dates also accept &gt;, &lt;, &gt;=, &lt;= and =. The CSV and Excel buttons download every row of the report, with the filters and sort applied, not only the page shown.</li>
