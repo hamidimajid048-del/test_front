@@ -1,4 +1,4 @@
-// Email logins page: every login of one email (MetaTrader Manager and archive), then the service's reports for all of
+// Email logins page: every login of one email (the users table of the service's MetaTrader backup), then the service's reports for all of
 // those logins together. The summary lists the IPs and CIDs per login; the details list every session with its location.
 // Sorting, column filters and paging of the three tables are done by the service (report-grid.js).
 
@@ -74,9 +74,8 @@ async function search(values) {
   clearResults();
 
   message.textContent = 'Finding the logins of the email...';
-  const found = await panelRequest('GET', `mt5/logins-by-email?email=${encodeURIComponent(values.email)}`);
+  const accounts = await apiGet('meta-trader-accounts/get-logins-by-email', { email: values.email });
   if (current !== request) return;
-  const accounts = found.accounts;
   writeState(values);
   showRelatedPages({ email: values.email });
 

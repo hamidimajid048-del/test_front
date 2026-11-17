@@ -15,7 +15,8 @@ public static class PanelApiRules
         ["copy-trade-and-hedge-reports"] = [PanelPermissions.CopyTradeView],
         ["position-compare-reports"] = [PanelPermissions.CopyTradeView],
         ["transaction-reports"] = [PanelPermissions.AccountDataView],
-        ["account-data"] = [PanelPermissions.AccountDataView]
+        ["account-data"] = [PanelPermissions.AccountDataView],
+        ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView]
     };
 
     public static bool IsAllowed(PathString path, ClaimsPrincipal user)
