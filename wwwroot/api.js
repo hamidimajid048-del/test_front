@@ -276,39 +276,44 @@ function fileNameFrom(contentDisposition) {
 }
 
 // Fetches an export so a failure (returned as JSON instead of a file) can be shown as a message.
+// Saves the file an API export answers with; throws ApiError when the service answers with an error instead.
+async function saveExport(path, params) {
+  let response;
+  try {
+    response = await fetch(apiUrl(path, params));
+  } catch {
+    throw new ApiError(UNAVAILABLE_MESSAGE);
+  }
+  if (response.status === 401) {
+    location.href = SESSION_EXPIRED_PAGE;
+    throw new ApiError('');
+  }
+  if (response.status === 403) throw new ApiError(FORBIDDEN_MESSAGE);
+  const contentType = response.headers.get('Content-Type') ?? '';
+  if (response.ok && !contentType.includes('json')) {
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileNameFrom(response.headers.get('Content-Disposition'));
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return;
+  }
+  const body = await response.json().catch(() => null);
+  if (isValidationError(body)) throw new ApiError([INVALID_INPUT_MESSAGE, ...Object.keys(fieldErrorsOf(body.errors))].join(' — '));
+  if (body?.status && typeof body.status === 'object') throw new ApiError(translateStatus(body.status));
+  throw new ApiError(UNAVAILABLE_MESSAGE);
+}
+
 async function downloadExport(path, params, button, messageElement) {
   button.disabled = true;
   messageElement.className = 'message';
   messageElement.textContent = 'Preparing file...';
   try {
-    let response;
-    try {
-      response = await fetch(apiUrl(path, params));
-    } catch {
-      throw new ApiError(UNAVAILABLE_MESSAGE);
-    }
-    if (response.status === 401) {
-      location.href = SESSION_EXPIRED_PAGE;
-      return;
-    }
-    if (response.status === 403) throw new ApiError(FORBIDDEN_MESSAGE);
-    const contentType = response.headers.get('Content-Type') ?? '';
-    if (response.ok && !contentType.includes('json')) {
-      const url = URL.createObjectURL(await response.blob());
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileNameFrom(response.headers.get('Content-Disposition'));
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-      messageElement.textContent = '';
-      return;
-    }
-    const body = await response.json().catch(() => null);
-    if (isValidationError(body)) throw new ApiError([INVALID_INPUT_MESSAGE, ...Object.keys(fieldErrorsOf(body.errors))].join(' — '));
-    if (body?.status && typeof body.status === 'object') throw new ApiError(translateStatus(body.status));
-    throw new ApiError(UNAVAILABLE_MESSAGE);
+    await saveExport(path, params);
+    messageElement.textContent = '';
   } catch (error) {
     messageElement.className = 'message error';
     messageElement.textContent = error instanceof ApiError ? error.message : UNAVAILABLE_MESSAGE;
@@ -840,7 +845,8 @@ function nextSort(current, item, natural) {
 //
 // options.export = { name, rows?, all?, permission? } adds CSV and Excel buttons (table-export.js): they download every row of the
 // report with the filters and sort applied (rows() gives all of them when the table is paged in the browser, all reads
-// every page of a report paged by the server) and the columns shown, except columns marked noExport.
+// every page of a report paged by the server, or all.download(format) has the server write the whole file) and the columns
+// shown, except columns marked noExport.
 function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const tools = options.tools !== false;
   const serverSort = tools ? options.sort : null;

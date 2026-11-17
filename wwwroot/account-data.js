@@ -88,56 +88,60 @@ const orderColumns = [
   column('comment', 'Comment'),
 ];
 
+const positionHistoryColumns = [
+  column('positionId', 'Position'),
+  column('symbol', 'Symbol'),
+  labelColumn('direction', 'Direction'),
+  column('volume', 'Volume', tradeOnly(lots)),
+  sourceColumn('openReason', 'Opened by'),
+  utcColumn('openedAt', 'Opened'),
+  priceColumn('openPrice', 'Open price'),
+  utcColumn('closedAt', 'Closed'),
+  priceColumn('closePrice', 'Close price'),
+  ...stopColumns('closeComment'),
+  column('durationSeconds', 'Open time', duration),
+  amountColumn('profit', 'Profit'),
+  amountColumn('commission', 'Commission'),
+  amountColumn('swap', 'Swap'),
+  amountColumn('netProfit', 'Net profit'),
+  column('isOpen', 'Status', tradeOnly(isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted'))),
+  column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)),
+  column('comment', 'Comment'),
+  column('closeComment', 'Close comment'),
+  { key: 'positionId', title: 'Actions', sortable: false, filterable: false, format: tradeOnly(positionId => actionLink('Details', `/position-details.html?login=${encodeURIComponent(currentLogin)}&position=${encodeURIComponent(positionId)}`)) },
+];
+
+const dealColumns = [
+  column('deal', 'Deal'),
+  utcColumn('time', 'Time'),
+  labelColumn('action', 'Action'),
+  labelColumn('entry', 'Entry'),
+  column('symbol', 'Symbol'),
+  column('volume', 'Volume', lots),
+  priceColumn('price', 'Price'),
+  ...stopColumns(),
+  amountColumn('profit', 'Profit'),
+  amountColumn('commission', 'Commission'),
+  amountColumn('swap', 'Swap'),
+  column('positionId', 'Position', value => value || '—'),
+  column('order', 'Order'),
+  sourceColumn('reason', 'Source'),
+  column('comment', 'Comment'),
+];
+
 const grids = {
   positions: createLocalGrid({
     containerId: 'positions',
     pagerId: 'positions-pager',
     sort: { item: 'Opened (UTC)', direction: 'Desc' },
-    columns: [
-      column('positionId', 'Position'),
-      column('symbol', 'Symbol'),
-      labelColumn('direction', 'Direction'),
-      column('volume', 'Volume', tradeOnly(lots)),
-      sourceColumn('openReason', 'Opened by'),
-      utcColumn('openedAt', 'Opened'),
-      priceColumn('openPrice', 'Open price'),
-      utcColumn('closedAt', 'Closed'),
-      priceColumn('closePrice', 'Close price'),
-      ...stopColumns('closeComment'),
-      column('durationSeconds', 'Open time', duration),
-      amountColumn('profit', 'Profit'),
-      amountColumn('commission', 'Commission'),
-      amountColumn('swap', 'Swap'),
-      amountColumn('netProfit', 'Net profit'),
-      column('isOpen', 'Status', tradeOnly(isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted'))),
-      column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)),
-      column('comment', 'Comment'),
-      column('closeComment', 'Close comment'),
-      { key: 'positionId', title: 'Actions', sortable: false, filterable: false, format: tradeOnly(positionId => actionLink('Details', `/position-details.html?login=${encodeURIComponent(currentLogin)}&position=${encodeURIComponent(positionId)}`)) },
-    ],
+    columns: positionHistoryColumns,
   }),
   orders: createLocalGrid({ containerId: 'orders', pagerId: 'orders-pager', columns: orderColumns, sort: { item: 'Placed (UTC)', direction: 'Desc' } }),
   deals: createLocalGrid({
     containerId: 'deals',
     pagerId: 'deals-pager',
     sort: { item: 'Time (UTC)', direction: 'Desc' },
-    columns: [
-      column('deal', 'Deal'),
-      utcColumn('time', 'Time'),
-      labelColumn('action', 'Action'),
-      labelColumn('entry', 'Entry'),
-      column('symbol', 'Symbol'),
-      column('volume', 'Volume', lots),
-      priceColumn('price', 'Price'),
-      ...stopColumns(),
-      amountColumn('profit', 'Profit'),
-      amountColumn('commission', 'Commission'),
-      amountColumn('swap', 'Swap'),
-      column('positionId', 'Position', value => value || '—'),
-      column('order', 'Order'),
-      sourceColumn('reason', 'Source'),
-      column('comment', 'Comment'),
-    ],
+    columns: dealColumns,
   }),
   changes: createLocalGrid({
     containerId: 'changes',
@@ -188,10 +192,91 @@ function showTab(tab) {
 
 const panelPath = suffix => `mt5/account-data${suffix}?login=${encodeURIComponent(currentLogin)}`;
 
+const isArchived = () => overview?.source === 'Archive';
+
 // MetaTrader keeps no history for an archived account, so its tabs are read from the service's backup.
-const historyRows = (suffix, backupAction) => overview?.source === 'Archive'
+const historyRows = (suffix, backupAction) => isArchived()
   ? apiGet(`account-data/${backupAction}`, { login: currentLogin })
   : panelRequest('GET', panelPath(suffix));
+
+// One of an archived account's backup reports: the service sorts, filters and pages it, and writes the whole report
+// when it is exported. Column keys are the report's fields, so their sort and filter keys are the same names.
+function createBackupGrid({ containerId, pagerId, columns, kind, sort }) {
+  const container = document.getElementById(containerId);
+  const pagerContainer = document.getElementById(pagerId);
+  const keyed = columns.map(column => column.sortable === false
+    ? column
+    : { ...column, sortKey: column.key.charAt(0).toUpperCase() + column.key.slice(1) });
+  let login = null;
+  let sortState = { ...sort };
+  let filters = {};
+  let paging = { currentPage: 1, pageSize: LOCAL_PAGE_SIZE };
+
+  const params = () => ({
+    login,
+    sortItem: sortState.item,
+    sortDirection: sortState.direction,
+    ...columnFilterParams(filters),
+  });
+  const reload = () => withLoading(form, message, load);
+
+  async function load() {
+    const report = await apiGet(`account-data/get-${kind}`, { ...params(), ...paging });
+    const shown = pagingOf(report.paging);
+    renderTable(container, keyed, report.items, null, {
+      sort: {
+        item: sortState.item,
+        direction: sortState.direction,
+        onChange: (item, direction) => {
+          sortState = { item, direction };
+          paging = { ...paging, currentPage: 1 };
+          return reload();
+        },
+      },
+      filter: {
+        values: filters,
+        onChange: values => {
+          filters = values;
+          paging = { ...paging, currentPage: 1 };
+          return reload();
+        },
+      },
+      export: {
+        name: containerId,
+        all: {
+          total: shown?.totalRecords ?? report.items.length,
+          download: format => saveExport(`account-data/export-${kind}`, { ...params(), format }),
+        },
+      },
+    });
+    renderPager(pagerContainer, shown, (currentPage, pageSize) => {
+      paging = { currentPage, pageSize };
+      return reload();
+    });
+  }
+
+  return {
+    open(account) {
+      login = account;
+      sortState = { ...sort };
+      filters = {};
+      paging = { currentPage: 1, pageSize: paging.pageSize };
+      return load();
+    },
+  };
+}
+
+const backupGrids = {
+  positions: createBackupGrid({ containerId: 'positions', pagerId: 'positions-pager', columns: positionHistoryColumns, kind: 'positions', sort: { item: 'OpenedAt', direction: 'Desc' } }),
+  orders: createBackupGrid({ containerId: 'orders', pagerId: 'orders-pager', columns: orderColumns, kind: 'orders', sort: { item: 'SetupAt', direction: 'Desc' } }),
+  deals: createBackupGrid({ containerId: 'deals', pagerId: 'deals-pager', columns: dealColumns, kind: 'deals', sort: { item: 'Time', direction: 'Desc' } }),
+};
+
+// The position, order and deal histories: the panel's MetaTrader lists, or the backup report of an archived account.
+async function loadHistory(kind, suffix) {
+  if (isArchived()) await backupGrids[kind].open(currentLogin);
+  else grids[kind].setRows(await panelRequest('GET', panelPath(suffix)));
+}
 
 const TAB_LOADERS = {
   async open() {
@@ -211,16 +296,16 @@ const TAB_LOADERS = {
     ]);
   },
   async positions() {
-    grids.positions.setRows(await historyRows('/positions', 'get-positions'));
+    await loadHistory('positions', '/positions');
   },
   async orders() {
-    grids.orders.setRows(await historyRows('/orders', 'get-orders'));
+    await loadHistory('orders', '/orders');
   },
   async changes() {
     grids.changes.setRows(await panelRequest('GET', `mt5/account-changes?login=${encodeURIComponent(currentLogin)}`));
   },
   async deals() {
-    grids.deals.setRows(await historyRows('/deals', 'get-deals'));
+    await loadHistory('deals', '/deals');
   },
 };
 
