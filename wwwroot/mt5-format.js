@@ -29,6 +29,10 @@ const duration = seconds => {
 };
 
 const column = (key, title, format) => ({ key, title, format });
+
+// A position-history row that is a trade; the others are deposits, withdrawals and other balance operations.
+const isTrade = row => /(^|_)(BUY|SELL)$/.test(String(row.direction ?? ''));
+const tradeOnly = format => (value, row) => isTrade(row) ? format(value, row) : '—';
 const labelColumn = (key, title) => column(key, title, label);
 const priceColumn = (key, title) => column(key, title, price);
 const amountColumn = (key, title) => column(key, title, amount);

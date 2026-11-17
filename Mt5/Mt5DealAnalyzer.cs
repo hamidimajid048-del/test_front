@@ -42,13 +42,41 @@ public static class Mt5DealAnalyzer
     public static double? GrowthPercent(double balance, double? startBalance) =>
         startBalance is { } start ? Math.Round((balance - start) / start * 100, 2) : null;
 
-    public static IReadOnlyList<Mt5PositionHistoryDto> PositionHistory(IEnumerable<Mt5DealDto> deals) =>
-    [.. deals
-        .Where(deal => deal.PositionId != 0 && deal.Action is CIMTDeal.EnDealAction.DEAL_BUY or CIMTDeal.EnDealAction.DEAL_SELL)
-        .GroupBy(deal => deal.PositionId)
-        .Select(Position)
-        .OrderByDescending(position => position.OpenedAt)
-        .ThenByDescending(position => position.PositionId)];
+    public static IReadOnlyList<Mt5PositionHistoryDto> PositionHistory(IEnumerable<Mt5DealDto> deals)
+    {
+        List<Mt5DealDto> all = [.. deals];
+        return [.. all
+            .Where(deal => deal.PositionId != 0 && deal.Action is CIMTDeal.EnDealAction.DEAL_BUY or CIMTDeal.EnDealAction.DEAL_SELL)
+            .GroupBy(deal => deal.PositionId)
+            .Select(Position)
+            .Concat(all.Where(deal => IsTransfer(deal.Action)).Select(Transfer))
+            .OrderByDescending(position => position.OpenedAt)
+            .ThenByDescending(position => position.PositionId)];
+    }
+
+    private static Mt5PositionHistoryDto Transfer(Mt5DealDto deal) => new(
+        deal.Login,
+        deal.Deal,
+        deal.Symbol,
+        deal.Action,
+        0,
+        deal.Time,
+        0,
+        deal.Time,
+        null,
+        0,
+        0,
+        deal.Profit,
+        deal.Commission,
+        deal.Swap,
+        deal.Fee,
+        Result(deal),
+        false,
+        null,
+        deal.Reason,
+        deal.Reason,
+        deal.Comment,
+        null);
 
     private static Mt5PositionHistoryDto Position(IGrouping<ulong, Mt5DealDto> group)
     {
@@ -56,13 +84,10 @@ public static class Mt5DealAnalyzer
         var ins = all.Where(deal => deal.Entry == CIMTDeal.EnEntryFlag.ENTRY_IN).ToList();
         var outs = all.Where(deal => deal.Entry != CIMTDeal.EnEntryFlag.ENTRY_IN).ToList();
         var opening = ins.Count > 0 ? ins : all;
-        var direction = opening[0].Action == CIMTDeal.EnDealAction.DEAL_BUY
-            ? CIMTPosition.EnPositionAction.POSITION_BUY
-            : CIMTPosition.EnPositionAction.POSITION_SELL;
-        if (ins.Count == 0)
-            direction = direction == CIMTPosition.EnPositionAction.POSITION_BUY
-                ? CIMTPosition.EnPositionAction.POSITION_SELL
-                : CIMTPosition.EnPositionAction.POSITION_BUY;
+        var firstIsBuy = opening[0].Action == CIMTDeal.EnDealAction.DEAL_BUY;
+        var direction = ins.Count > 0
+            ? firstIsBuy ? CIMTDeal.EnDealAction.DEAL_BUY : CIMTDeal.EnDealAction.DEAL_SELL
+            : firstIsBuy ? CIMTDeal.EnDealAction.DEAL_SELL : CIMTDeal.EnDealAction.DEAL_BUY;
 
         var openedVolume = ins.Sum(deal => deal.Volume);
         var closedVolume = outs.Sum(deal => deal.Volume);

@@ -4,7 +4,7 @@ public sealed record Mt5PositionHistoryDto(
     ulong Login,
     ulong PositionId,
     string Symbol,
-    CIMTPosition.EnPositionAction Direction,
+    CIMTDeal.EnDealAction Direction,
     double Volume,
     DateTime OpenedAt,
     double OpenPrice,

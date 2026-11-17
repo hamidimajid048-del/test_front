@@ -105,7 +105,7 @@ public sealed class Mt5TradeReportReader(Mt5ConnectionService mt5, TimeProvider 
             .Where(deal => deal.PositionId != 0 && deal.Entry == CIMTDeal.EnEntryFlag.ENTRY_IN)
             .Select(deal => deal.PositionId)
             .ToHashSet();
-        List<Mt5DealDto> deals = [.. inRange.Where(deal => opened.Contains(deal.PositionId))];
+        List<Mt5DealDto> deals = [.. inRange.Where(deal => opened.Contains(deal.PositionId) || Mt5DealAnalyzer.IsTransfer(deal.Action))];
         var positions = Mt5DealAnalyzer.PositionHistory(deals);
 
         var unfinished = positions.Where(position => position.IsOpen).ToList();
