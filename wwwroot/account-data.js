@@ -542,6 +542,23 @@ function clearResults() {
   document.getElementById('open-orders-title').textContent = 'Active orders';
 }
 
+// MetaTrader keeps no deals for an archived account, so the deal figures and the growth chart come from the service's backup.
+async function archivedDealFigures(login) {
+  try {
+    const backup = await apiGet('account-data/get-overview', { login });
+    return {
+      netProfit: backup.netProfit,
+      totalDeposits: backup.totalDeposits,
+      totalWithdrawals: backup.totalWithdrawals,
+      dealCount: backup.dealCount,
+      chart: backup.chart,
+    };
+  } catch (error) {
+    if (!(error instanceof ApiError)) console.error('[panel] backup overview request failed', error);
+    return {};
+  }
+}
+
 async function search(login) {
   const current = ++request;
   clearResults();
@@ -556,6 +573,7 @@ async function search(login) {
     panelRequest('GET', `mt5/account-switches?login=${encodeURIComponent(login)}`).catch(() => []),
     panelRequest('GET', `mt5/account-status?login=${encodeURIComponent(login)}`).catch(() => null),
   ]);
+  if (data.source === 'Archive') Object.assign(data, await archivedDealFigures(login));
   if (current !== request) return;
   overview = data;
   renderOverview(data, switches, status);
