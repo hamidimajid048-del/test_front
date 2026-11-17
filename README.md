@@ -48,10 +48,9 @@ after its table has loaded and fills the Name, Group, Email and Balance columns.
 reports do not: the service returns those columns (from `mt5_backup.mt5_users`) and sorts, filters and exports them, and
 applies **Different email only** on the similarity summary (`differentEmailOnly=true`).
 
-`GET /panel-api/mt5/logins-by-email?email=` returns `{ accounts, archiveAvailable }`: every account whose email equals
-the given one (case-insensitive), active ones from the Manager (`UserRequestArray`) and deleted ones from the
-Administrator archive (`UserArchiveRequestArray`), each with name, group and balance. `archiveAvailable` is `false` when
-the archive could not be read. `GET /panel-api/mt5/account-data?login=` and its sub-paths `/open`, `/transfers`, `/positions`, `/orders` and `/deals` read
+The Email logins and Compare emails pages find the logins of an email with the service's
+`meta-trader-accounts/get-logins-by-email?email=` (the users table of the MetaTrader backup, case-insensitive), each
+with its status (active or deleted), name, group and balance. `GET /panel-api/mt5/account-data?login=` and its sub-paths `/open`, `/transfers`, `/positions`, `/orders` and `/deals` read
 one account from the Manager connection (404 when the login is unknown, 503 like the others). The overview has the
 active and trade-enabled flags (from the user rights), the start balance, balance, equity, net profit, growth and the
 balance curve; `/open` has the open positions and active orders; `/transfers` the balance, credit, charge, correction and

@@ -1,4 +1,4 @@
-// Compare emails page: the logins of two emails (MetaTrader Manager and archive) are compared by the service through
+// Compare emails page: the logins of two emails (the users table of the service's MetaTrader backup) are compared by the service through
 // their IP and CID mappings. The summary rates the evidence and lists the linked login pairs and the shared IPs and
 // CIDs; the details list every session that used a shared value. Sorting, filters and paging are done by the service.
 
@@ -240,25 +240,25 @@ async function search(values) {
 
   message.textContent = 'Finding the logins of both emails...';
   const [main, other] = await Promise.all([values.email, values.otherEmail].map(email =>
-    panelRequest('GET', `mt5/logins-by-email?email=${encodeURIComponent(email)}`)));
+    apiGet('meta-trader-accounts/get-logins-by-email', { email })));
   if (current !== request) return;
   emails = { main: values.email, other: values.otherEmail };
   sideOf = new Map([
-    ...main.accounts.map(account => [account.login, 'main']),
-    ...other.accounts.map(account => [account.login, 'other']),
+    ...main.map(account => [account.login, 'main']),
+    ...other.map(account => [account.login, 'other']),
   ]);
   writeState(values);
   showRelatedPages({ email: values.email }, { email: values.otherEmail });
 
-  showAccounts('main', values.email, main.accounts);
-  showAccounts('other', values.otherEmail, other.accounts);
+  showAccounts('main', values.email, main);
+  showAccounts('other', values.otherEmail, other);
   for (const [email, found] of [[values.email, main], [values.otherEmail, other]]) {
-    if (!found.accounts.length) throw new ApiError(`No login was found for ${email}.`);
-    if (found.accounts.length > MAX_LOGINS)
-      throw new ApiError(`${email} has ${found.accounts.length} logins; the comparison takes at most ${MAX_LOGINS} per email.`);
+    if (!found.length) throw new ApiError(`No login was found for ${email}.`);
+    if (found.length > MAX_LOGINS)
+      throw new ApiError(`${email} has ${found.length} logins; the comparison takes at most ${MAX_LOGINS} per email.`);
   }
-  const mainLogins = new Set(main.accounts.map(account => account.login));
-  if (other.accounts.some(account => mainLogins.has(account.login)))
+  const mainLogins = new Set(main.map(account => account.login));
+  if (other.some(account => mainLogins.has(account.login)))
     throw new ApiError('A login belongs to both emails, so they cannot be compared.');
 
   message.textContent = 'Comparing...';

@@ -16,7 +16,7 @@ public static class PanelApiRules
         ["position-compare-reports"] = [PanelPermissions.CopyTradeView],
         ["transaction-reports"] = [PanelPermissions.AccountDataView],
         ["account-data"] = [PanelPermissions.AccountDataView],
-        ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView]
+        ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView, PanelPermissions.CompareEmailsView]
     };
 
     public static bool IsAllowed(PathString path, ClaimsPrincipal user)

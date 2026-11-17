@@ -17,12 +17,6 @@ public sealed class Mt5AccountReader(
             ?? new Mt5AccountDto(login, Mt5AccountSourceEnum.NotFound, null, null, null, null))];
     }
 
-    public async Task<Mt5EmailSearchDto> FindByEmailAsync(string email, CancellationToken cancellationToken)
-    {
-        var found = await QueryAsync($"{Select} WHERE lower(email) = lower($1) ORDER BY login", email, cancellationToken);
-        return new Mt5EmailSearchDto(found);
-    }
-
     private async Task<IReadOnlyList<Mt5AccountDto>> QueryAsync(string sql, object parameter, CancellationToken cancellationToken)
     {
         try

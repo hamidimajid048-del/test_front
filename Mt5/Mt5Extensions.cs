@@ -5,7 +5,6 @@ public static class Mt5Extensions
     public const int MaxAccountLogins = 500;
     public const string UsersDataSourceKey = "mt5-users";
     private const string UsersConnectionStringName = "Mt5Users";
-    private const int MaxEmailLength = 320;
     private const int MaxChangeEntries = 500;
 
     public static void AddMt5UserDirectory(this WebApplicationBuilder builder)
@@ -43,8 +42,6 @@ public static class Mt5Extensions
         if (app.Services.GetService<Mt5AccountReader>() is not null)
         {
             mt5.MapGet("/accounts", ReadAccounts).RequirePermission(PanelPermissions.AllReportViews);
-            mt5.MapGet("/logins-by-email", FindLoginsByEmail)
-                .RequirePermission(PanelPermissions.EmailLoginsView, PanelPermissions.CompareEmailsView);
         }
 
         if (app.Services.GetService<Mt5ConnectionService>() is null)
@@ -79,22 +76,6 @@ public static class Mt5Extensions
         try
         {
             return Results.Ok(await reader.ReadAsync([.. parsed.Select(login => login!.Value).Distinct()], cancellationToken));
-        }
-        catch (Mt5UnavailableException exception)
-        {
-            return Error(StatusCodes.Status503ServiceUnavailable, exception.Message);
-        }
-    }
-
-    private static async Task<IResult> FindLoginsByEmail(string? email, Mt5AccountReader reader, CancellationToken cancellationToken)
-    {
-        var trimmed = (email ?? string.Empty).Trim();
-        if (trimmed.Length is 0 or > MaxEmailLength || !trimmed.Contains('@'))
-            return Error(StatusCodes.Status400BadRequest, "Enter a valid email address.");
-
-        try
-        {
-            return Results.Ok(await reader.FindByEmailAsync(trimmed, cancellationToken));
         }
         catch (Mt5UnavailableException exception)
         {
