@@ -938,6 +938,8 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         const td = tr.insertCell();
         if (compact[position]) td.classList.add('compact-col');
         if (numeric[position]) td.classList.add('num');
+        const cellClass = column.cellClass?.(row);
+        if (cellClass) td.classList.add(cellClass);
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';

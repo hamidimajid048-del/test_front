@@ -61,6 +61,11 @@ Net profit is profit + commission + swap + fee of all deals that are not deposit
 **Account data** page (`account-data.html`) shows them in six tabs, each read when first opened, with a growth chart in
 money or percent.
 
+Open positions, orders, position history and deals (also on Trade history and Position details) show the SL and TP
+prices; a position's are those of its last deal, and its **Close comment** is the comment of its last closing deal. The SL
+cell is red when the stop loss closed the row and the TP cell green when the take profit did: the comment (the closing
+comment for positions) holds `sl` / `tp` (for example `[sl 1.0850]`) or the reason is SL / TP.
+
 The Overview tab has three **switches** (green = enabled, red = disabled) that show the current state and change it
 through `POST /panel-api/mt5/account-switch` (`{ login, switch, enabled }`), each with its own permission:
 

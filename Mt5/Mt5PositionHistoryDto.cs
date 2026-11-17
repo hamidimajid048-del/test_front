@@ -10,6 +10,8 @@ public sealed record Mt5PositionHistoryDto(
     double OpenPrice,
     DateTime? ClosedAt,
     double? ClosePrice,
+    double PriceSl,
+    double PriceTp,
     double Profit,
     double Commission,
     double Swap,
@@ -18,4 +20,5 @@ public sealed record Mt5PositionHistoryDto(
     bool IsOpen,
     double? DurationSeconds,
     CIMTDeal.EnDealReason Reason,
-    string Comment);
+    string Comment,
+    string? CloseComment);

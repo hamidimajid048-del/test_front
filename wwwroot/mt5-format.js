@@ -32,3 +32,12 @@ const column = (key, title, format) => ({ key, title, format });
 const labelColumn = (key, title) => column(key, title, label);
 const priceColumn = (key, title) => column(key, title, price);
 const amountColumn = (key, title) => column(key, title, amount);
+
+// SL and TP columns; the cell is red when the stop loss closed the row and green when the take profit did, read from
+// the comment ("[sl 1.0850]") or the reason. Positions pass their closing comment.
+const closedBy = (row, pattern, reason, commentKey) =>
+  pattern.test(row[commentKey] ?? '') || String(row.reason ?? '').endsWith(reason);
+const stopColumns = (commentKey = 'comment', sorted = false) => [
+  { ...priceColumn('priceSl', 'SL'), ...(sorted ? { sortKey: 'PriceSl' } : {}), cellClass: row => closedBy(row, /\bsl\b/i, '_REASON_SL', commentKey) ? 'hit-sl' : '' },
+  { ...priceColumn('priceTp', 'TP'), ...(sorted ? { sortKey: 'PriceTp' } : {}), cellClass: row => closedBy(row, /\btp\b/i, '_REASON_TP', commentKey) ? 'hit-tp' : '' },
+];

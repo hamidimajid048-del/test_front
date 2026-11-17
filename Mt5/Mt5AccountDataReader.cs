@@ -183,6 +183,8 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
         deal.Symbol(),
         deal.VolumeExt() / VolumeScale,
         deal.Price(),
+        deal.PriceSL(),
+        deal.PriceTP(),
         deal.Profit(),
         deal.Commission(),
         deal.Storage(),

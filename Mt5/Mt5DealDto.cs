@@ -9,6 +9,8 @@ public sealed record Mt5DealDto(
     string Symbol,
     double Volume,
     double Price,
+    double PriceSl,
+    double PriceTp,
     double Profit,
     double Commission,
     double Swap,

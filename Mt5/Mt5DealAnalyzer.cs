@@ -79,6 +79,8 @@ public static class Mt5DealAnalyzer
             WeightedPrice(ins),
             closedAt,
             outs.Count == 0 ? null : WeightedPrice(outs),
+            all[^1].PriceSl,
+            all[^1].PriceTp,
             all.Sum(deal => deal.Profit),
             all.Sum(deal => deal.Commission),
             all.Sum(deal => deal.Swap),
@@ -87,7 +89,8 @@ public static class Mt5DealAnalyzer
             isOpen,
             closedAt is { } closed ? Math.Round((closed - opening[0].Time).TotalSeconds, 3) : null,
             all[^1].Reason,
-            opening[0].Comment);
+            opening[0].Comment,
+            outs.Count == 0 ? null : outs[^1].Comment);
     }
 
     private static double WeightedPrice(IReadOnlyList<Mt5DealDto> deals)
