@@ -5,7 +5,7 @@
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const MAX_LOGINS = 100;
-const SOURCE_LABELS = { Manager: 'Active', Archive: 'Deleted' };
+const SOURCE_LABELS = { Manager: 'Active', Archive: 'Archived' };
 
 const rangeControls = initRangeControls(form);
 
@@ -21,7 +21,7 @@ const inNewTab = link => {
 
 const loginTabLink = login => inNewTab(loginLink(login));
 
-const actionsColumn = { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false };
+const actionsColumn = { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false, noExport: true };
 
 const loginColumn = { key: 'login', title: 'Login', format: loginTabLink, sortKey: 'Login' };
 

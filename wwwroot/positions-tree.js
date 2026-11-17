@@ -403,10 +403,11 @@ function renderPositionsTree(container, kindKey, nodes, state) {
     parent.className = 'tree-parent clickable';
     parent.tabIndex = 0;
     const toggle = cell(parent, '', 'tree-toggle');
-    cell(parent, main.positionTicket);
+    makeCopyable(cell(parent, main.positionTicket), main.positionTicket);
     cell(parent, formatUtc(main.openTimeUtc));
     cell(parent, closedText(main));
-    cell(parent, main.symbol);
+    if (isCopyableValue(main.symbol)) makeCopyable(cell(parent, main.symbol), main.symbol);
+    else cell(parent, main.symbol);
     cell(parent, directionBadge(main.direction));
     cell(parent, main.volume);
     cell(parent, price(main.openPrice));
@@ -425,7 +426,7 @@ function renderPositionsTree(container, kindKey, nodes, state) {
       row.className = `tree-child clickable${child.isAssigned ? ' counted' : ''}`;
       row.tabIndex = 0;
       cell(row, '');
-      cell(row, related.positionTicket);
+      makeCopyable(cell(row, related.positionTicket), related.positionTicket);
       cell(row, formatUtc(related.openTimeUtc));
       cell(row, closedText(related));
       cell(row, inline(signedDuration(child.comparison.relatedMinusMainOpenSeconds), proximityBar(child.comparison.relatedMinusMainOpenSeconds, state.window)));

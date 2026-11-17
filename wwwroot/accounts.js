@@ -16,7 +16,7 @@ function createAccountDirectory(messageElement) {
     const value = account[field];
     if (value === null || value === undefined || value === '') return NO_VALUE;
     if (field === 'balance') return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return field === 'name' && account.source === 'Archive' ? `${value} (deleted)` : value;
+    return field === 'name' && account.source === 'Archive' ? `${value} (archived)` : value;
   }
 
   function cell(login, field) {

@@ -567,6 +567,15 @@ form.filters label.check input { width: auto; height: auto; }
   font-size: var(--font-size-sm);
   font-weight: 500;
 }
+.copyable { cursor: copy; }
+.copyable:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
+.row-menu { display: inline-block; }
+.row-menu-button { width: 34px; height: 28px; padding: 0; font-size: 18px; line-height: 1; color: var(--text-muted); background: transparent; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.row-menu-button:hover, .row-menu-button[aria-expanded="true"] { color: var(--text); border-color: var(--primary); background: var(--primary-soft); }
+.row-menu-list { position: fixed; z-index: 60; display: flex; flex-direction: column; min-width: 190px; overflow-y: auto; padding: var(--space-4); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+.row-menu-list[hidden], .row-menu-item[hidden] { display: none; }
+.row-menu-item { display: block; padding: var(--space-8) var(--space-12); color: var(--text); text-align: start; font-size: var(--font-size-sm); white-space: nowrap; text-decoration: none; border-radius: var(--radius-sm); }
+.row-menu-item:hover, .row-menu-item:focus-visible { color: var(--primary); background: var(--primary-soft); text-decoration: none; outline: none; }
 .action-link:hover { color: var(--primary); background: var(--primary-soft); border-color: transparent; text-decoration: none; }
 td.empty { padding: var(--space-32); text-align: center; color: var(--text-faint); }
 

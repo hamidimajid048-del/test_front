@@ -88,9 +88,9 @@ function clearRelatedPages() {
   document.getElementById('related-pages').replaceChildren();
 }
 
-// The same login links for a row's "Actions" cell, opened in a new browser tab.
+// The same login links for a row's "Actions" cell, in a "⋯" menu, opened in a new browser tab.
 function relatedLoginActions(login) {
-  return inline(...RELATED_LOGIN_PAGES.map(page => {
+  return rowMenu(`Open login ${login} in`, RELATED_LOGIN_PAGES.map(page => {
     const link = relatedLink(page, login);
     link.target = '_blank';
     link.rel = 'noopener';

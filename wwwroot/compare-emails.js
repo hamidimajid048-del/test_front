@@ -6,7 +6,7 @@ const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const MAX_LOGINS = 100;
 const MAX_LISTED_LOGINS = 6;
-const SOURCE_LABELS = { Manager: 'Active', Archive: 'Deleted' };
+const SOURCE_LABELS = { Manager: 'Active', Archive: 'Archived' };
 
 const EVIDENCE = {
   Strong: { kind: 'danger', text: 'A valid shared CID, or 3 or more shared IPs that are not VPN, proxy, Tor or datacenter.' },
@@ -48,7 +48,7 @@ const accountColumns = [
       ? '—'
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
-  { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false },
+  { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false, noExport: true },
 ];
 
 const sideColumns = () => [

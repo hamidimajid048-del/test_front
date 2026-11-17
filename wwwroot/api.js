@@ -677,15 +677,56 @@ function seenColumn(firstKey, lastKey, title, options = {}) {
 }
 
 // Renders "label: value" pairs, e.g. a report's metadata above its table.
+// The values people take to other pages and tools (logins, emails, CIDs, IPs, position, deal and order numbers, symbols):
+// a click on one in a table cell or a summary copies it. Action columns (not sortable) reuse these keys and are left out.
+const COPY_KEYS = new Set([
+  'login', 'relatedLogin', 'otherLogin', 'email', 'cid', 'sharedCid', 'otherCid', 'computerId',
+  'ip', 'sharedIp', 'otherIp', 'ipAddress', 'positionId', 'position', 'deal', 'order', 'symbol',
+]);
+const COPY_LABELS = /^(Account|Login|Email|IP|CID|Computer ID|Position|Deal|Order|Symbol)( [AB])?$/;
+
+const isCopyableValue = value => (typeof value === 'string' && value.trim() !== '' && value !== '—') || (typeof value === 'number' && value !== 0);
+
+async function copyValue(value) {
+  const text = String(value);
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.append(area);
+      area.select();
+      const copied = document.execCommand('copy');
+      area.remove();
+      if (!copied) throw new Error('copy refused');
+    }
+    toast('Copied', 'success', text);
+  } catch {
+    toast('Copying is not available here', 'error', 'Select the text and copy it.');
+  }
+}
+
+function makeCopyable(element, value) {
+  element.classList.add('copyable');
+  element.title = 'Click to copy';
+  element.addEventListener('click', () => copyValue(value));
+}
+
 function renderSummary(container, items) {
   container.replaceChildren(...items.map(([label, value]) => {
     const item = document.createElement('span');
+    const copy = COPY_LABELS.test(label);
     if (value instanceof Node) {
+      if (copy && isCopyableValue(value.textContent)) makeCopyable(value, value.textContent);
       item.append(`${label}: `, value);
       return item;
     }
     const strong = document.createElement('strong');
     strong.textContent = value ?? '—';
+    if (copy && isCopyableValue(value)) makeCopyable(strong, value);
     item.append(`${label}: `, strong);
     return item;
   }));
@@ -701,6 +742,82 @@ function loginLink(login) {
 }
 
 // A button-like link for a row's "Actions" cell; the click does not also trigger the row's own click handler.
+// A "⋯" button that opens a menu of a table row's links. The menu is fixed to the window, so the table's scroll box does
+// not cut it off; it opens below the button, or above when there is more room there (scrolling when neither side holds
+// it), and closes on a pick, a click elsewhere, Escape or scrolling.
+let openRowMenu = null;
+
+function rowMenu(label, links) {
+  const wrap = document.createElement('span');
+  wrap.className = 'row-menu';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'row-menu-button';
+  button.textContent = '⋯';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.setAttribute('aria-haspopup', 'menu');
+  button.setAttribute('aria-expanded', 'false');
+  const menu = document.createElement('div');
+  menu.className = 'row-menu-list';
+  menu.setAttribute('role', 'menu');
+  menu.hidden = true;
+  for (const link of links) {
+    link.className = 'row-menu-item';
+    link.setAttribute('role', 'menuitem');
+    menu.append(link);
+  }
+
+  const onPointerDown = event => { if (!wrap.contains(event.target)) close(); };
+  const onKeyDown = event => {
+    if (event.key !== 'Escape') return;
+    close();
+    button.focus();
+  };
+  function close() {
+    if (menu.hidden) return;
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', onPointerDown, true);
+    document.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('scroll', close, true);
+    window.removeEventListener('resize', close);
+    if (openRowMenu === close) openRowMenu = null;
+  }
+  function open() {
+    openRowMenu?.();
+    menu.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+    menu.style.maxHeight = '';
+    const box = button.getBoundingClientRect();
+    const roomBelow = window.innerHeight - box.bottom - 12;
+    const roomAbove = box.top - 12;
+    const below = menu.offsetHeight <= roomBelow || roomBelow >= roomAbove;
+    const height = Math.min(menu.offsetHeight, below ? roomBelow : roomAbove);
+    menu.style.maxHeight = `${height}px`;
+    menu.style.top = `${below ? box.bottom + 4 : box.top - 4 - height}px`;
+    menu.style.left = `${Math.max(8, Math.min(box.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8))}px`;
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    openRowMenu = close;
+    menu.querySelector('a:not([hidden])')?.focus();
+  }
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    if (menu.hidden) open();
+    else close();
+  });
+  menu.addEventListener('click', event => {
+    event.stopPropagation();
+    if (event.target.closest('a')) close();
+  });
+  wrap.append(button, menu);
+  return wrap;
+}
+
 function actionLink(text, href) {
   const link = document.createElement('a');
   link.className = 'action-link';
@@ -949,6 +1066,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';
+        if (COPY_KEYS.has(column.key) && column.sortable !== false && isCopyableValue(row[column.key])) makeCopyable(td, row[column.key]);
       });
     }
     const filtered = serverFilter ? serverFiltered() : state.filters.some(query => query.trim());

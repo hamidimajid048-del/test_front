@@ -6,7 +6,7 @@ const NO_ACCOUNT_VALUE = '—';
 function accountName(name, row) {
   if (row.isDeleted == null) return 'Not found';
   if (!name) return NO_ACCOUNT_VALUE;
-  return row.isDeleted ? `${name} (deleted)` : name;
+  return row.isDeleted ? `${name} (archived)` : name;
 }
 
 function accountBalance(value) {
