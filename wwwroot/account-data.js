@@ -129,6 +129,14 @@ const dealColumns = [
   column('comment', 'Comment'),
 ];
 
+const transferColumns = [
+  column('deal', 'Deal'),
+  utcColumn('time', 'Time'),
+  labelColumn('action', 'Type'),
+  amountColumn('profit', 'Amount'),
+  column('comment', 'Comment'),
+];
+
 const grids = {
   positions: createLocalGrid({
     containerId: 'positions',
@@ -156,18 +164,7 @@ const grids = {
       column('ipAddress', 'IP'),
     ],
   }),
-  transfers: createLocalGrid({
-    containerId: 'transfers',
-    pagerId: 'transfers-pager',
-    sort: { item: 'Time (UTC)', direction: 'Desc' },
-    columns: [
-      column('deal', 'Deal'),
-      utcColumn('time', 'Time'),
-      labelColumn('action', 'Type'),
-      amountColumn('profit', 'Amount'),
-      column('comment', 'Comment'),
-    ],
-  }),
+  transfers: createLocalGrid({ containerId: 'transfers', pagerId: 'transfers-pager', columns: transferColumns, sort: { item: 'Time (UTC)', direction: 'Desc' } }),
   openPositions: createLocalGrid({
     containerId: 'open-positions',
     pagerId: 'open-positions-pager',
@@ -194,13 +191,9 @@ const panelPath = suffix => `mt5/account-data${suffix}?login=${encodeURIComponen
 
 const isArchived = () => overview?.source === 'Archive';
 
-// MetaTrader keeps no history for an archived account, so its tabs are read from the service's backup.
-const historyRows = (suffix, backupAction) => isArchived()
-  ? apiGet(`account-data/${backupAction}`, { login: currentLogin })
-  : panelRequest('GET', panelPath(suffix));
-
 // One of an archived account's backup reports: the service sorts, filters and pages it, and writes the whole report
-// when it is exported. Column keys are the report's fields, so their sort and filter keys are the same names.
+// when it is exported. Column keys are the report's fields, so their sort and filter keys are the same names. open()
+// gives the number of rows.
 function createBackupGrid({ containerId, pagerId, columns, kind, sort }) {
   const container = document.getElementById(containerId);
   const pagerContainer = document.getElementById(pagerId);
@@ -253,6 +246,7 @@ function createBackupGrid({ containerId, pagerId, columns, kind, sort }) {
       paging = { currentPage, pageSize };
       return reload();
     });
+    return shown?.totalRecords ?? report.items.length;
   }
 
   return {
@@ -267,15 +261,20 @@ function createBackupGrid({ containerId, pagerId, columns, kind, sort }) {
 }
 
 const backupGrids = {
+  transfers: createBackupGrid({ containerId: 'transfers', pagerId: 'transfers-pager', columns: transferColumns, kind: 'transfers', sort: { item: 'Time', direction: 'Desc' } }),
   positions: createBackupGrid({ containerId: 'positions', pagerId: 'positions-pager', columns: positionHistoryColumns, kind: 'positions', sort: { item: 'OpenedAt', direction: 'Desc' } }),
   orders: createBackupGrid({ containerId: 'orders', pagerId: 'orders-pager', columns: orderColumns, kind: 'orders', sort: { item: 'SetupAt', direction: 'Desc' } }),
   deals: createBackupGrid({ containerId: 'deals', pagerId: 'deals-pager', columns: dealColumns, kind: 'deals', sort: { item: 'Time', direction: 'Desc' } }),
 };
 
-// The position, order and deal histories: the panel's MetaTrader lists, or the backup report of an archived account.
+// The account's histories: the panel's MetaTrader lists, handled in the browser, or for an archived account (MetaTrader
+// keeps no history for it) the service's backup report, sorted, filtered, paged and exported by the service. Gives the
+// number of rows.
 async function loadHistory(kind, suffix) {
-  if (isArchived()) await backupGrids[kind].open(currentLogin);
-  else grids[kind].setRows(await panelRequest('GET', panelPath(suffix)));
+  if (isArchived()) return backupGrids[kind].open(currentLogin);
+  const rows = await panelRequest('GET', panelPath(suffix));
+  grids[kind].setRows(rows);
+  return rows.length;
 }
 
 const TAB_LOADERS = {
@@ -287,12 +286,11 @@ const TAB_LOADERS = {
     document.getElementById('open-orders-title').textContent = `Active orders (${open.orders.length})`;
   },
   async transfers() {
-    const transfers = await historyRows('/transfers', 'get-transfers');
-    grids.transfers.setRows(transfers);
+    const operations = await loadHistory('transfers', '/transfers');
     renderSummary(document.getElementById('transfer-totals'), [
       ['Deposits', money(overview?.totalDeposits)],
       ['Withdrawals', money(overview?.totalWithdrawals)],
-      ['Operations', transfers.length],
+      ['Operations', operations],
     ]);
   },
   async positions() {
