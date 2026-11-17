@@ -66,6 +66,7 @@ const positionColumns = [
   amountColumn('profit', 'Profit'),
   amountColumn('swap', 'Swap'),
   utcColumn('openedAt', 'Opened'),
+  sourceColumn('reason', 'Opened by'),
   column('comment', 'Comment'),
 ];
 
@@ -83,7 +84,7 @@ const orderColumns = [
   utcColumn('doneAt', 'Done'),
   utcColumn('expiresAt', 'Expires', true),
   column('positionId', 'Position', value => value || '—'),
-  labelColumn('reason', 'Reason'),
+  sourceColumn('reason', 'Placed by'),
   column('comment', 'Comment'),
 ];
 
@@ -97,6 +98,7 @@ const grids = {
       column('symbol', 'Symbol'),
       labelColumn('direction', 'Direction'),
       column('volume', 'Volume', lots),
+      sourceColumn('openReason', 'Opened by'),
       utcColumn('openedAt', 'Opened'),
       priceColumn('openPrice', 'Open price'),
       utcColumn('closedAt', 'Closed'),
@@ -108,7 +110,7 @@ const grids = {
       amountColumn('swap', 'Swap'),
       amountColumn('netProfit', 'Net profit'),
       column('isOpen', 'Status', isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted')),
-      labelColumn('reason', 'Reason'),
+      column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)),
       column('comment', 'Comment'),
       column('closeComment', 'Close comment'),
       { key: 'positionId', title: 'Actions', sortable: false, filterable: false, format: positionId => actionLink('Details', `/position-details.html?login=${encodeURIComponent(currentLogin)}&position=${encodeURIComponent(positionId)}`) },
@@ -133,7 +135,7 @@ const grids = {
       amountColumn('swap', 'Swap'),
       column('positionId', 'Position', value => value || '—'),
       column('order', 'Order'),
-      labelColumn('reason', 'Reason'),
+      sourceColumn('reason', 'Source'),
       column('comment', 'Comment'),
     ],
   }),

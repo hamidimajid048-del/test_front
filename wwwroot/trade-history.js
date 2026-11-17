@@ -40,6 +40,7 @@ const COLUMNS = {
     sorted(column('symbol', 'Symbol'), 'Symbol'),
     sorted(labelColumn('direction', 'Direction'), 'Direction'),
     sorted(column('volume', 'Volume', lots), 'Volume'),
+    sorted(sourceColumn('openReason', 'Opened by'), 'OpenReason'),
     sorted(utcColumn('openedAt', 'Opened'), 'OpenedAt'),
     sorted(priceColumn('openPrice', 'Open price'), 'OpenPrice'),
     sorted(utcColumn('closedAt', 'Closed'), 'ClosedAt'),
@@ -52,7 +53,7 @@ const COLUMNS = {
     sorted(amountColumn('fee', 'Fee'), 'Fee'),
     sorted(amountColumn('netProfit', 'Net profit'), 'NetProfit'),
     { ...sorted(column('isOpen', 'Status', isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted')), 'IsOpen'), filterable: false },
-    sorted(labelColumn('reason', 'Reason'), 'Reason'),
+    sorted(column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),
     sorted(column('closeComment', 'Close comment'), 'CloseComment'),
     {
@@ -75,7 +76,7 @@ const COLUMNS = {
     sorted(utcColumn('doneAt', 'Done'), 'DoneAt'),
     sorted(utcColumn('expiresAt', 'Expires', true), 'ExpiresAt'),
     sorted(column('positionId', 'Position', value => value || '—'), 'PositionId'),
-    sorted(labelColumn('reason', 'Reason'), 'Reason'),
+    sorted(sourceColumn('reason', 'Placed by'), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),
   ],
   deals: [
@@ -94,7 +95,7 @@ const COLUMNS = {
     sorted(amountColumn('fee', 'Fee'), 'Fee'),
     sorted(column('positionId', 'Position', value => value || '—'), 'PositionId'),
     sorted(column('order', 'Order'), 'Order'),
-    sorted(labelColumn('reason', 'Reason'), 'Reason'),
+    sorted(sourceColumn('reason', 'Source'), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),
   ],
 };

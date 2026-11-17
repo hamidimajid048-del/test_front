@@ -206,6 +206,7 @@ public sealed class Mt5AccountDataReader(Mt5ConnectionService mt5, TimeProvider 
         position.Profit(),
         position.Storage(),
         Mt5Reads.FromUnixMs(position.TimeCreateMsc()),
+        (CIMTPosition.EnPositionReason)position.Reason(),
         position.Comment());
 
     internal static Mt5OrderDto ToDto(CIMTOrder order) => new(

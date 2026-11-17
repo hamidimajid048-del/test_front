@@ -66,6 +66,11 @@ prices; a position's are those of its last deal, and its **Close comment** is th
 cell is red when the stop loss closed the row and the TP cell green when the take profit did: the comment (the closing
 comment for positions) holds `sl` / `tp` (for example `[sl 1.0850]`) or the reason is SL / TP.
 
+The same tables show where each row came from, read from the MetaTrader reason: **Opened by** for positions (the reason of
+the opening deal; open positions read their own), **Closed by** for closed positions (the reason of the last deal),
+**Placed by** for orders and **Source** for deals. The values are Client (desktop terminal), Mobile, Web (each with its
+icon), Expert, Dealer, Stop loss, Take profit, Stop out and the other server reasons.
+
 The Overview tab has three **switches** (green = enabled, red = disabled) that show the current state and change it
 through `POST /panel-api/mt5/account-switch` (`{ login, switch, enabled }`), each with its own permission:
 

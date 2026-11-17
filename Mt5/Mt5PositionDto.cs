@@ -12,4 +12,5 @@ public sealed record Mt5PositionDto(
     double Profit,
     double Swap,
     DateTime OpenedAt,
+    CIMTPosition.EnPositionReason Reason,
     string Comment);

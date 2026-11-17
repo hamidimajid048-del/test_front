@@ -33,6 +33,27 @@ const labelColumn = (key, title) => column(key, title, label);
 const priceColumn = (key, title) => column(key, title, price);
 const amountColumn = (key, title) => column(key, title, amount);
 
+// Who opened, placed or closed a deal, order or position (its MetaTrader reason). CLIENT and FIRST, and CORPORATE_ACTION
+// and LAST, are the same value, so either name can arrive.
+const SOURCE_LABELS = {
+  CLIENT: 'Client', FIRST: 'Client', MOBILE: 'Mobile', WEB: 'Web', EXPERT: 'Expert', DEALER: 'Dealer',
+  SL: 'Stop loss', TP: 'Take profit', SO: 'Stop out', EXTERNAL_CLIENT: 'External client', VMARGIN: 'Variation margin',
+  CORPORATE_ACTION: 'Corporate action', LAST: 'Corporate action', EXTERNAL_SERVICE: 'External service',
+};
+const SOURCE_PLATFORMS = { CLIENT: 'system', FIRST: 'system', MOBILE: 'mobile', WEB: 'web' };
+
+const source = value => {
+  const code = String(value ?? '').replace(/^(DEAL|ORDER|POSITION)_REASON_/, '');
+  if (!code) return '—';
+  const text = SOURCE_LABELS[code] ?? label(code);
+  if (!SOURCE_PLATFORMS[code] || typeof platformIcon !== 'function') return text;
+  const cell = document.createElement('span');
+  cell.className = 'platform-cell';
+  cell.append(platformIcon(SOURCE_PLATFORMS[code]), document.createTextNode(text));
+  return cell;
+};
+const sourceColumn = (key, title) => column(key, title, source);
+
 // SL and TP columns; the cell is red when the stop loss closed the row and green when the take profit did, read from
 // the comment ("[sl 1.0850]") or the reason. Positions pass their closing comment.
 const closedBy = (row, pattern, reason, commentKey) =>
