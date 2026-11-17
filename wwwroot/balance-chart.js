@@ -2,7 +2,7 @@
 // mode: 'amount' plots the balance, 'percent' its growth against the start balance.
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const CHART = { width: 900, height: 320, left: 64, right: 16, top: 16, bottom: 32, ticks: 5 };
+const CHART = { height: 320, left: 64, right: 16, top: 16, bottom: 32, ticks: 5 };
 
 function svgElement(name, attributes = {}, text) {
   const element = document.createElementNS(SVG_NS, name);
@@ -26,7 +26,19 @@ function niceScale(min, max) {
   return { low: Math.floor(min / step) * step, high: Math.ceil(max / step) * step, step };
 }
 
+const DEFAULT_CHART_WIDTH = 900;
+const drawnCharts = new WeakMap();
+const chartResizes = new ResizeObserver(entries => {
+  for (const { target } of entries) {
+    const drawn = drawnCharts.get(target);
+    if (drawn && target.clientWidth > 0 && target.clientWidth !== drawn.width) renderBalanceChart(target, drawn.points, drawn.mode);
+  }
+});
+
 function renderBalanceChart(container, points, mode) {
+  const width = container.clientWidth || DEFAULT_CHART_WIDTH;
+  if (!drawnCharts.has(container)) chartResizes.observe(container);
+  drawnCharts.set(container, { points, mode, width });
   const usable = mode === 'percent' ? points.filter(point => point.growthPercent !== null) : points;
   if (usable.length === 0) {
     const empty = document.createElement('p');
@@ -43,17 +55,17 @@ function renderBalanceChart(container, points, mode) {
   const times = usable.map(point => new Date(point.time).getTime());
   const [firstTime, lastTime] = [times[0], times[times.length - 1]];
   const scale = niceScale(Math.min(...usable.map(value)), Math.max(...usable.map(value)));
-  const innerWidth = CHART.width - CHART.left - CHART.right;
+  const innerWidth = width - CHART.left - CHART.right;
   const innerHeight = CHART.height - CHART.top - CHART.bottom;
   const x = index => CHART.left + (lastTime === firstTime ? innerWidth / 2 : (times[index] - firstTime) / (lastTime - firstTime) * innerWidth);
   const y = number => CHART.top + (scale.high - number) / (scale.high - scale.low) * innerHeight;
 
-  const svg = svgElement('svg', { viewBox: `0 0 ${CHART.width} ${CHART.height}`, class: 'balance-chart', role: 'img' });
+  const svg = svgElement('svg', { viewBox: `0 0 ${width} ${CHART.height}`, class: 'balance-chart', role: 'img' });
   const day = time => new Date(time).toISOString().slice(0, 10);
   svg.setAttribute('aria-label', `Balance ${mode === 'percent' ? 'growth' : 'chart'}: ${usable.length} points, from ${format(value(usable[0]))} on ${day(firstTime)} to ${format(value(usable.at(-1)))} on ${day(lastTime)}, lowest ${format(scale.low)}, highest ${format(scale.high)}`);
   for (let tick = scale.low; tick <= scale.high + scale.step / 2; tick += scale.step) {
     svg.append(
-      svgElement('line', { x1: CHART.left, x2: CHART.width - CHART.right, y1: y(tick), y2: y(tick), class: 'chart-grid' }),
+      svgElement('line', { x1: CHART.left, x2: width - CHART.right, y1: y(tick), y2: y(tick), class: 'chart-grid' }),
       svgElement('text', { x: CHART.left - 8, y: y(tick) + 4, class: 'chart-label', 'text-anchor': 'end' }, format(tick)));
   }
   for (let index = 0; index <= CHART.ticks; index++) {
@@ -63,7 +75,7 @@ function renderBalanceChart(container, points, mode) {
       'text-anchor': index === 0 ? 'start' : index === CHART.ticks ? 'end' : 'middle',
     }, new Date(time).toISOString().slice(0, 10)));
   }
-  if (scale.low < 0 && scale.high > 0) svg.append(svgElement('line', { x1: CHART.left, x2: CHART.width - CHART.right, y1: y(0), y2: y(0), class: 'chart-zero' }));
+  if (scale.low < 0 && scale.high > 0) svg.append(svgElement('line', { x1: CHART.left, x2: width - CHART.right, y1: y(0), y2: y(0), class: 'chart-zero' }));
 
   const path = usable.map((point, index) => `${index === 0 ? 'M' : 'L'}${x(index).toFixed(1)},${y(value(point)).toFixed(1)}`).join(' ');
   svg.append(svgElement('path', { d: path, class: 'chart-line' }));
@@ -75,7 +87,7 @@ function renderBalanceChart(container, points, mode) {
 
   svg.addEventListener('pointermove', event => {
     const box = svg.getBoundingClientRect();
-    const target = (event.clientX - box.left) / box.width * CHART.width;
+    const target = (event.clientX - box.left) / box.width * width;
     let nearest = 0;
     for (let index = 1; index < usable.length; index++)
       if (Math.abs(x(index) - target) < Math.abs(x(nearest) - target)) nearest = index;
@@ -85,7 +97,7 @@ function renderBalanceChart(container, points, mode) {
     cursor.setAttribute('x2', px);
     dot.setAttribute('cx', px);
     dot.setAttribute('cy', py);
-    tip.setAttribute('x', Math.min(Math.max(px, CHART.left + 90), CHART.width - CHART.right - 90));
+    tip.setAttribute('x', Math.min(Math.max(px, CHART.left + 90), width - CHART.right - 90));
     tip.setAttribute('y', Math.max(py - 10, CHART.top + 12));
     tip.setAttribute('text-anchor', 'middle');
     tip.textContent = `${formatUtc(point.time)}  ${format(value(point))}`;

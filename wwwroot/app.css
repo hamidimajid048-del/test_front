@@ -823,7 +823,7 @@ button[aria-pressed="true"] { font-weight: 600; color: var(--primary); backgroun
 .toggle button:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
 .toggle button:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-inline-start: -1px; }
 .toggle button[aria-pressed="true"] { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
-.balance-chart { width: 100%; height: auto; max-height: 360px; display: block; touch-action: pan-y; }
+.balance-chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
 .chart-grid { stroke: var(--border); stroke-width: 1; }
 .chart-zero { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 4 3; }
 .chart-label { fill: var(--text-muted); font-size: var(--font-size-2xs); }
