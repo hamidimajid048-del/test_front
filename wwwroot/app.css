@@ -593,7 +593,8 @@ th .sort-button:focus-visible { outline: 2px solid var(--primary); outline-offse
 th .sort-icon { font-size: var(--font-size-2xs); color: var(--text-faint); }
 th.sorted .sort-button, th.sorted .sort-icon { color: var(--primary); }
 thead tr.filter-row th { padding: var(--space-6) var(--space-8); background: var(--surface); }
-thead tr.filter-row input { width: 100%; min-width: 72px; height: var(--control-sm); font-size: var(--font-size-sm); font-weight: 400; }
+/* A filter box takes the width of its column and never widens it, so each column is as wide as its data. */
+thead tr.filter-row input { width: 0; min-width: 100%; height: var(--control-sm); font-size: var(--font-size-sm); font-weight: 400; }
 .grid-meta { display: flex; gap: var(--space-12); align-items: center; margin-top: var(--space-8); color: var(--text-muted); font-size: var(--font-size-sm); }
 .grid-meta:empty { display: none; }
 .grid-meta button { height: var(--control-xs); padding: 0 var(--space-10); font-size: var(--font-size-sm); }
@@ -988,7 +989,6 @@ form.filters .device-type-menu input[type="checkbox"] { width: auto; }
 
 th.compact-col, td.compact-col { width: 1%; }
 td .actions { flex-wrap: nowrap; justify-content: center; }
-thead tr.filter-row th.compact-col input { min-width: 52px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
