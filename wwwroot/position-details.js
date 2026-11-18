@@ -41,7 +41,7 @@ const grids = {
         help: 'Seconds since the record before it, in record order. The tracker keeps whole seconds, so this is to the second.',
         format: seconds => (seconds === null ? '—' : String(seconds)),
       },
-      codeColumn('actionText', 'Action', 'action'),
+      codeColumn('actionText', 'Action', 'action', (text, code) => actionLabel(text || '—', code?.name ?? '')),
       codeColumn('typeText', 'Type', 'type'),
       codeColumn('entryText', 'Entry', 'entry', (text, code) => entryLabel(text || '—', code?.name ?? '')),
       column('symbol', 'Symbol'),

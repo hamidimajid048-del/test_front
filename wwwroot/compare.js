@@ -125,7 +125,7 @@ const codeLabel = name => name ? sideLabel(label(name), name) : '—';
 const TRANSACTION_COLUMNS = [
   TIMELINE_COLUMNS[0],
   { ...utcColumn('time', 'Time', true), sortKey: 'Time' },
-  { key: 'action', title: 'Action', format: codeLabel, filterKey: 'Action' },
+  { key: 'action', title: 'Action', format: name => name ? actionLabel(label(name), name) : '—', filterKey: 'Action' },
   { key: 'type', title: 'Type', format: codeLabel, filterKey: 'Type' },
   { key: 'entry', title: 'Entry', format: name => name ? entryLabel(label(name), name) : '—', filterKey: 'Entry' },
   { key: 'symbol', title: 'Symbol', filterKey: 'Symbol' },

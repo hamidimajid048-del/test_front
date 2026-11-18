@@ -87,6 +87,7 @@ const ICON_PATHS = {
   stateExpired: '<path d="M7 3h10M7 21h10M8 3c0 4 8 5 8 9s-8 5-8 9M16 3c0 4-8 5-8 9s8 5 8 9"/>',
   statePlaced: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
   stateRequest: '<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/>',
+  bolt: '<path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/>',
   entryIn: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M3 12h11M10 8l4 4-4 4"/>',
   entryOut: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M9 12h11M16 8l4 4-4 4"/>',
   logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
@@ -497,6 +498,29 @@ function orderStateLabel(text, code) {
   const state = String(code ?? '').toUpperCase().replace(/[\s/]+/g, '_').replace(/^.*STATE_/, '');
   const kind = ORDER_STATES[state] ?? (state.startsWith('REQUEST') ? 'request' : '');
   return kind ? iconLabel(text, `state${kind[0].toUpperCase()}${kind.slice(1)}`, `state-${kind}`) : text;
+}
+
+// A trade request action of the transaction tracker (MetaTrader TA_ codes, matched by their words so any prefix or
+// spelling works) gets an icon and a colour; a buy or sell gets its arrow and an unknown action stays plain text.
+const TRADE_ACTIONS = [
+  [/STOP_?OUT/, 'alert', 'act-stopout'],
+  [/(^|_)SL$/, 'shield', 'act-sl'],
+  [/(^|_)TP$/, 'target', 'act-tp'],
+  [/SLTP|MODIFY/, 'pencil', 'act-modify'],
+  [/REMOVE|CANCEL|DELETE/, 'stateCanceled', 'act-remove'],
+  [/EXPIR/, 'stateExpired', 'act-expire'],
+  [/ACTIVATE/, 'bolt', 'act-activate'],
+  [/CLOSE/, 'entryOut', 'act-close'],
+  [/PENDING|PLACE/, 'statePlaced', 'act-pending'],
+  [/INSTANT|MARKET|EXCHANGE|REQUEST|PRICE|EXECUTE/, 'entryIn', 'act-market'],
+  [/BALANCE|CREDIT|CHARGE|CORRECTION|BONUS|COMMISSION|DEPOSIT|WITHDRAW/, 'wallet', 'act-balance'],
+];
+
+function actionLabel(text, code) {
+  const action = String(code ?? '').toUpperCase().replace(/[\s/-]+/g, '_');
+  if (/BUY|SELL/.test(action)) return sideLabel(text, action);
+  const match = TRADE_ACTIONS.find(([pattern]) => pattern.test(action));
+  return match ? iconLabel(text, match[1], match[2]) : text;
 }
 
 function iconLabel(text, iconName, tone) {
