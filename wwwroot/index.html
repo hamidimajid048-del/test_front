@@ -9,27 +9,25 @@
   <script src="/theme.js"></script>
   <script src="/i18n.js"></script>
 </head>
-<body>
+<body class="home">
   <nav class="menu" id="menu"></nav>
   <main>
-    <h1 class="page-title">Violation reports</h1>
+    <header class="home-header">
+      <div>
+        <h1 class="page-title">Violation reports</h1>
+        <p class="home-subtitle">Monitor and review violations across accounts, logins, and trading activities.</p>
+      </div>
+    </header>
     <div class="cards" id="cards"></div>
-    <span class="status" id="health">Checking service status...</span>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
   <script src="/platform-icons.js"></script>
   <script src="/table-views.js"></script>
   <script>
+    document.querySelector('.home-header').prepend(icon('chart', 'home-header-icon'));
     renderCards(document.getElementById('cards'));
     renderMenu();
-    const health = document.getElementById('health');
-    // The panel probes the service itself and answers { available } rather than the usual ResponseBase envelope.
-    fetch('/service-status')
-      .then(response => response.ok ? response.json() : Promise.reject())
-      .then(body => body.available ? Promise.resolve() : Promise.reject())
-      .then(() => { health.textContent = 'Violation service is available'; health.classList.add('ok'); })
-      .catch(() => { health.textContent = 'Violation service is unavailable'; health.classList.add('down'); });
   </script>
 </body>
 </html>

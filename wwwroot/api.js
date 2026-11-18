@@ -15,26 +15,52 @@ const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
 
 // The menu groups, in the order shown; each page of MENU_ITEMS names its group.
 const MENU_GROUPS = [
-  { key: 'accounts', title: 'Accounts & trades' },
-  { key: 'logins', title: 'Logins, IP & CID' },
-  { key: 'compare', title: 'Comparison' },
-  { key: 'operations', title: 'Operations' },
+  { key: 'accounts', title: 'Accounts & trades', icon: 'layers' },
+  { key: 'logins', title: 'Logins, IP & CID', icon: 'users' },
+  { key: 'compare', title: 'Comparison', icon: 'link' },
+  { key: 'operations', title: 'Operations', icon: 'settings' },
 ];
 
 // Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
 const MENU_ITEMS = [
-  { group: 'accounts', href: '/account-data.html', title: 'Account data', permission: 'account-data.view', description: "One account's status, start and current balance, net profit, growth chart, open positions and orders, deposits and withdrawals, and the position, order and deal histories." },
-  { group: 'accounts', href: '/trade-history.html', title: 'Trade history', permission: 'trade-history.view', description: 'Positions, orders or deals of every account in a range of days, with the login of each row.' },
-  { group: 'logins', href: '/logins.html', title: 'Login history', permission: 'logins.view', description: 'Sessions of a login with IP, CID, location and VPN/proxy warnings.' },
-  { group: 'logins', href: '/email-logins.html', title: 'Email logins', permission: 'email-logins.view', description: 'Every login of an email (from the MetaTrader backup) with its IPs, CIDs and full login history in a date range.' },
-  { group: 'logins', href: '/similarity.html', title: 'IP/CID similarity', permission: 'similarity.view', description: 'Logins that share an IP or CID, with details and Excel/CSV export.' },
-  { group: 'logins', href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view', description: 'Every login that used a given CID or IP, with its login count and when it was first and last seen.' },
-  { group: 'compare', href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
-  { group: 'compare', href: '/compare.html', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, a merged timeline, and transactions made from a shared IP or computer ID.' },
-  { group: 'compare', href: '/compare-logins.html', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
-  { group: 'compare', href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
-  { group: 'operations', href: '/bulk-balance.html', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
+  { group: 'accounts', href: '/account-data.html', icon: 'database', title: 'Account data', permission: 'account-data.view', description: "One account's status, start and current balance, net profit, growth chart, open positions and orders, deposits and withdrawals, and the position, order and deal histories." },
+  { group: 'accounts', href: '/trade-history.html', icon: 'swap', title: 'Trade history', permission: 'trade-history.view', description: 'Positions, orders or deals of every account in a range of days, with the login of each row.' },
+  { group: 'logins', href: '/logins.html', icon: 'monitor', title: 'Login history', permission: 'logins.view', description: 'Sessions of a login with IP, CID, location and VPN/proxy warnings.' },
+  { group: 'logins', href: '/email-logins.html', icon: 'mail', title: 'Email logins', permission: 'email-logins.view', description: 'Every login of an email (from the MetaTrader backup) with its IPs, CIDs and full login history in a date range.' },
+  { group: 'logins', href: '/similarity.html', icon: 'fingerprint', title: 'IP/CID similarity', permission: 'similarity.view', description: 'Logins that share an IP or CID, with details and Excel/CSV export.' },
+  { group: 'logins', href: '/value-search.html', icon: 'search', title: 'CID / IP search', permission: 'value-search.view', description: 'Every login that used a given CID or IP, with its login count and when it was first and last seen.' },
+  { group: 'compare', href: '/copy-trade.html', icon: 'swap', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
+  { group: 'compare', href: '/compare.html', icon: 'layers', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, a merged timeline, and transactions made from a shared IP or computer ID.' },
+  { group: 'compare', href: '/compare-logins.html', icon: 'users', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
+  { group: 'compare', href: '/compare-emails.html', icon: 'mail', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
+  { group: 'operations', href: '/bulk-balance.html', icon: 'wallet', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
 ];
+
+const ICON_PATHS = {
+  layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5" opacity=".6"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.4 3.5 5.2"/>',
+  link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  database: '<ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13"/><path d="M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>',
+  swap: '<path d="M4 8h15l-4-4M20 16H5l4 4"/>',
+  monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
+  fingerprint: '<path d="M6.5 6.5A7.5 7.5 0 0 1 19.5 12v1.5"/><path d="M4.5 11a7.5 7.5 0 0 1 .7-2.6M4.5 15v-2"/><path d="M8 18.5a17 17 0 0 0 1-6.5 3 3 0 0 1 6 0c0 3-.4 5.4-1.3 7.5"/><path d="M12 12c0 3.5-.6 6.3-2 8.5M17.8 17.5c.4-1.2.7-2.5.9-4"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/>',
+  wallet: '<path d="M4 7.5V18a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-3"/><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H17v2.5"/><path d="M4 7.5h15a1 1 0 0 1 1 1V12h-4a2 2 0 0 0 0 4h4"/>',
+  chart: '<path d="M4 20h16"/><path d="M7 16v-5M11 16V7M15 16v-7M19 16V5"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/>',
+  server: '<rect x="3.5" y="4" width="17" height="7" rx="1.5"/><rect x="3.5" y="13" width="17" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+  trend: '<path d="M3 20h18"/><path d="m4 15 5-5 4 4 7-8"/>',
+};
+
+function icon(name, className = 'icon') {
+  const span = document.createElement('span');
+  span.className = className;
+  span.setAttribute('aria-hidden', 'true');
+  span.innerHTML = `<svg viewBox="0 0 24 24">${ICON_PATHS[name]}</svg>`;
+  return span;
+}
 
 // The home page cards come from MENU_ITEMS, grouped like the menu, so a page added to the menu appears there too.
 // A group whose pages the account may not open is hidden.
@@ -45,11 +71,12 @@ function renderCards(container) {
     section.className = 'card-group';
     section.hidden = true;
     const heading = document.createElement('h2');
-    heading.textContent = group.title;
+    heading.className = 'card-group-title';
+    heading.append(icon(group.icon, 'card-group-icon'), group.title);
     const grid = document.createElement('div');
     grid.className = 'cards';
     const items = MENU_ITEMS.filter(item => item.group === group.key);
-    grid.append(...items.map(item => {
+    const cards = items.map(item => {
       const card = document.createElement('a');
       card.className = 'card';
       card.href = item.href;
@@ -58,15 +85,23 @@ function renderCards(container) {
       title.textContent = item.title;
       const text = document.createElement('p');
       text.textContent = item.description;
-      card.append(title, text);
+      const body = document.createElement('div');
+      body.className = 'card-body';
+      body.append(title, text);
+      card.append(icon(item.icon, 'card-icon'), body);
       return card;
-    }));
+    });
+    grid.append(...cards);
     section.append(heading, grid);
-    return { section, items };
+    return { section, grid, items };
   });
   container.replaceChildren(...sections.map(({ section }) => section));
   currentAccount().then(me => {
-    for (const { section, items } of sections) section.hidden = !items.some(item => can(me, item.permission));
+    for (const { section, grid, items } of sections) {
+      const shown = items.filter(item => can(me, item.permission)).length;
+      section.hidden = shown === 0;
+      grid.classList.toggle('few', shown <= 2);
+    }
   });
 }
 
@@ -395,6 +430,43 @@ const NAV_TOGGLE_ICON =
 const BRAND_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>';
 
+// The panel answers /service-status itself; MetaTrader is online while the Manager link is connected.
+// A pill the account may not check (403) or a connection that is not enabled is left out.
+function createServiceStatus() {
+  const box = document.createElement('div');
+  box.className = 'service-status';
+  const pill = (iconName, title, request, isOnline) => {
+    const element = document.createElement('span');
+    element.className = 'service-pill';
+    const state = document.createElement('span');
+    state.className = 'service-state';
+    state.textContent = 'Checking';
+    const label = document.createElement('span');
+    label.className = 'service-name';
+    label.textContent = title;
+    element.append(icon(iconName), label, state);
+    request()
+      .then(response => {
+        if (response.status === 403 || response.status === 503) return null;
+        return response.ok ? response.json().then(isOnline) : false;
+      })
+      .catch(() => false)
+      .then(online => {
+        if (online === null) {
+          element.remove();
+          return;
+        }
+        element.classList.add(online ? 'ok' : 'down');
+        state.textContent = online ? 'Online' : 'Offline';
+      });
+    return element;
+  };
+  box.append(
+    pill('server', 'Backend Service', () => fetch('/service-status', { cache: 'no-store' }), body => Boolean(body.available)),
+    pill('trend', 'MetaTrader Service', () => fetch('/panel-api/mt5/status', { cache: 'no-store' }), body => Boolean(body.manager?.connected)));
+  return box;
+}
+
 function renderMenu() {
   const nav = document.getElementById('menu');
 
@@ -422,7 +494,7 @@ function renderMenu() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'nav-group-button';
-    button.textContent = group.title;
+    button.append(icon(group.icon), group.title);
     button.setAttribute('aria-haspopup', 'true');
     button.setAttribute('aria-expanded', 'false');
     if (items.some(item => item.href === location.pathname)) button.classList.add('active');
@@ -437,7 +509,7 @@ function renderMenu() {
         link.classList.add('active');
         link.setAttribute('aria-current', 'page');
       }
-      link.textContent = item.title;
+      link.append(icon(item.icon), item.title);
       link.title = item.description;
       return link;
     });
@@ -473,7 +545,8 @@ function renderMenu() {
 
   const actions = document.createElement('div');
   actions.className = 'nav-actions';
-  actions.append(signedInAs, createLanguageSwitcher(), createThemeToggle(), logout);
+  signedInAs.hidden = true;
+  actions.append(createServiceStatus(), signedInAs, createLanguageSwitcher(), createThemeToggle(), logout);
 
   // The version of the pages on this server: it changes with any edit of the front end, so it shows what is deployed.
   const version = document.createElement('span');
@@ -538,7 +611,8 @@ function renderMenu() {
 
   currentAccount().then(me => {
     if (!me) return;
-    signedInAs.textContent = me.username;
+    signedInAs.replaceChildren(icon('user'), me.username);
+    signedInAs.hidden = false;
     for (const { element, items, links } of groups) {
       items.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
       element.hidden = links.every(link => link.hidden);
@@ -547,7 +621,7 @@ function renderMenu() {
       const users = document.createElement('a');
       users.className = 'nav-link';
       users.href = USERS_PAGE.href;
-      users.textContent = USERS_PAGE.title;
+      users.append(icon('users'), USERS_PAGE.title);
       if (location.pathname === USERS_PAGE.href) users.classList.add('active');
       linkBox.append(users);
     }
