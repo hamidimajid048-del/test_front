@@ -16,6 +16,7 @@ public static class PanelApiRules
         ["position-compare-reports"] = [PanelPermissions.CopyTradeView],
         ["transaction-reports"] = [PanelPermissions.AccountDataView],
         ["account-data"] = [PanelPermissions.AccountDataView],
+        ["ip-geo"] = PanelPermissions.AllReportViews,
         ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView, PanelPermissions.CompareView, PanelPermissions.CompareEmailsView]
     };
 

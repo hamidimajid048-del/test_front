@@ -1409,6 +1409,7 @@ button.confirm.danger-solid:hover:not(:disabled) { background: var(--danger); bo
 
 .country-cell { display: inline-flex; align-items: center; gap: var(--space-8); }
 img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radius: var(--radius-xs); box-shadow: 0 0 0 1px var(--border); }
+img.ip-flag { width: 18px; height: 13.5px; margin-inline-end: var(--space-6); vertical-align: -2px; cursor: help; }
 
 .platform-list { display: inline-flex; flex-wrap: wrap; gap: var(--space-4) var(--space-12); }
 .platform-cell { display: inline-flex; align-items: center; gap: var(--space-6); white-space: nowrap; }

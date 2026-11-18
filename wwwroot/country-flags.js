@@ -39,3 +39,70 @@ function withCountryFlag(country, text) {
   cell.append(flag, document.createTextNode(text));
   return cell;
 }
+
+// Every IP address shown on a page (a table cell, a summary, a list) gets the flag of its country in front of it, with
+// the country name on hover. The countries come from the login tracker's geo records, asked in batches and kept for the
+// page; an IP without a record gets no flag. The flag carries no text, so sorting, filtering and exports are unchanged.
+const IP_COUNTRY_BATCH = 200;
+const IPV4_TEXT = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+const IPV6_TEXT = /^[0-9a-f:]+$/i;
+const ipCountries = new Map();
+const ipWaiting = new Map();
+let ipLookupTimer = null;
+
+const isIpText = text => IPV4_TEXT.test(text) || (IPV6_TEXT.test(text) && (text.includes('::') || text.split(':').length > 3));
+
+function addIpFlag(textNode, country) {
+  const flag = countryFlag(country);
+  if (!flag || !textNode.isConnected) return;
+  flag.classList.add('ip-flag');
+  flag.title = country;
+  textNode.before(flag);
+}
+
+function flagIps(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node.nodeValue.trim();
+    const parent = node.parentElement;
+    if (!isIpText(text) || !parent || parent.closest('svg, option, select, textarea, script, style, title')) continue;
+    if (node.previousSibling?.classList?.contains('ip-flag')) continue;
+    if (ipCountries.has(text)) {
+      const country = ipCountries.get(text);
+      if (country) addIpFlag(node, country);
+      continue;
+    }
+    if (!ipWaiting.has(text)) ipWaiting.set(text, []);
+    ipWaiting.get(text).push(node);
+  }
+  if (ipWaiting.size && !ipLookupTimer) ipLookupTimer = setTimeout(lookupIpCountries, 60);
+}
+
+async function lookupIpCountries() {
+  ipLookupTimer = null;
+  const waiting = new Map(ipWaiting);
+  ipWaiting.clear();
+  const ips = [...waiting.keys()];
+  for (const ip of ips) ipCountries.set(ip, null);
+  for (let start = 0; start < ips.length; start += IP_COUNTRY_BATCH) {
+    try {
+      const found = await apiGet('ip-geo/get-countries', { ips: ips.slice(start, start + IP_COUNTRY_BATCH) });
+      for (const { ip, country } of found ?? []) ipCountries.set(ip, country);
+    } catch {
+      continue;
+    }
+  }
+  for (const [ip, nodes] of waiting) {
+    const country = ipCountries.get(ip);
+    if (country) nodes.forEach(node => addIpFlag(node, country));
+  }
+}
+
+if (typeof apiGet === 'function') {
+  new MutationObserver(records => {
+    for (const record of records)
+      for (const node of record.addedNodes)
+        if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) flagIps(node.nodeType === Node.TEXT_NODE ? node.parentNode : node);
+  }).observe(document.body, { childList: true, subtree: true });
+  flagIps(document.body);
+}
