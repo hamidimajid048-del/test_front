@@ -1259,7 +1259,7 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 
 /* ---------- Account data page ---------- */
 
-.account-data button[type="submit"] .icon svg { stroke: currentColor; }
+.account-data button[type="submit"] .icon svg, form.pd-search button[type="submit"] .icon svg { stroke: currentColor; }
 .summary-icon { display: inline-grid; flex: none; place-items: center; }
 .summary-icon svg { width: 18px; height: 18px; fill: none; stroke: url(#icon-gradient); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -1323,6 +1323,23 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .ad-figures .neg > .summary-icon svg { stroke: var(--danger); }
 .ad-figures .pos > .summary-icon { background: color-mix(in srgb, var(--success) 14%, var(--surface)); }
 .ad-figures .pos > .summary-icon svg { stroke: var(--success); }
+.ad-figures > .pos::before { content: none; }
+.ad-figures .pos strong::before { content: "+"; }
+
+/* Position details: the search, a card of position figures as icon tiles, pill tabs and the reports. */
+form.pd-search { align-items: flex-end; }
+form.pd-search button[type="submit"] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); min-width: 140px; }
+form.pd-search .pd-back { display: inline-flex; align-items: center; gap: var(--space-8); height: var(--control-md); padding: 0 var(--space-16); }
+form.pd-search .pd-back .icon svg { width: 16px; height: 16px; }
+.pd-info { margin-bottom: var(--space-16); }
+.pd-info:has(.summary:empty) { display: none; }
+.pd-info .ad-card-title { margin-bottom: var(--space-12); }
+.pd-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-10); }
+.pd-summary > span { min-width: 0; background: var(--tile-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; }
+.pd-summary strong { overflow: hidden; text-overflow: ellipsis; }
+.summary-icon .platform-icon { width: 22px; height: 22px; stroke: currentColor; }
+.pd-info + .tabs.pills, .related-pages + .tabs.pills { margin-bottom: var(--space-16); }
+[data-panel] > .hint .icon svg { width: 18px; height: 18px; }
 
 @media (max-width: 1280px) {
   .ad-top { grid-template-columns: 1fr; }

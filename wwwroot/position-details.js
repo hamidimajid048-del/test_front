@@ -113,25 +113,28 @@ const SUMMARY_PHASES = { 'Opened (UTC)': 'open', 'Open price': 'open', 'Closed (
 
 function renderPosition(login, { position, deals }) {
   const summary = document.getElementById('summary');
+  const isBuy = /BUY/i.test(position.direction ?? '');
+  const opener = source(position.openReason);
+  const openerIcon = opener instanceof Element ? opener.querySelector('.platform-icon') : null;
   const items = [
-    ['Account', login],
-    ['Position', position.positionId],
-    ['Symbol', position.symbol],
-    ['Direction', sideLabel(label(position.direction), position.direction)],
-    ['Volume', lots(position.volume)],
-    ['Opened by', source(position.openReason)],
-    ['Opened (UTC)', formatUtc(position.openedAt)],
-    ['Open price', price(position.openPrice)],
-    ['Closed (UTC)', position.closedAt ? formatUtc(position.closedAt) : '—'],
-    ['Close price', price(position.closePrice)],
-    ['SL', price(position.priceSl)],
-    ['TP', price(position.priceTp)],
-    ['Open time', duration(position.durationSeconds)],
-    ['Net profit', money(position.netProfit)],
-    ['Status', position.isOpen ? 'Open' : 'Closed'],
-    ['Deals', deals.length],
+    ['Account', login, 'user'],
+    ['Position', position.positionId, 'layers'],
+    ['Symbol', position.symbol, 'chart'],
+    ['Direction', label(position.direction), isBuy ? 'arrowUp' : 'arrowDown', isBuy ? 'pos' : 'neg'],
+    ['Volume', lots(position.volume), 'database'],
+    ['Opened by', openerIcon ? opener.textContent : opener, openerIcon ?? 'user'],
+    ['Opened (UTC)', formatUtc(position.openedAt), 'calendar'],
+    ['Open price', price(position.openPrice), 'tag'],
+    ['Closed (UTC)', position.closedAt ? formatUtc(position.closedAt) : '—', 'calendar'],
+    ['Close price', price(position.closePrice), 'tag'],
+    ['SL', price(position.priceSl), 'shield'],
+    ['TP', price(position.priceTp), 'target'],
+    ['Open time', duration(position.durationSeconds), 'timer'],
+    ['Net profit', money(position.netProfit), position.netProfit < 0 ? 'trendDown' : 'trend', signTone(position.netProfit)],
+    ['Status', position.isOpen ? 'Open' : 'Closed', position.isOpen ? 'statePlaced' : 'stateFilled'],
+    ['Deals', deals.length, 'list'],
   ];
-  renderSummary(summary, items);
+  renderIconSummary(summary, items);
   items.forEach(([label], index) => {
     if (SUMMARY_PHASES[label]) summary.children[index].classList.add(`phase-${SUMMARY_PHASES[label]}`);
   });

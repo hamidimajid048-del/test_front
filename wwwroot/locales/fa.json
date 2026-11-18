@@ -892,6 +892,7 @@
     "Trading disabled": "معامله‌کردن غیرفعال",
     "Trading enabled": "معامله‌کردن فعال",
     "Transaction tracker": "ردیاب تراکنش",
+    "Position info": "اطلاعات پوزیشن",
     "Transaction tracker records of either account made from an IP or a computer ID (CID) that the other account also used in this range.": "سوابق ردیاب تراکنش هر یک از دو حساب که از IP یا شناسهٔ کامپیوتری (CID) انجام شده است که حساب دیگر نیز در این بازه از آن استفاده کرده است.",
     "transaction; the computer (CID) is the one of the login session that covers the transaction time and, when possible, its IP.": "تراکنش است؛ کامپیوتر (CID) همان کامپیوتر نشست ورودی است که زمان تراکنش را پوشش می‌دهد و در صورت امکان، IP آن.",
     "Transactions": "تراکنش‌ها",

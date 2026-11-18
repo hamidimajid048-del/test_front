@@ -586,18 +586,6 @@ balanceForm.addEventListener('submit', async event => {
   }
 });
 
-// renderSummary with an icon in front of every item; a tone ('pos' or 'neg') colours a figure by its sign, 'long' lets it wrap.
-function renderIconSummary(container, items) {
-  renderSummary(container, items.map(([label, value]) => [label, value]));
-  items.forEach(([, , iconName, tone], index) => {
-    const item = container.children[index];
-    item.prepend(icon(iconName, 'summary-icon'));
-    if (tone) item.classList.add(tone);
-  });
-}
-
-const signTone = value => (value > 0 ? 'pos' : value < 0 ? 'neg' : '');
-
 function renderOverview(data, switches, status) {
   const identity = document.getElementById('identity');
   renderIconSummary(identity, [
