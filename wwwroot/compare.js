@@ -14,7 +14,9 @@ const MATCH_PHRASES = { Ip: 'same IP', Subnet: 'same network', Asn: 'same ASN' }
 
 // What the page is currently comparing: set when the form is submitted.
 let context = null;
-let activeTab = 'shared-ips';
+// The overview is the first tab; it is drawn once per comparison, the report tabs load when selected.
+const OVERVIEW_TAB = 'overview';
+let activeTab = OVERVIEW_TAB;
 const states = {};
 
 // ---- formatting ----
@@ -361,7 +363,7 @@ function controlElement(tab, control, state, onChange) {
 }
 
 function renderTabs() {
-  document.getElementById('tabs').replaceChildren(...TABS.map(tab => {
+  document.getElementById('tabs').replaceChildren(...[{ key: OVERVIEW_TAB, title: 'Overview' }, ...TABS].map(tab => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = tab.title;
@@ -495,6 +497,12 @@ function showChart(tab) {
 // Builds the active tab's toolbar and result area, and loads its data when it has none yet.
 function showPanel() {
   const tab = tabByKey(activeTab);
+  document.getElementById('overview-section').hidden = tab !== undefined;
+  document.getElementById('tab-panel').hidden = tab === undefined;
+  if (!tab) {
+    writeState();
+    return;
+  }
   if (tab.chart) {
     showChart(tab);
     writeState();
@@ -744,7 +752,6 @@ function renderOverview(report) {
     { key: 'other', title: `Compared · ${other.login}` },
     { key: 'shared', title: 'Shared' },
   ], rows, undefined, { tools: false });
-  document.getElementById('overview-section').hidden = false;
 }
 
 // ---- form ----
@@ -781,7 +788,8 @@ function readContext() {
 
 function writeState() {
   if (!context) return;
-  const state = stateOf(tabByKey(activeTab));
+  const tab = tabByKey(activeTab);
+  const state = tab ? stateOf(tab) : {};
   writeQuery({
     login: context.login,
     other: context.other,
@@ -802,7 +810,7 @@ async function run(page, pageSize) {
   await withLoading(form, message, async () => {
     context = readContext();
     for (const key of Object.keys(states)) delete states[key];
-    Object.assign(stateOf(tabByKey(activeTab)), { page, pageSize });
+    if (tabByKey(activeTab)) Object.assign(stateOf(tabByKey(activeTab)), { page, pageSize });
 
     const overview = await apiGet(`${COMPARE_PATH}/get-overview`, {
       ...compareParams(context),
@@ -829,6 +837,6 @@ if (fillFormFromQuery(form) && form.elements.login.value && form.elements.other.
   const query = new URLSearchParams(location.search);
   syncWindowField();
   rangeControls.restore();
-  if (tabByKey(query.get('tab'))) activeTab = query.get('tab');
+  if (tabByKey(query.get('tab')) || query.get('tab') === OVERVIEW_TAB) activeTab = query.get('tab');
   run(Number(query.get('currentPage')) || 1, Number(query.get('pageSize')) || DEFAULT_PAGE_SIZE);
 }
