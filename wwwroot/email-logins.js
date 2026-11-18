@@ -72,39 +72,27 @@ function withSeparators(list, separator) {
 function cidList(cids) {
   const list = document.createElement('div');
   list.className = 'cid-list';
-  for (const { cid, sessions } of cids) {
+  for (const { cid, sessionCount } of cids) {
     const line = document.createElement('div');
     const count = document.createElement('small');
-    count.textContent = ` (${sessions.toLocaleString('en-US')})`;
+    count.textContent = ` (${sessionCount.toLocaleString('en-US')})`;
     line.append(copyableText(cid), count);
     list.append(line);
   }
   return withSeparators(list, '; ');
 }
 
-// The devices and computer IDs of each login, from every page of the CID summary of the search.
+// The devices and computer IDs of each login in the range, grouped by the service.
 async function readLoginDevices(params) {
-  const byLogin = new Map();
-  for (let page = 1; ; page++) {
-    const report = await apiGet('login-reports/get-logins-cid-mappings', {
-      ...params, sortItem: 'SessionCount', sortDirection: 'Desc', currentPage: page, pageSize: SERVICE_MAX_PAGE_SIZE,
-    });
-    for (const mapping of report.items) {
-      const entry = byLogin.get(mapping.login) ?? { devices: new Set(), cids: [] };
-      for (const device of String(mapping.deviceType ?? '').split(',').map(item => item.trim()).filter(Boolean)) entry.devices.add(device);
-      if (mapping.cid) entry.cids.push({ cid: mapping.cid, sessions: mapping.sessionCount });
-      byLogin.set(mapping.login, entry);
-    }
-    const totalPages = pagingOf(report.paging)?.totalPages ?? page;
-    if (report.items.length === 0 || page >= totalPages) return byLogin;
-  }
+  const items = await apiGet('login-reports/get-logins-devices', params);
+  return new Map(items.map(item => [item.login, item]));
 }
 
 function renderAccounts(accounts) {
   renderTable(document.getElementById('accounts'), accountColumns, accounts, undefined, { export: { name: 'email-logins' } });
 }
 
-// Adds the devices and computer IDs to the logins table once the CID summary is read; the rest of the page does not wait.
+// Adds the devices and computer IDs to the logins table once the service sends them; the rest of the page does not wait.
 async function showLoginDevices(accounts, params, isCurrent) {
   let byLogin;
   try {
@@ -115,7 +103,7 @@ async function showLoginDevices(accounts, params, isCurrent) {
   if (!isCurrent()) return;
   renderAccounts(accounts.map(account => {
     const entry = byLogin.get(account.login);
-    return { ...account, devices: entry ? [...entry.devices].sort() : [], cids: entry?.cids ?? [] };
+    return { ...account, devices: entry?.devices ?? [], cids: entry?.cids ?? [] };
   }));
 }
 

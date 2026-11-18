@@ -50,7 +50,7 @@ applies **Different email only** on the similarity summary (`differentEmailOnly=
 
 The Email logins and Compare emails pages find the logins of an email with the service's
 `meta-trader-accounts/get-logins-by-email?email=` (the users table of the MetaTrader backup, case-insensitive), each
-with its status (active or deleted), name, group and balance. `GET /panel-api/mt5/account-data?login=` and its sub-paths `/open`, `/transfers`, `/positions`, `/orders` and `/deals` read
+with its status (active or archived), name, group and balance. `GET /panel-api/mt5/account-data?login=` and its sub-paths `/open`, `/transfers`, `/positions`, `/orders` and `/deals` read
 one account from the Manager connection (404 when the login is unknown, 503 like the others). The overview has the
 active and trade-enabled flags (from the user rights), the start balance, balance, equity, net profit, growth and the
 balance curve; `/open` has the open positions and active orders; `/transfers` the balance, credit, charge, correction and
@@ -100,7 +100,7 @@ and asks the service for the reports of all those logins together (`login-report
 `get-logins-cid-mappings` and `get-logins-sessions`, at most 100 logins): the summary lists the IPs and CIDs per login
 with first/last sign-in and session count, the details list every session with its location and warnings. Sorting,
 column filters and paging are done by the service.
-The page has three tabs: **Logins** (the accounts of the email, each with buttons that open its account data, login history, similarity, copy trade, hedge or compare page in a new browser tab), **Summary** (IPs and CIDs per login) and **Details** (every session).
+The page has three tabs: **Logins** (the accounts of the email, with the devices and computer IDs each one signed in with in the range from `login-reports/get-logins-devices`, read after the table is shown and without transaction counts so it stays fast, and with buttons that open its account data, login history, similarity, copy trade, hedge or compare page in a new browser tab), **Summary** (IPs and CIDs per login) and **Details** (every session).
 
 The **Compare emails** page (`compare-emails.html`) takes email A, one or more emails B (separated by commas) and an
 optional UTC day range, finds the logins of every email as above, and compares the logins of A with the logins of all
