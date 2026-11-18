@@ -11,31 +11,36 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
-      <label>Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <button type="submit">Search</button>
-    </form>
+  <main class="login-history">
+    <div class="ad-top lh-top">
+      <form class="filters ad-search" id="filters">
+        <label><span class="field-name">Login</span> <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+        <button type="submit" data-icon="search">Search</button>
+      </form>
+      <div class="related-pages" id="related-pages"></div>
+    </div>
     <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
 
-    <div class="summary" id="metadata"></div>
+    <section class="ad-card lh-info">
+      <h3 class="ad-card-title" data-icon="user">Login info</h3>
+      <div class="summary lh-meta" id="metadata"></div>
+    </section>
 
-    <div class="tabs" id="tabs">
-      <button type="button" data-tab="summary">Summary</button>
-      <button type="button" data-tab="details">Details</button>
-      <button type="button" data-tab="timeline">Timeline</button>
+    <div class="tabs pills" id="tabs">
+      <button type="button" data-tab="summary" data-icon="grid">Summary</button>
+      <button type="button" data-tab="details" data-icon="list">Details</button>
+      <button type="button" data-tab="timeline" data-icon="history">Timeline</button>
     </div>
 
-    <section data-panel="summary">
-      <div id="cid-overview"></div>
+    <section data-panel="summary" class="lh-summary">
+      <div class="ad-card lh-cids" id="cid-overview"></div>
       <div class="summary-columns">
-        <div>
-          <h3 id="ips-title">IP</h3>
+        <div class="ad-card">
+          <h3 class="ad-card-title" data-icon="mapPin"><span id="ips-title">IP</span></h3>
           <div id="ips"></div>
         </div>
-        <div>
-          <h3 id="cids-title">CID</h3>
+        <div class="ad-card">
+          <h3 class="ad-card-title" data-icon="monitor"><span id="cids-title">CID</span></h3>
           <div id="cids"></div>
         </div>
       </div>

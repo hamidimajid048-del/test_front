@@ -37,7 +37,7 @@ const RELATED_EMAIL_PAGES = [
   },
 ];
 
-const relatedEmails = new Map();
+const relatedAccounts = new Map();
 let relatedRequest = 0;
 
 function relatedLink(page, value, subject) {
@@ -52,14 +52,17 @@ function relatedLinks(pages, value, me) {
   });
 }
 
-function emailOfLogin(login) {
+// The MetaTrader account of a login (its name, group and email), asked once per page; null when it cannot be read.
+function accountOfLogin(login) {
   const key = String(login);
-  if (!relatedEmails.has(key))
-    relatedEmails.set(key, apiGet('meta-trader-accounts/get-accounts', { logins: [key] })
-      .then(accounts => accounts[0]?.email || null)
+  if (!relatedAccounts.has(key))
+    relatedAccounts.set(key, apiGet('meta-trader-accounts/get-accounts', { logins: [key] })
+      .then(accounts => accounts[0] ?? null)
       .catch(() => null));
-  return relatedEmails.get(key);
+  return relatedAccounts.get(key);
 }
+
+const emailOfLogin = login => accountOfLogin(login).then(account => account?.email || null);
 
 function relatedGroup(label, links) {
   const group = document.createElement('div');

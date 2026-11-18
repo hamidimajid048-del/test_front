@@ -1259,7 +1259,7 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 
 /* ---------- Account data page ---------- */
 
-.account-data button[type="submit"] .icon svg, form.pd-search button[type="submit"] .icon svg { stroke: currentColor; }
+:is(.account-data, .login-history) button[type="submit"] .icon svg, form.pd-search button[type="submit"] .icon svg { stroke: currentColor; }
 .summary-icon { display: inline-grid; flex: none; place-items: center; }
 .summary-icon svg { width: 18px; height: 18px; fill: none; stroke: url(#icon-gradient); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -1267,23 +1267,23 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .ad-top .related-pages:empty { display: none; }
 /* Until an account is loaded only the search shows; the tabs and their empty cards wait for the data. */
 .account-data:not(.loaded) #tabs, .account-data:not(.loaded) [data-panel] { display: none; }
-.account-data form.ad-search { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12); margin: 0; padding: var(--space-16); }
-.account-data form.ad-search label { flex-direction: row; align-items: center; gap: var(--space-12); }
+:is(.account-data, .login-history) form.ad-search { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12); margin: 0; padding: var(--space-16); }
+:is(.account-data, .login-history) form.ad-search label { flex-direction: row; align-items: center; gap: var(--space-12); }
 .field-name { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-16); color: var(--text); background: var(--tile-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); font-weight: 600; white-space: nowrap; }
-.account-data form.ad-search .login-lookup-field { gap: var(--space-12); }
-.account-data form.ad-search .login-lookup-field select { width: 104px; }
-.account-data form.ad-search .login-lookup-field input { width: 168px; }
-.account-data form.ad-search button[type="submit"] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); min-width: 118px; }
+:is(.account-data, .login-history) form.ad-search .login-lookup-field { gap: var(--space-12); }
+:is(.account-data, .login-history) form.ad-search .login-lookup-field select { width: 104px; }
+:is(.account-data, .login-history) form.ad-search .login-lookup-field input { width: 168px; }
+:is(.account-data, .login-history) form.ad-search button[type="submit"] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); min-width: 118px; }
 
-.account-data .related-pages { position: relative; justify-content: center; margin: 0; padding: var(--space-10); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow); }
-.account-data .related-pages::before { content: ""; position: absolute; top: var(--space-12); bottom: var(--space-12); inset-inline-start: -11px; width: 1px; background: var(--nav-border); }
-.account-data .related-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: var(--space-8); width: 100%; }
-.account-data .related-label { display: none; }
-.account-data .related-group .action-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); min-height: 58px; padding: var(--space-8) var(--space-6); font-size: var(--font-size-xs); line-height: 1.25; text-align: center; border-radius: var(--radius-lg); }
-.account-data .related-group .action-link .icon svg { width: 22px; height: 22px; }
+:is(.account-data, .login-history) .related-pages { position: relative; justify-content: center; margin: 0; padding: var(--space-10); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow); }
+:is(.account-data, .login-history) .related-pages::before { content: ""; position: absolute; top: var(--space-12); bottom: var(--space-12); inset-inline-start: -11px; width: 1px; background: var(--nav-border); }
+:is(.account-data, .login-history) .related-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: var(--space-8); width: 100%; }
+:is(.account-data, .login-history) .related-label { display: none; }
+:is(.account-data, .login-history) .related-group .action-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); min-height: 58px; padding: var(--space-8) var(--space-6); font-size: var(--font-size-xs); line-height: 1.25; text-align: center; border-radius: var(--radius-lg); }
+:is(.account-data, .login-history) .related-group .action-link .icon svg { width: 22px; height: 22px; }
 @media (min-width: 1600px) {
-  .account-data .related-group { display: flex; flex-wrap: wrap; }
-  .account-data .related-group .action-link { flex: 1 1 auto; white-space: nowrap; }
+  :is(.account-data, .login-history) .related-group { display: flex; flex-wrap: wrap; }
+  :is(.account-data, .login-history) .related-group .action-link { flex: 1 1 auto; white-space: nowrap; }
 }
 .related-group .action-link { display: inline-flex; align-items: center; gap: var(--space-6); }
 .related-group .action-link .icon svg { width: 16px; height: 16px; }
@@ -1326,6 +1326,28 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .ad-figures .pos > .summary-icon { background: color-mix(in srgb, var(--success) 14%, var(--surface)); }
 .ad-figures .pos > .summary-icon svg { stroke: var(--success); }
 .ad-figures > .pos::before { content: none; }
+
+/* Login history: one card holding the search and the related pages, the login info in a row, summary cards whose
+   tables show about fifty rows before they scroll. Until a login is loaded only the search shows. */
+.login-history:not(.loaded) .lh-info, .login-history:not(.loaded) #tabs, .login-history:not(.loaded) [data-panel] { display: none; }
+.lh-top { grid-template-columns: auto minmax(0, 1fr); margin-bottom: var(--space-16); padding: var(--space-12) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow); }
+.lh-top form.ad-search, .lh-top .related-pages { padding: 0; background: none; border: 0; box-shadow: none; }
+.lh-top .related-pages::before { inset-inline-start: -11px; }
+.lh-top .related-group .action-link { min-height: 52px; }
+.lh-info { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12) var(--space-24); margin-bottom: var(--space-16); padding-block: var(--space-12); }
+.lh-info .ad-card-title { margin: 0; }
+.lh-info:has(.summary:empty) { display: none; }
+.lh-meta { display: flex; flex: 1; flex-wrap: wrap; row-gap: var(--space-8); margin: 0; overflow: hidden; }
+.lh-meta > span { display: flex; align-items: center; gap: var(--space-8); min-width: 0; margin-inline-start: -1px; padding: var(--space-4) var(--space-20); background: none; border: 0; border-inline-start: 1px solid var(--nav-border); border-radius: 0; box-shadow: none; white-space: nowrap; }
+.lh-meta .summary-icon svg { width: 20px; height: 20px; }
+.lh-summary, .lh-summary[hidden] { padding: 0; background: none; border: 0; box-shadow: none; }
+.lh-summary[hidden] { display: none; }
+.lh-cids { margin-bottom: var(--space-16); }
+.lh-cids:empty { display: none; }
+.lh-cids .cid-overview { gap: 0; }
+.lh-cids .cid-overview > div { padding: var(--space-4) var(--space-16); border-inline-start: 1px solid var(--nav-border); }
+.lh-summary .summary-columns .ad-card-title { margin-bottom: var(--space-12); }
+.lh-summary .table-wrap { max-height: 3500px; }
 .ad-figures .pos strong::before { content: "+"; }
 
 /* Position details: the search, a card of position figures as icon tiles, pill tabs and the reports. */
@@ -1345,13 +1367,13 @@ form.pd-search .pd-back .icon svg { width: 16px; height: 16px; }
 
 @media (max-width: 1280px) {
   .ad-top { grid-template-columns: 1fr; }
-  .account-data .related-pages::before { display: none; }
+  :is(.account-data, .login-history) .related-pages::before { display: none; }
   .ad-overview { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
   .tabs.pills { flex-wrap: nowrap; overflow-x: auto; }
   .tabs.pills button { flex: none; padding: 0 var(--space-14); }
-  .account-data form.ad-search .login-lookup-field input { width: 100%; }
+  :is(.account-data, .login-history) form.ad-search .login-lookup-field input { width: 100%; }
 }
 
 /* ---------- Notifications ---------- */

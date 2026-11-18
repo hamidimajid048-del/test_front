@@ -87,6 +87,7 @@ const ICON_PATHS = {
   stateExpired: '<path d="M7 3h10M7 21h10M8 3c0 4 8 5 8 9s-8 5-8 9M16 3c0 4-8 5-8 9s8 5 8 9"/>',
   statePlaced: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
   stateRequest: '<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/>',
+  mapPin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   tag: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
   timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5M12 2.5V6"/>',
   activity: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
@@ -1035,7 +1036,8 @@ function renderCidOverview(container, cids) {
   container.replaceChildren();
   if (!unique.length) return;
   const title = document.createElement('h3');
-  title.textContent = `Computer IDs (${unique.length})`;
+  title.className = 'ad-card-title';
+  title.append(icon('monitor'), `Computer IDs (${unique.length})`);
   const list = document.createElement('div');
   list.className = 'cid-overview';
   for (const cid of unique) {

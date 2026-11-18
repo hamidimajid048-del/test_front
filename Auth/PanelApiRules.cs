@@ -17,7 +17,7 @@ public static class PanelApiRules
         ["transaction-reports"] = [PanelPermissions.AccountDataView],
         ["account-data"] = [PanelPermissions.AccountDataView],
         ["ip-geo"] = PanelPermissions.AllReportViews,
-        ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView, PanelPermissions.CompareView, PanelPermissions.CompareEmailsView]
+        ["meta-trader-accounts"] = [PanelPermissions.LoginsView, PanelPermissions.EmailLoginsView, PanelPermissions.CompareView, PanelPermissions.CompareEmailsView]
     };
 
     public static bool IsAllowed(PathString path, ClaimsPrincipal user)

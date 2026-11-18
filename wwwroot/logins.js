@@ -11,6 +11,8 @@ const ACCOUNT_REASONS = new Set([
 ]);
 
 let currentLogin = null;
+// The MetaTrader account of the login, for its name and email in the login info.
+let loginAccount = null;
 let currentTab = 'summary';
 // The IP and CID mappings of the last search, drawn by the timeline tab; 'cid' or 'ip' is the one shown.
 const mappings = { ip: null, cid: null };
@@ -54,17 +56,21 @@ function renderMetadata(result) {
   const { metadata } = result.report;
   showRelatedPages({ login: metadata.login });
   if (result.accountNote === null) {
-    renderSummary(document.getElementById('metadata'), [
-      ['Login', metadata.login],
-      ['Data start (UTC)', formatUtc(metadata.firstDataTime)],
-      ['Data end (UTC)', formatUtc(metadata.lastDataTime)],
+    renderIconSummary(document.getElementById('metadata'), [
+      ['Login', metadata.login, 'layers'],
+      ['Name', loginAccount?.name || '—', 'user'],
+      ['Email', loginAccount?.email || '—', 'mail'],
+      ['Data start (UTC)', formatUtc(metadata.firstDataTime), 'calendar'],
+      ['Data end (UTC)', formatUtc(metadata.lastDataTime), 'calendar'],
     ]);
     return;
   }
-  renderSummary(document.getElementById('metadata'), [
-    ['Login', metadata.login],
-    ['Range', 'All recorded sessions'],
-    ['Evaluator account', result.accountNote],
+  renderIconSummary(document.getElementById('metadata'), [
+    ['Login', metadata.login, 'layers'],
+    ['Name', loginAccount?.name || '—', 'user'],
+    ['Email', loginAccount?.email || '—', 'mail'],
+    ['Range', 'All recorded sessions', 'calendar'],
+    ['Evaluator account', result.accountNote, 'info'],
   ]);
 }
 
@@ -167,12 +173,16 @@ async function sessionsRequest(page, pageSize) {
 
 async function loadReport(login, page, pageSize) {
   currentLogin = login;
+  const main = document.querySelector('main.login-history');
+  main.classList.remove('loaded');
   await withLoading(form, message, async () => {
-    const [sessions, ips, cids] = await Promise.allSettled([
+    const [sessions, ips, cids, account] = await Promise.allSettled([
       sessionsRequest(page, pageSize),
       apiGet('login-reports/get-ip-mappings', { login }),
       apiGet('login-reports/get-cid-mappings', { login }),
+      accountOfLogin(login),
     ]);
+    loginAccount = account.status === 'fulfilled' ? account.value : null;
     renderMapping('ips', 'ips', 'IP', 'ip', ips);
     renderMapping('cids', 'cids', 'CID', 'cid', cids);
     renderCidOverview(document.getElementById('cid-overview'), cids.status === 'fulfilled'
@@ -186,6 +196,7 @@ async function loadReport(login, page, pageSize) {
       throw sessions.reason;
     }
     renderSessions(sessions.value);
+    main.classList.add('loaded');
   });
 }
 
