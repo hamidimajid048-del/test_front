@@ -123,6 +123,15 @@ reads the accounts of the backup with `meta-trader-accounts/get-accounts?logins=
 still compared. Both pages share `group-compare.js` (tabs, tables, overview); each page only resolves its inputs to the
 two login groups.
 
+Every row that names an IP or a CID also carries how many transactions were made from it, filled by the service from
+the transaction tracker over the report's date range (all time when none is given): the IP and CID mappings of Login
+history and Email logins (`transactionCount`), the CID / IP search summary (`transactionCount`, per login), the
+similarity details (`transactionCount`, `relatedTransactionCount`), the shared IPs and CIDs of Compare accounts
+(`transactionCount`, `otherTransactionCount`) and of Compare with logins / Compare emails (`mainTransactionCount`,
+`otherTransactionCount`, summed over the side's logins). The IP is the one recorded on the transaction; the CID is the
+one of the login session that covers the transaction time and, when possible, its IP (the same attribution as the
+transactions tab). The counts are sortable, filterable and exported like the other columns.
+
 ## Run
 
 ```powershell

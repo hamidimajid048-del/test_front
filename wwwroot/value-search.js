@@ -87,6 +87,7 @@ const SUMMARY_COLUMNS = [
   { key: 'login', title: 'Login', sortKey: 'Login' },
   ...accountColumns(),
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
+  { key: 'transactionCount', title: 'Transactions', sortKey: 'TransactionCount', help: 'Transactions this login made from the searched value in the range. For a CID, the computer of the login session that covers the transaction time and, when possible, its IP.' },
   seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
   loginActionsColumn('login'),
 ];

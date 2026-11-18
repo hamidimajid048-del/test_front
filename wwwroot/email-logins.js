@@ -24,6 +24,7 @@ const mappingColumns = (key, title, extra = []) => [
   loginColumn,
   seenColumn('firstSeen', 'lastSeen', 'First / last seen', { sortKey: 'FirstSeen' }),
   { key: 'sessionCount', title: 'Sessions', sortKey: 'SessionCount' },
+  { key: 'transactionCount', title: 'Transactions', sortKey: 'TransactionCount', help: 'Transactions the login made from this value in the range. For a CID, the computer of the login session that covers the transaction time and, when possible, its IP.' },
   actionsColumn,
 ];
 

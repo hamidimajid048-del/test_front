@@ -22,7 +22,9 @@ const TYPE_LABELS = { Ip: 'IP', Cid: 'CID' };
 const SHARED_SIGNINS_HELP = 'How many times this related account signed in from an IP or CID that the searched account also used. '
   + 'A high number means the two accounts keep working from the same device or network, which points to one person or linked accounts; '
   + 'a low number (1-2) is often a coincidence such as a shared network. It follows the filters above (date range, device type, CID).';
-const DETAIL_SIGNINS_HELP = 'How many times the related account signed in from this value. Compare it with Logins, the sign-ins of the searched account.';
+const TRANSACTIONS_HELP = 'Transactions the account made from this value in the range. The IP is the one recorded on the transaction; '
+  + 'the computer (CID) is the one of the login session that covers the transaction time and, when possible, its IP.';
+const DETAIL_SIGNINS_HELP ='How many times the related account signed in from this value. Compare it with Logins, the sign-ins of the searched account.';
 
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
 let filters = null;
@@ -146,6 +148,8 @@ const DETAILS_COLUMNS = [
   { key: 'value', title: 'Value', sortKey: 'Value' },
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { key: 'relatedLoginCount', title: 'Related sign-ins', sortKey: 'RelatedLoginCount', help: DETAIL_SIGNINS_HELP },
+  { key: 'transactionCount', title: 'Transactions', sortKey: 'TransactionCount', help: TRANSACTIONS_HELP },
+  { key: 'relatedTransactionCount', title: 'Related transactions', sortKey: 'RelatedTransactionCount', help: TRANSACTIONS_HELP },
   { key: 'platforms', title: 'Device type', format: platformList, sortable: false, filterable: false },
   seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
   seenColumn('relatedFirstSeenUtc', 'relatedLastSeenUtc', 'Related first / last seen', { sortKey: 'RelatedFirstSeenUtc' }),

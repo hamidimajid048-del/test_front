@@ -6,7 +6,9 @@
 const GROUP_COMPARE_MAX_LOGINS = 100;
 const GROUP_COMPARE_MAX_LISTED_LOGINS = 6;
 const GROUP_COMPARE_SOURCE_LABELS = { Manager: 'Active', Archive: 'Archived' };
-const GROUP_COMPARE_TABS = ['overview', 'logins', 'pairs', 'ips', 'cids', 'details'];
+const GROUP_COMPARE_TRANSACTIONS_HELP = 'Transactions the logins of this side made from this value in the range. The IP is the one recorded on the '
+  + 'transaction; the computer (CID) is the one of the login session that covers the transaction time and, when possible, its IP.';
+const GROUP_COMPARE_TABS =['overview', 'logins', 'pairs', 'ips', 'cids', 'details'];
 const GROUP_COMPARE_TAB_TITLES = { pairs: 'Linked pairs', ips: 'Shared IPs', cids: 'Shared CIDs' };
 
 const GROUP_COMPARE_EVIDENCE = {
@@ -84,10 +86,12 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
     { key: 'mainLogins', title: 'Logins', group: names.main, format: groupCompareLoginsCell, sortable: false, filterable: false },
     { key: 'mainEmails', title: 'Emails', group: names.main, format: groupCompareEmailsCell, sortable: false, filterable: false },
     { key: 'mainSessionCount', title: 'Sessions', group: names.main, sortKey: 'MainSessionCount' },
+    { key: 'mainTransactionCount', title: 'Transactions', group: names.main, sortKey: 'MainTransactionCount', help: GROUP_COMPARE_TRANSACTIONS_HELP },
     seenColumn('mainFirstSeenUtc', 'mainLastSeenUtc', 'First / last seen', { group: names.main, sortKey: 'MainFirstSeenUtc' }),
     { key: 'otherLogins', title: 'Logins', group: names.other, format: groupCompareLoginsCell, sortable: false, filterable: false },
     { key: 'otherEmails', title: 'Emails', group: names.other, format: groupCompareEmailsCell, sortable: false, filterable: false },
     { key: 'otherSessionCount', title: 'Sessions', group: names.other, sortKey: 'OtherSessionCount' },
+    { key: 'otherTransactionCount', title: 'Transactions', group: names.other, sortKey: 'OtherTransactionCount', help: GROUP_COMPARE_TRANSACTIONS_HELP },
     seenColumn('otherFirstSeenUtc', 'otherLastSeenUtc', 'First / last seen', { group: names.other, sortKey: 'OtherFirstSeenUtc' }),
     { key: 'overlapsInTime', title: 'Used in the same period', format: yesNo, sortKey: 'OverlapsInTime' },
     ...extra,

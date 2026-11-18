@@ -24,6 +24,7 @@ const mappingColumns = (key, title, extra = []) => [
   ...extra,
   seenColumn('firstSeen', 'lastSeen', 'First / last seen'),
   { key: 'sessionCount', title: 'Sessions' },
+  { key: 'transactionCount', title: 'Transactions', help: 'Transactions the login made from this value. For a CID, the computer of the login session that covers the transaction time and, when possible, its IP.' },
 ];
 
 function showTab(tab) {

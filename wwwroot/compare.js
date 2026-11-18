@@ -35,6 +35,9 @@ function topList(counts, limit = 4) {
 
 // ---- columns ----
 
+const TRANSACTIONS_HELP = 'Transactions the login made from this value in the range. The IP is the one recorded on the transaction; '
+  + 'the computer (CID) is the one of the login session that covers the transaction time and, when possible, its IP.';
+
 const SHARED_VALUE_COLUMNS = [
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   { key: 'otherLoginCount', title: 'Compared logins', sortKey: 'RelatedLoginCount' },
@@ -42,6 +45,8 @@ const SHARED_VALUE_COLUMNS = [
   seenColumn('otherFirstSeenUtc', 'otherLastSeenUtc', 'Compared first / last seen', { sortKey: 'RelatedFirstSeenUtc' }),
   { key: 'occurrenceDays', title: 'Occurrence days', sortKey: 'OccurrenceDays' },
   { key: 'coOccurrenceDays', title: 'Co-occurrence days', sortKey: 'CoOccurrenceDays' },
+  { key: 'transactionCount', title: 'Transactions', sortKey: 'TransactionCount', help: TRANSACTIONS_HELP },
+  { key: 'otherTransactionCount', title: 'Compared transactions', sortKey: 'OtherTransactionCount', help: TRANSACTIONS_HELP },
 ];
 
 const SHARED_IP_COLUMNS = [
@@ -174,6 +179,7 @@ const TABS = [
           ['RelatedLoginCount', 'Compared logins'], ['Value', 'IP'], ['LoginCount', 'Logins'],
           ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
           ['OccurrenceDays', 'Occurrence days'], ['CoOccurrenceDays', 'Co-occurrence days'],
+          ['TransactionCount', 'Transactions'], ['OtherTransactionCount', 'Compared transactions'],
         ],
       },
       direction('Desc'),
@@ -195,6 +201,7 @@ const TABS = [
           ['RelatedLoginCount', 'Compared logins'], ['Value', 'CID'], ['LoginCount', 'Logins'],
           ['FirstSeenUtc', 'First seen'], ['LastSeenUtc', 'Last seen'],
           ['OccurrenceDays', 'Occurrence days'], ['CoOccurrenceDays', 'Co-occurrence days'],
+          ['TransactionCount', 'Transactions'], ['OtherTransactionCount', 'Compared transactions'],
         ],
       },
       direction('Desc'),
