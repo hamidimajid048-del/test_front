@@ -252,7 +252,7 @@ nav.menu {
 .sidebar .brand-mark { width: 36px; height: 36px; background: none; box-shadow: none; filter: drop-shadow(0 0 8px var(--glow-soft)); }
 .sidebar .brand-mark svg { width: 34px; height: 34px; stroke: url(#icon-gradient); stroke-width: 1.7; }
 
-.nav-toggle { display: none; place-items: center; width: var(--control-sm); height: var(--control-sm); padding: 0; border-radius: var(--radius-md); }
+.nav-toggle { display: grid; flex: none; place-items: center; width: var(--control-sm); height: var(--control-sm); margin-inline-end: var(--space-8); padding: 0; border-radius: var(--radius-md); }
 .nav-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 .nav-group { position: relative; }
@@ -406,7 +406,7 @@ nav.menu .page-subtitle { overflow: hidden; margin: 0; font-size: var(--font-siz
 /* ---------- Sidebar ---------- */
 
 :root { --sidebar-width: 272px; }
-body.has-sidebar { padding-inline-start: var(--sidebar-width); }
+body.has-sidebar { padding-inline-start: var(--sidebar-width); transition: padding-inline-start .2s ease; }
 .sidebar {
   position: fixed;
   z-index: 30;
@@ -478,13 +478,19 @@ body.has-sidebar { padding-inline-start: var(--sidebar-width); }
 .side-link::before { content: ""; position: absolute; top: calc(var(--space-10) * -1 - 1px); inset-inline: var(--space-8); height: 1px; background: var(--nav-border); }
 .sidebar-shade { display: none; }
 
+@media (min-width: 1101px) {
+  .sidebar { transition: transform .2s ease; }
+  body.has-sidebar.sidebar-hidden { padding-inline-start: 0; }
+  body.sidebar-hidden .sidebar { transform: translateX(-100%); visibility: hidden; transition: transform .2s ease, visibility 0s .2s; }
+  [dir="rtl"] body.sidebar-hidden .sidebar { transform: translateX(100%); }
+}
+
 @media (max-width: 1100px) {
   body.has-sidebar { padding-inline-start: 0; }
   .sidebar { transform: translateX(-100%); transition: transform .2s ease; }
   [dir="rtl"] .sidebar { transform: translateX(100%); }
   body.sidebar-open .sidebar { transform: none; }
   body.sidebar-open .sidebar-shade { position: fixed; z-index: 25; inset: 0; display: block; background: var(--overlay); }
-  .nav-toggle { display: grid; }
 }
 
 /* ---------- Form controls ---------- */

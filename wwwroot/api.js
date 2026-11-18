@@ -513,6 +513,8 @@ function createServiceStatus() {
 }
 
 const SIDEBAR_CLOSED_KEY = 'violation-panel-sidebar-closed';
+const SIDEBAR_HIDDEN_KEY = 'violation-panel-sidebar-hidden';
+const NARROW_SCREEN = window.matchMedia('(max-width: 1100px)');
 
 function closedSidebarGroups() {
   try {
@@ -531,10 +533,12 @@ function saveClosedSidebarGroups(keys) {
 }
 
 // The pages are in a sidebar of folding groups (the folded ones are remembered on this device); the top bar keeps the
-// service status, theme, language and the account menu. On a narrow screen the sidebar slides in from the menu button.
+// service status, theme, language and the account menu. The menu button hides or shows the sidebar (remembered on this
+// device); on a narrow screen the sidebar is hidden and slides in over the page from the menu button.
 function renderMenu() {
   const nav = document.getElementById('menu');
   document.body.classList.add('has-sidebar');
+  document.body.classList.toggle('sidebar-hidden', readStorage(SIDEBAR_HIDDEN_KEY) === '1');
 
   const brand = document.createElement('a');
   brand.className = 'brand';
@@ -650,13 +654,29 @@ function renderMenu() {
   toggle.title = 'Menu';
   toggle.setAttribute('aria-label', 'Menu');
   toggle.setAttribute('aria-controls', 'sidebar');
-  toggle.setAttribute('aria-expanded', 'false');
   toggle.innerHTML = NAV_TOGGLE_ICON;
+  const showExpanded = () => toggle.setAttribute('aria-expanded', String(NARROW_SCREEN.matches
+    ? document.body.classList.contains('sidebar-open')
+    : !document.body.classList.contains('sidebar-hidden')));
   const setSidebarOpen = open => {
     document.body.classList.toggle('sidebar-open', open);
-    toggle.setAttribute('aria-expanded', String(open));
+    showExpanded();
   };
-  toggle.addEventListener('click', () => setSidebarOpen(!document.body.classList.contains('sidebar-open')));
+  toggle.addEventListener('click', () => {
+    if (NARROW_SCREEN.matches) {
+      setSidebarOpen(!document.body.classList.contains('sidebar-open'));
+      return;
+    }
+    const hidden = document.body.classList.toggle('sidebar-hidden');
+    try {
+      localStorage.setItem(SIDEBAR_HIDDEN_KEY, hidden ? '1' : '0');
+    } catch {
+      // Storage may be unavailable (private mode); the sidebar still hides for this page.
+    }
+    showExpanded();
+  });
+  NARROW_SCREEN.addEventListener('change', () => setSidebarOpen(false));
+  showExpanded();
   shade.addEventListener('click', () => setSidebarOpen(false));
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
