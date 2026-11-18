@@ -858,6 +858,10 @@ function utcColumn(key, title, wholeSeconds = false) {
   return { key, title: `${title} (UTC)`, format: wholeSeconds ? formatUtcSeconds : formatUtc };
 }
 
+// Open time and price columns are tinted one colour and close ones another, header and cells alike.
+const openColumn = column => ({ ...column, phase: 'open' });
+const closeColumn = column => ({ ...column, phase: 'close' });
+
 // A number of seconds as "1d 2h 3m 4.567s", with the milliseconds; wholeSeconds leaves them out for set values such
 // as a window typed in seconds.
 function formatSpan(totalSeconds, wholeSeconds = false) {
@@ -1310,6 +1314,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         if (numeric[position]) td.classList.add('num');
         const cellClass = column.cellClass?.(row);
         if (cellClass) td.classList.add(cellClass);
+        if (column.phase) td.classList.add(`phase-${column.phase}`);
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';
@@ -1347,6 +1352,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   columns.forEach(column => {
     const index = indexOf(column);
     const th = document.createElement('th');
+    if (column.phase) th.classList.add(`phase-${column.phase}`);
     if (!canSort(column)) {
       th.textContent = column.title;
       addColumnHelp(th, column);

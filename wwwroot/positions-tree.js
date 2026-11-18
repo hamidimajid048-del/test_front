@@ -257,6 +257,14 @@ const TREE_SORT_NATURAL = { MainOpenTime: 'Asc', MainProfitLoss: 'Asc', ChildCou
 const PARENT_HEADERS = ['', 'Main ticket', 'Opened (UTC)', 'Closed (UTC)', 'Symbol', 'Direction', 'Volume', 'Entry', 'Stop loss', 'Take profit', 'Profit/loss', 'Matches', 'Closest offset', 'Signal'];
 const CHILD_HEADERS = ['', 'Related ticket', 'Opened (UTC)', 'Closed (UTC)', 'Offset', 'Direction', 'Volume', 'Entry', 'Stop loss', 'Take profit', 'Profit/loss', 'Counted', 'Net profit/loss', 'Signals'];
 
+// Opened, closed and entry price columns of the tree, tinted like the open and close columns of the other reports.
+const TREE_PHASES = { 2: 'open', 3: 'close', 7: 'open' };
+
+function markPhases(row) {
+  for (const [index, phase] of Object.entries(TREE_PHASES)) row.cells[index]?.classList.add(`phase-${phase}`);
+  return row;
+}
+
 function cell(row, content, className) {
   const td = row.insertCell();
   if (className) td.className = className;
@@ -285,7 +293,7 @@ function headerRow(titles, className, sortKeys = {}, sort = null, container = nu
     }
     row.append(th);
   });
-  return row;
+  return markPhases(row);
 }
 
 function closedText(position) {
@@ -314,11 +322,12 @@ function comparePanel(main, child, kindKey) {
     ['Take profit', stopsText(main.takeProfit), stopsText(related.takeProfit), comparison.sameTakeProfit ? 'Same' : '—'],
     ['Profit/loss', money(main.profitLoss), money(related.profitLoss), `net ${money(comparison.netProfitLoss)}`],
   ];
+  const phase = row => ({ 'Opened (UTC)': 'phase-open', 'Entry price': 'phase-open', 'Closed (UTC)': 'phase-close', 'Exit price': 'phase-close' })[row[0]] ?? '';
   renderTable(panel.appendChild(document.createElement('div')), [
-    { key: 0, title: 'Field' },
-    { key: 1, title: `Main (${main.accountId})` },
-    { key: 2, title: `Related (${related.accountId})` },
-    { key: 3, title: 'Difference' },
+    { key: 0, title: 'Field', cellClass: phase },
+    { key: 1, title: `Main (${main.accountId})`, cellClass: phase },
+    { key: 2, title: `Related (${related.accountId})`, cellClass: phase },
+    { key: 3, title: 'Difference', cellClass: phase },
   ], rows.map(row => ({ 0: row[0], 1: row[1], 2: row[2], 3: row[3] })), undefined, { tools: false });
 
   panel.append(lifeline(main, related));
@@ -421,6 +430,7 @@ function renderPositionsTree(container, kindKey, nodes, state) {
     cell(parent, `${node.children.length} (${node.assignedCount} counted)`);
     cell(parent, inline(duration(node.closestOffsetSeconds), proximityBar(node.children[0].comparison.relatedMinusMainOpenSeconds, state.window)));
     cell(parent, severityBadge(node.maxSeverity));
+    markPhases(parent);
 
     const childRows = [headerRow(CHILD_HEADERS, 'tree-child tree-child-head')];
     for (const child of node.children) {
@@ -443,6 +453,7 @@ function renderPositionsTree(container, kindKey, nodes, state) {
       cell(row, child.isAssigned ? badge('Counted', 'main') : badge('Not counted', 'muted'));
       cell(row, pnl(child.comparison.netProfitLoss));
       cell(row, signalBadges(child.signals));
+      markPhases(row);
 
       const detail = document.createElement('tr');
       detail.className = 'tree-detail';

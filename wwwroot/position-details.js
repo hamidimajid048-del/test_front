@@ -109,8 +109,11 @@ function showTab(tab) {
     panel.hidden = panel.dataset.panel !== currentTab;
 }
 
+const SUMMARY_PHASES = { 'Opened (UTC)': 'open', 'Open price': 'open', 'Closed (UTC)': 'close', 'Close price': 'close' };
+
 function renderPosition(login, { position, deals }) {
-  renderSummary(document.getElementById('summary'), [
+  const summary = document.getElementById('summary');
+  const items = [
     ['Account', login],
     ['Position', position.positionId],
     ['Symbol', position.symbol],
@@ -127,7 +130,11 @@ function renderPosition(login, { position, deals }) {
     ['Net profit', money(position.netProfit)],
     ['Status', position.isOpen ? 'Open' : 'Closed'],
     ['Deals', deals.length],
-  ]);
+  ];
+  renderSummary(summary, items);
+  items.forEach(([label], index) => {
+    if (SUMMARY_PHASES[label]) summary.children[index].classList.add(`phase-${SUMMARY_PHASES[label]}`);
+  });
   grids.deals.setRows(deals);
 }
 
