@@ -74,7 +74,7 @@ const orderColumns = [
   column('order', 'Order'),
   column('symbol', 'Symbol'),
   labelColumn('type', 'Type'),
-  labelColumn('state', 'State'),
+  orderStateColumn('state', 'State'),
   column('volumeInitial', 'Volume', lots),
   column('volumeCurrent', 'Remaining', lots),
   priceColumn('priceOrder', 'Price'),

@@ -59,7 +59,7 @@ const COLUMNS = {
     sorted(column('order', 'Order'), 'Order'),
     sorted(column('symbol', 'Symbol'), 'Symbol'),
     sorted(labelColumn('type', 'Type'), 'Type'),
-    sorted(labelColumn('state', 'State'), 'State'),
+    sorted(orderStateColumn('state', 'State'), 'State'),
     sorted(column('volumeInitial', 'Volume', lots), 'VolumeInitial'),
     sorted(column('volumeCurrent', 'Remaining', lots), 'VolumeCurrent'),
     sorted(priceColumn('priceOrder', 'Price'), 'PriceOrder'),

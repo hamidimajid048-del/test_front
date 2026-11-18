@@ -35,6 +35,7 @@ const isTrade = row => /(^|_)(BUY|SELL)$/.test(String(row.direction ?? ''));
 const tradeOnly = format => (value, row) => isTrade(row) ? format(value, row) : '—';
 const labelColumn = (key, title) => column(key, title, value => sideLabel(label(value), value));
 const entryColumn = (key, title) => column(key, title, value => entryLabel(label(value), value));
+const orderStateColumn = (key, title) => column(key, title, value => orderStateLabel(label(value), value));
 const priceColumn = (key, title) => column(key, title, price);
 const amountColumn = (key, title) => column(key, title, amount);
 

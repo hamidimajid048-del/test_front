@@ -1405,6 +1405,14 @@ img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radi
 .side-cell.entry-in .side-icon svg { stroke: var(--entry-in); }
 .side-cell.entry-out .side-icon svg { stroke: var(--entry-out); }
 .side-cell.entry-inout .side-icon svg { stroke: var(--entry-inout); }
+.side-cell[class*="state-"] .side-icon svg { width: 16px; height: 16px; stroke-width: 2; }
+.side-cell.state-filled { --state: var(--success); }
+.side-cell.state-partial { --state: var(--entry-in); }
+.side-cell.state-canceled, .side-cell.state-rejected { --state: var(--danger); }
+.side-cell.state-expired { --state: var(--warning); }
+.side-cell.state-placed { --state: var(--primary); }
+.side-cell.state-request { --state: var(--text-muted); }
+.side-cell[class*="state-"] .side-icon svg { stroke: var(--state); color: var(--state); }
 /* Open time and price columns (teal, an arrow going in) and close ones (orange, an arrow going out). */
 td.phase-open { background: color-mix(in srgb, var(--entry-in) 8%, transparent); }
 td.phase-close { background: color-mix(in srgb, var(--entry-out) 8%, transparent); }
