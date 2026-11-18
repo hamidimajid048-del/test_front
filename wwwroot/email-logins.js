@@ -101,6 +101,10 @@ async function showLoginDevices(accounts, params, isCurrent) {
     byLogin = new Map();
   }
   if (!isCurrent()) return;
+  const sessionsByCid = new Map();
+  for (const { cids } of byLogin.values())
+    for (const { cid, sessionCount } of cids) sessionsByCid.set(cid, (sessionsByCid.get(cid) ?? 0) + sessionCount);
+  renderCidOverview(document.getElementById('cid-overview'), [...sessionsByCid].sort((a, b) => b[1] - a[1]).map(([cid]) => cid));
   renderAccounts(accounts.map(account => {
     const entry = byLogin.get(account.login);
     return { ...account, devices: entry?.devices ?? [], cids: entry?.cids ?? [] };
@@ -121,7 +125,7 @@ function writeState(values) {
 
 function clearResults() {
   for (const grid of grids) grid.clear();
-  for (const id of ['metadata', 'accounts', 'geo-details']) document.getElementById(id).replaceChildren();
+  for (const id of ['metadata', 'accounts', 'geo-details', 'cid-overview']) document.getElementById(id).replaceChildren();
   document.getElementById('accounts-title').textContent = 'Logins';
 }
 

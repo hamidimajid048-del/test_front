@@ -741,6 +741,23 @@ function copyableText(value) {
   return text;
 }
 
+// The distinct computer IDs of a summary, most used first, one per line and copyable, above its tables.
+function renderCidOverview(container, cids) {
+  const unique = [...new Set(cids.filter(Boolean))];
+  container.replaceChildren();
+  if (!unique.length) return;
+  const title = document.createElement('h3');
+  title.textContent = `Computer IDs (${unique.length})`;
+  const list = document.createElement('div');
+  list.className = 'cid-overview';
+  for (const cid of unique) {
+    const line = document.createElement('div');
+    line.append(copyableText(cid));
+    list.append(line);
+  }
+  container.append(title, list);
+}
+
 // A "⋯" button that opens a menu of a table row's links. The menu is fixed to the window, so the table's scroll box does
 // not cut it off; it opens below the button, or above when there is more room there (scrolling when neither side holds
 // it), and closes on a pick, a click elsewhere, Escape or scrolling.

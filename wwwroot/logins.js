@@ -175,6 +175,9 @@ async function loadReport(login, page, pageSize) {
     ]);
     renderMapping('ips', 'ips', 'IP', 'ip', ips);
     renderMapping('cids', 'cids', 'CID', 'cid', cids);
+    renderCidOverview(document.getElementById('cid-overview'), cids.status === 'fulfilled'
+      ? [...cids.value].sort((a, b) => b.sessionCount - a.sessionCount).map(mapping => mapping.cid)
+      : []);
     Object.assign(mappings, { ip: ips, cid: cids });
     renderTimeline();
     if (sessions.status === 'rejected') {
