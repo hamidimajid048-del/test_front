@@ -8,31 +8,31 @@ const otherLogin = (login, subject) => subject?.login && Number(subject.login) !
 const otherEmail = (email, subject) => subject?.email && subject.email.toLowerCase() !== email.toLowerCase();
 
 const RELATED_LOGIN_PAGES = [
-  { title: 'Account data', permission: 'account-data.view', path: '/account-data.html', query: login => ({ login }) },
-  { title: 'Login history', permission: 'logins.view', path: '/logins.html', query: login => ({ login }) },
-  { title: 'IP/CID similarity', permission: 'similarity.view', path: '/similarity.html', query: login => ({ login }) },
+  { title: 'Account data', icon: 'database', permission: 'account-data.view', path: '/account-data.html', query: login => ({ login }) },
+  { title: 'Login history', icon: 'user', permission: 'logins.view', path: '/logins.html', query: login => ({ login }) },
+  { title: 'IP/CID similarity', icon: 'fingerprint', permission: 'similarity.view', path: '/similarity.html', query: login => ({ login }) },
   {
-    title: 'Copy trade', permission: 'copy-trade.view', path: '/copy-trade.html',
+    title: 'Copy trade', icon: 'swap', permission: 'copy-trade.view', path: '/copy-trade.html',
     query: login => ({ kind: 'copy-trade', login, secondsBefore: 5, secondsAfter: 5, minCountShare: 1 }),
   },
   {
-    title: 'Hedge', permission: 'copy-trade.view', path: '/copy-trade.html',
+    title: 'Hedge', icon: 'shield', permission: 'copy-trade.view', path: '/copy-trade.html',
     query: login => ({ kind: 'hedge', login, secondsBefore: 5, secondsAfter: 5, minCountShare: 1, volumeTolerancePercent: 10 }),
   },
   {
-    title: 'Compare accounts', permission: 'compare.view', path: '/compare.html',
+    title: 'Compare accounts', icon: 'layers', permission: 'compare.view', path: '/compare.html',
     query: (login, subject) => (otherLogin(login, subject) ? { login: subject.login, other: login, ...subjectRange(subject) } : { login }),
   },
   {
-    title: 'Compare with logins', permission: 'compare.view', path: '/compare-logins.html',
+    title: 'Compare with logins', icon: 'users', permission: 'compare.view', path: '/compare-logins.html',
     query: (login, subject) => (otherLogin(login, subject) ? { login: subject.login, otherLogins: login, ...subjectRange(subject) } : { login }),
   },
 ];
 
 const RELATED_EMAIL_PAGES = [
-  { title: 'Email logins', permission: 'email-logins.view', path: '/email-logins.html', query: email => ({ email }) },
+  { title: 'Email logins', icon: 'mailPlus', permission: 'email-logins.view', path: '/email-logins.html', query: email => ({ email }) },
   {
-    title: 'Compare emails', permission: 'compare-emails.view', path: '/compare-emails.html',
+    title: 'Compare emails', icon: 'mail', permission: 'compare-emails.view', path: '/compare-emails.html',
     query: (email, subject) => (otherEmail(email, subject) ? { email: subject.email, otherEmail: email, ...subjectRange(subject) } : { email }),
   },
 ];
@@ -45,7 +45,11 @@ function relatedLink(page, value, subject) {
 }
 
 function relatedLinks(pages, value, me) {
-  return pages.filter(page => page.path !== location.pathname && can(me, page.permission)).map(page => relatedLink(page, value));
+  return pages.filter(page => page.path !== location.pathname && can(me, page.permission)).map(page => {
+    const link = relatedLink(page, value);
+    link.prepend(icon(page.icon));
+    return link;
+  });
 }
 
 function emailOfLogin(login) {

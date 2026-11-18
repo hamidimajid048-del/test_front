@@ -52,6 +52,32 @@ const ICON_PATHS = {
   user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/>',
   server: '<rect x="3.5" y="4" width="17" height="7" rx="1.5"/><rect x="3.5" y="13" width="17" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/>',
   candles: '<path d="M7 3v3M7 15v6M17 3v5M17 17v4"/><rect x="5" y="6" width="4" height="9" rx="1"/><rect x="15" y="8" width="4" height="9" rx="1"/>',
+  trend: '<path d="M3 20h18"/><path d="m4 15 5-5 4 4 7-8"/><path d="M15 6h5v5"/>',
+  trendDown: '<path d="M3 20h18"/><path d="m4 7 5 5 4-4 7 8"/><path d="M15 16h5v-5"/>',
+  percent: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>',
+  card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/>',
+  upload: '<path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 19h16"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+  scale: '<path d="M12 4v16M8 20h8M5 7h14"/><path d="m5 7-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z"/>',
+  calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/>',
+  message: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
+  grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+  history: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M12 8v4l3 2"/>',
+  bars: '<path d="M4 20h16"/><path d="M7 16v-4M11 16V8M15 16v-6M19 16V5"/>',
+  plug: '<path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5h.01"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  shield: '<path d="M12 3 5 6v5.5c0 4.3 2.9 7.6 7 8.9 4.1-1.3 7-4.6 7-8.9V6z"/><path d="m9 12 2 2 4-4"/>',
+  shieldUser: '<path d="M12 3 5 6v5.5c0 4.3 2.9 7.6 7 8.9 4.1-1.3 7-4.6 7-8.9V6z"/><circle cx="12" cy="10" r="2.3"/><path d="M8.5 16c.6-1.8 1.9-2.7 3.5-2.7s2.9.9 3.5 2.7"/>',
+  mailPlus: '<path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/><path d="M19 15v6M16 18h6"/>',
+  alert: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5h.01"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
   logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
 };
 
@@ -61,6 +87,14 @@ function ensureIconGradient() {
   const defs = document.createElement('div');
   defs.innerHTML = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="icon-gradient" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="var(--icon-from)"/><stop offset="1" stop-color="var(--icon-to)"/></linearGradient></defs></svg>';
   document.body.append(defs.firstChild);
+}
+
+// Static markup names its icons: <button data-icon="grid">Overview</button> gets the icon in front of its text.
+function applyIcons(root = document) {
+  for (const element of root.querySelectorAll('[data-icon]')) {
+    element.prepend(icon(element.dataset.icon));
+    element.removeAttribute('data-icon');
+  }
 }
 
 function icon(name, className = 'icon') {
@@ -642,18 +676,22 @@ function renderMenu() {
   actions.append(createServiceStatus(), divider, createThemeToggle(), createLanguageSwitcher(), account);
   nav.replaceChildren(toggle, actions);
 
-  // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu entry.
+  // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu
+  // entry; a page that writes its own header (with a subtitle) gets the icon only.
   const main = document.querySelector('main');
-  if (main && !main.querySelector('h1')) {
+  const pageIcon = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.icon ?? (location.pathname === '/account.html' ? 'user' : 'layers');
+  let header = main?.querySelector('.page-header');
+  if (main && !header && !main.querySelector('h1')) {
     const heading = document.createElement('h1');
     heading.className = 'page-title';
     heading.textContent = document.title.split(' — ')[0];
-    const pageIcon = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.icon ?? (location.pathname === '/account.html' ? 'user' : 'layers');
-    const header = document.createElement('header');
+    header = document.createElement('header');
     header.className = 'page-header';
-    header.append(icon(pageIcon, 'page-icon'), heading);
+    header.append(heading);
     main.prepend(header);
   }
+  if (header && !header.querySelector('.page-icon')) header.prepend(icon(pageIcon, 'page-icon'));
+  applyIcons();
 
   currentAccount().then(me => {
     if (!me) return;
@@ -677,10 +715,19 @@ function renderMenu() {
     applyPermissions(me);
     guardPage(me);
     if (!me.twoFactor && location.pathname !== '/account.html') {
-      const banner = document.createElement('a');
+      const banner = document.createElement('div');
       banner.className = 'banner warn';
-      banner.href = '/account.html';
-      banner.textContent = 'Two-factor is not set up. Set it up';
+      const link = document.createElement('a');
+      link.href = '/account.html';
+      link.append(icon('alert'), 'Two-factor is not set up. Set it up');
+      const dismiss = document.createElement('button');
+      dismiss.type = 'button';
+      dismiss.className = 'banner-close';
+      dismiss.title = 'Dismiss';
+      dismiss.setAttribute('aria-label', 'Dismiss');
+      dismiss.append(icon('close'));
+      dismiss.addEventListener('click', () => banner.remove());
+      banner.append(link, dismiss);
       nav.after(banner);
     }
   });

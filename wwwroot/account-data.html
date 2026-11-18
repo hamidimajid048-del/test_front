@@ -11,52 +11,71 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
-      <label>Account <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <button type="submit">Search</button>
-    </form>
-    <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
-    <div class="summary" id="identity"></div>
+  <main class="account-data">
+    <header class="page-header with-subtitle">
+      <div>
+        <h1 class="page-title">Account data</h1>
+        <p class="page-subtitle">Account settings, limits, balance and activity overview.</p>
+      </div>
+    </header>
 
-    <div class="tabs" id="tabs">
-      <button type="button" data-tab="overview">Overview</button>
-      <button type="button" data-tab="open">Open positions &amp; orders</button>
-      <button type="button" data-tab="transfers">Deposits &amp; withdrawals</button>
-      <button type="button" data-tab="positions">Positions</button>
-      <button type="button" data-tab="orders">Orders</button>
-      <button type="button" data-tab="deals">Deals</button>
-      <button type="button" data-tab="changes" data-permission="account-data.changes">Changes</button>
+    <div class="ad-top">
+      <form class="filters ad-search" id="filters">
+        <label><span class="field-name">Account</span> <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+        <button type="submit" data-icon="search">Search</button>
+      </form>
+      <div class="related-pages" id="related-pages"></div>
+    </div>
+    <p class="message" id="message"></p>
+    <div class="summary ad-identity" id="identity"></div>
+
+    <div class="tabs pills" id="tabs">
+      <button type="button" data-tab="overview" data-icon="grid">Overview</button>
+      <button type="button" data-tab="open" data-icon="target">Open positions &amp; orders</button>
+      <button type="button" data-tab="transfers" data-icon="download">Deposits &amp; withdrawals</button>
+      <button type="button" data-tab="positions" data-icon="bars">Positions</button>
+      <button type="button" data-tab="orders" data-icon="list">Orders</button>
+      <button type="button" data-tab="deals" data-icon="swap">Deals</button>
+      <button type="button" data-tab="changes" data-icon="history" data-permission="account-data.changes">Changes</button>
     </div>
 
-    <section data-panel="overview">
-      <div class="summary" id="status"></div>
-      <div class="controls" id="controls"></div>
-      <div data-permission="account-data.passwords">
-        <div class="password-card" id="passwords" hidden>
-          <h3>Passwords</h3>
-          <p class="hint">Type a password to check it against the account, or generate one and set it. 8 to 16 characters.</p>
-          <div id="password-rows"></div>
+    <section data-panel="overview" class="ad-overview">
+      <div class="ad-column">
+        <div class="controls ad-card" id="controls"></div>
+        <div data-permission="account-data.passwords">
+          <div class="password-card ad-card" id="passwords" hidden>
+            <h3 class="ad-card-title" data-icon="lock">Passwords</h3>
+            <p class="hint" data-icon="info">Type a password to check it against the account, or generate one and set it. 8 to 16 characters.</p>
+            <div id="password-rows"></div>
+          </div>
         </div>
       </div>
-      <div class="summary" id="stop-out-status"></div>
-      <p class="hint" id="stop-out-reason"></p>
-      <div class="summary" id="figures"></div>
-      <p class="hint" id="comment"></p>
-      <div class="section-head">
-        <h3 id="chart-title">Balance growth</h3>
-        <div class="toggle" id="chart-mode">
-          <button type="button" data-mode="amount" aria-pressed="true">Amount</button>
-          <button type="button" data-mode="percent" aria-pressed="false">Percent</button>
+      <div class="ad-column">
+        <div class="ad-card">
+          <div class="ad-card-head">
+            <h3 class="ad-card-title" data-icon="database">Limits &amp; Status</h3>
+            <div class="summary" id="status"></div>
+          </div>
+          <div class="summary ad-status-bar" id="stop-out-status"></div>
+          <p class="hint" id="stop-out-reason"></p>
+          <div class="summary ad-figures" id="figures"></div>
+        </div>
+        <div class="ad-card">
+          <div class="section-head">
+            <h3 class="ad-card-title" id="chart-title" data-icon="bars">Balance growth</h3>
+            <div class="toggle" id="chart-mode">
+              <button type="button" data-mode="amount" aria-pressed="true">Amount</button>
+              <button type="button" data-mode="percent" aria-pressed="false">Percent</button>
+            </div>
+          </div>
+          <div id="chart"></div>
+          <ul class="help">
+            <li><strong>Start balance:</strong> read from the account comment: the whole comment when it is a number, otherwise the part after its last colon (<code>Prop:...:...:StartBalance</code>).</li>
+            <li><strong>Net profit:</strong> profit, commission, swap and fee of all trading deals; deposits, withdrawals, credit and bonus are not included.</li>
+            <li><strong>Growth chart:</strong> the balance after each deal that changed it, in money or as the percent change against the start balance.</li>
+          </ul>
         </div>
       </div>
-      <div id="chart"></div>
-      <ul class="help">
-        <li><strong>Start balance:</strong> read from the account comment: the whole comment when it is a number, otherwise the part after its last colon (<code>Prop:...:...:StartBalance</code>).</li>
-        <li><strong>Net profit:</strong> profit, commission, swap and fee of all trading deals; deposits, withdrawals, credit and bonus are not included.</li>
-        <li><strong>Growth chart:</strong> the balance after each deal that changed it, in money or as the percent change against the start balance.</li>
-      </ul>
     </section>
     <section data-panel="open" hidden>
       <h3 id="open-positions-title">Open positions</h3>

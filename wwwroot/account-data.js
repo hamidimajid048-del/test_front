@@ -28,19 +28,19 @@ const CHANGE_ACTIONS = {
 // cannot be read, the last change made from the panel). `last` is that change: { enabled, username, occurredAt }.
 const SWITCHES = [
   {
-    key: 'account', api: 'Account', title: 'Account', permission: 'account-data.switch-account',
+    key: 'account', api: 'Account', title: 'Account', icon: 'user', permission: 'account-data.switch-account',
     description: 'The owner can sign in to the account.',
     effect: ['The owner will no longer be able to sign in.', 'The owner will be able to sign in again.'],
     state: (data) => data.isEnabled,
   },
   {
-    key: 'trading', api: 'Trading', title: 'Trading', permission: 'account-data.switch-trading',
+    key: 'trading', api: 'Trading', title: 'Trading', icon: 'trend', permission: 'account-data.switch-trading',
     description: 'The owner can open and close trades.',
     effect: ['The owner will no longer be able to open or close trades.', 'The owner will be able to trade again.'],
     state: (data) => data.isTradeEnabled,
   },
   {
-    key: 'stop_out', api: 'StopOut', title: 'Stop-out plugin', permission: 'account-data.switch-stop-out',
+    key: 'stop_out', api: 'StopOut', title: 'Stop-out plugin', icon: 'plug', permission: 'account-data.switch-stop-out',
     description: 'The stop-out plugin watches the account.',
     effect: ['', 'The stop-out plugin will watch this account.'],
     enableOnly: true,
@@ -374,7 +374,7 @@ function switchRow(data, last, status, definition) {
     state.append(lastChange);
   }
 
-  row.append(text, state, toggle);
+  row.append(icon(definition.icon, 'control-icon'), text, state, toggle);
   return row;
 }
 
@@ -422,6 +422,7 @@ function renderStopOutStatus(status) {
   }
 
   renderSummary(summary, items);
+  summary.firstElementChild.prepend(icon('shieldUser', 'summary-icon'));
   reason.textContent = [
     status.statusReason,
     status.stateConflict && `Conflict: ${typeof status.stateConflict === 'string' ? status.stateConflict : JSON.stringify(status.stateConflict)}`,
@@ -468,10 +469,10 @@ function generatePassword() {
   return characters.join('');
 }
 
-function actionButton(text, onClick, danger = false) {
+function actionButton(text, iconName, onClick, danger = false) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.textContent = text;
+  button.append(icon(iconName), text);
   if (danger) button.className = 'danger';
   button.addEventListener('click', onClick);
   return button;
@@ -503,17 +504,17 @@ function passwordRow(type, title) {
     }
   };
 
-  const generate = actionButton('Generate', () => {
+  const generate = actionButton('Generate', 'key', () => {
     input.value = generatePassword();
     result.textContent = '';
   });
-  const check = actionButton('Check', async () => {
+  const check = actionButton('Check', 'check', async () => {
     const answer = await run('check');
     if (!answer) return;
     result.className = `password-result ${answer.valid ? 'good' : 'bad'}`;
     result.textContent = answer.valid ? 'This is the current password.' : 'This is not the current password.';
   });
-  const change = actionButton('Change', async () => {
+  const change = actionButton('Change', 'pencil', async () => {
     if (!await confirmAction({
       title: `Change the ${title.toLowerCase()}?`,
       message: `Account ${currentLogin}. The owner must use the new password from now on.`,
@@ -526,7 +527,7 @@ function passwordRow(type, title) {
     result.textContent = 'Changed.';
     toast(`${title} changed`, 'success', `Account ${login}`);
   }, true);
-  const copy = actionButton('Copy', async () => {
+  const copy = actionButton('Copy', 'copy', async () => {
     try {
       await navigator.clipboard.writeText(input.value);
       result.className = 'password-result good';
@@ -585,13 +586,30 @@ balanceForm.addEventListener('submit', async event => {
   }
 });
 
+// renderSummary with an icon in front of every item; a tone ('pos' or 'neg') colours a figure by its sign, 'long' lets it wrap.
+function renderIconSummary(container, items) {
+  renderSummary(container, items.map(([label, value]) => [label, value]));
+  items.forEach(([, , iconName, tone], index) => {
+    const item = container.children[index];
+    item.prepend(icon(iconName, 'summary-icon'));
+    if (tone) item.classList.add(tone);
+  });
+}
+
+const signTone = value => (value > 0 ? 'pos' : value < 0 ? 'neg' : '');
+
 function renderOverview(data, switches, status) {
-  renderSummary(document.getElementById('identity'), [
-    ['Account', data.login],
-    ['Name', data.name || '—'],
-    ['Group', data.group || '—'],
-    ['Email', data.email || '—'],
+  const identity = document.getElementById('identity');
+  renderIconSummary(identity, [
+    ['Account', data.login, 'layers'],
+    ['Name', data.name || '—', 'user'],
+    ['Group', data.group || '—', 'users'],
+    ['Email', data.email || '—', 'mail'],
   ]);
+  const lead = document.createElement('strong');
+  lead.className = 'ad-identity-lead';
+  lead.textContent = `Login ${data.login}`;
+  identity.prepend(lead);
 
   document.getElementById('status').replaceChildren(
     ...(data.source === 'Archive' ? [badge('Archived', 'warn')] : []));
@@ -600,20 +618,20 @@ function renderOverview(data, switches, status) {
   lockForArchive(document.getElementById('password-rows'), data.source === 'Archive');
   lockForArchive(balanceForm, data.source === 'Archive');
 
-  renderSummary(document.getElementById('figures'), [
-    ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance)],
-    ['Balance', money(data.balance)],
-    ['Equity', money(data.equity)],
-    ['Net profit', money(data.netProfit)],
-    ['Growth', data.growthPercent === null ? '—' : `${money(data.growthPercent)}%`],
-    ['Credit', money(data.credit)],
-    ['Deposits', money(data.totalDeposits)],
-    ['Withdrawals', money(data.totalWithdrawals)],
-    ['Deals', data.dealCount.toLocaleString('en-US')],
-    ['Leverage', data.leverage ? `1:${data.leverage}` : '—'],
-    ['Registered (UTC)', data.registeredAt ? formatUtcSeconds(data.registeredAt) : '—'],
+  renderIconSummary(document.getElementById('figures'), [
+    ['Start balance', data.startBalance === null ? 'Not in the comment' : money(data.startBalance), 'layers'],
+    ['Balance', money(data.balance), 'wallet'],
+    ['Equity', money(data.equity), 'layers'],
+    ['Net profit', money(data.netProfit), data.netProfit < 0 ? 'trendDown' : 'trend', signTone(data.netProfit)],
+    ['Growth', data.growthPercent === null ? '—' : `${money(data.growthPercent)}%`, 'percent', signTone(data.growthPercent)],
+    ['Credit', money(data.credit), 'card'],
+    ['Deposits', money(data.totalDeposits), 'download'],
+    ['Withdrawals', money(data.totalWithdrawals), 'upload'],
+    ['Deals', data.dealCount.toLocaleString('en-US'), 'list'],
+    ['Leverage', data.leverage ? `1:${data.leverage}` : '—', 'scale'],
+    ['Registered (UTC)', data.registeredAt ? formatUtcSeconds(data.registeredAt) : '—', 'calendar'],
+    ...(data.comment ? [['Comment', data.comment, 'message', 'long']] : []),
   ]);
-  document.getElementById('comment').textContent = data.comment ? `Comment: ${data.comment}` : '';
   renderBalanceChart(document.getElementById('chart'), data.chart, chartMode);
 }
 
@@ -624,7 +642,6 @@ function clearResults() {
   lockForArchive(balanceForm, false);
   for (const id of ['identity', 'status', 'controls', 'stop-out-status', 'figures', 'chart', 'transfer-totals'])
     document.getElementById(id).replaceChildren();
-  document.getElementById('comment').textContent = '';
   for (const grid of Object.values(grids)) grid.clear();
   document.getElementById('open-positions-title').textContent = 'Open positions';
   document.getElementById('open-orders-title').textContent = 'Active orders';
