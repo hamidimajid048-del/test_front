@@ -40,7 +40,7 @@ function warningBadges(geo) {
 // The sort keys are the sessions report's columns: sorting and the typed filters are done by the service on every page.
 const SESSION_COLUMNS = [
   { ...utcColumn('loginAt', 'Login'), sortKey: 'LoginAt' },
-  { ...utcColumn('logoutAt', 'Logout'), sortKey: 'LogoutAt' },
+  { ...utcColumn('logoutAt', 'Logout'), sortKey: 'LogoutAt', hiddenByDefault: true },
   { key: 'ip', title: 'IP', sortKey: 'Ip' },
   { key: 'cid', title: 'CID', sortKey: 'Cid' },
   { key: 'platform', title: 'Platform', sortKey: 'Platform', format: platformLabel },
@@ -50,7 +50,7 @@ const SESSION_COLUMNS = [
   { key: 'isCidValid', title: 'CID valid', hiddenByDefault: true, format: yesNo, sortKey: 'IsCidValid' },
   { key: 'geo', title: 'Country / city', format: geo => geo ? withCountryFlag(geo.country, [geo.country, geo.city].filter(Boolean).join(' / ')) || '—' : '—' },
   { key: 'geo', title: 'ISP', format: geo => geo?.isp || '—' },
-  { key: 'geo', title: 'ASN', format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
+  { key: 'geo', title: 'ASN', hiddenByDefault: true, format: geo => geo && geo.asn > 0 ? geo.asn : '—' },
   {
     key: 'geo', title: 'Warnings', format: warningBadges,
     help: WARNINGS_HELP,

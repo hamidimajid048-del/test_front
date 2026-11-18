@@ -4,8 +4,6 @@ const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const DEFAULT_PAGE_SIZE = 1000;
 
-const LOGIN_COLUMNS = SESSION_COLUMNS.map(column => column.title === 'ASN' ? { ...column, hiddenByDefault: true } : column);
-
 // The account report cannot answer when the evaluator has no usable data range for the login; the sessions
 // themselves are still known to the login tracker, so the page falls back to them.
 const ACCOUNT_REASONS = new Set([
@@ -73,7 +71,7 @@ function renderSessions(result) {
   const paging = pagingOf(result.report.paging);
   renderMetadata(result);
   renderTable(
-    document.getElementById('sessions'), LOGIN_COLUMNS, result.report.items,
+    document.getElementById('sessions'), SESSION_COLUMNS, result.report.items,
     session => renderGeoDetails(document.getElementById('geo-details'), session),
     {
       sort: {

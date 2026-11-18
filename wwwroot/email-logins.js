@@ -17,8 +17,6 @@ const actionsColumn = loginActionsColumn('login');
 
 const loginColumn = { key: 'login', title: 'Login', sortKey: 'Login' };
 
-const DETAIL_HIDDEN = ['Logout', 'ASN'];
-const DETAIL_COLUMNS = SESSION_COLUMNS.map(column => DETAIL_HIDDEN.includes(column.title) ? { ...column, hiddenByDefault: true } : column);
 
 const mappingColumns = (key, title, extra = []) => [
   { key, title, sortKey: title },
@@ -118,7 +116,7 @@ async function submit() {
 grids = [
   createReportGrid({
     path: 'login-reports/get-logins-sessions',
-    columns: [loginColumn, ...DETAIL_COLUMNS, actionsColumn],
+    columns: [loginColumn, ...SESSION_COLUMNS, actionsColumn],
     sort: { item: 'LoginAt', direction: 'Desc' },
     containerId: 'sessions',
     pagerId: 'sessions-pager',

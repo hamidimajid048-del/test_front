@@ -105,7 +105,7 @@ const TIMELINE_COLUMNS = [
     filterKey: 'Side',
   },
   { ...utcColumn('loginAt', 'Login'), sortKey: 'LoginAt' },
-  { ...utcColumn('logoutAt', 'Logout'), filterKey: 'LogoutAt' },
+  { ...utcColumn('logoutAt', 'Logout'), filterKey: 'LogoutAt', hiddenByDefault: true },
   { key: 'ip', title: 'IP', filterKey: 'Ip' },
   { key: 'cid', title: 'CID', filterKey: 'Cid' },
   { key: 'platform', title: 'Platform', filterKey: 'Platform', format: platformLabel },
