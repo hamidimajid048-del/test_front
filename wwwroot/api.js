@@ -761,11 +761,17 @@ function rowMenu(label, links) {
   menu.className = 'row-menu-list';
   menu.setAttribute('role', 'menu');
   menu.hidden = true;
-  for (const link of links) {
-    link.className = 'row-menu-item';
-    link.setAttribute('role', 'menuitem');
-    menu.append(link);
+  // links may be a function: the items are then built each time the menu opens, so data loaded after the row was drawn
+  // (such as the email of its login) is part of them.
+  function fill() {
+    menu.replaceChildren();
+    for (const link of typeof links === 'function' ? links() : links) {
+      link.className = 'row-menu-item';
+      link.setAttribute('role', 'menuitem');
+      menu.append(link);
+    }
   }
+  fill();
 
   const onPointerDown = event => { if (!wrap.contains(event.target)) close(); };
   const onKeyDown = event => {
@@ -785,6 +791,7 @@ function rowMenu(label, links) {
   }
   function open() {
     openRowMenu?.();
+    if (typeof links === 'function') fill();
     menu.hidden = false;
     button.setAttribute('aria-expanded', 'true');
     menu.style.maxHeight = '';

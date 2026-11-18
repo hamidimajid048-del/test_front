@@ -132,10 +132,13 @@ const LIST_COLUMNS = [
   { key: 'percentShare', title: 'Share (%)', format: value => `${value}%`, sortKey: 'PercentShare' },
   { key: 'profitLoss', title: 'Profit/loss', sortKey: 'ProfitLoss' },
   { key: 'hasIpShare', title: 'Shared evidence', format: (_, row) => shareLabels(row) },
-  loginActionsColumn('relatedLogin', row => [
-    menuAction('Positions', () => openPositions(row.relatedLogin)),
-    actionLink(`Compare with ${search.login}`, compareHref(row.relatedLogin)),
-  ]),
+  loginActionsColumn('relatedLogin', row => [menuAction('Positions', () => openPositions(row.relatedLogin))], {
+    subject: () => {
+      const range = search.fromUtc ? { from: search.fromUtc, to: search.toUtc } : listRange;
+      return { login: search.login, email: accountsDirectory.get(Number(search.login))?.email, fromUtc: range?.from, toUtc: range?.to };
+    },
+    emailOf: row => accountsDirectory.get(row.relatedLogin)?.email,
+  }),
 ];
 
 function windowItems(metadata) {

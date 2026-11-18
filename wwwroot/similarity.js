@@ -112,15 +112,9 @@ function renderMetadata(metadata) {
   renderSummary(document.getElementById('summary-metadata'), [['Login', metadata.login], ['Range (UTC)', range]]);
 }
 
-// The compare page for the searched login and a row's related login, over the same date range and on the tab of
-// the row's evidence type.
-function compareHref(row) {
-  const query = new URLSearchParams({ login: filters.login, other: row.relatedLogin, tab: row.type === 'Cid' ? 'shared-cids' : 'shared-ips' });
-  for (const key of ['range', 'fromUtc', 'toUtc']) {
-    if (filters[key]) query.set(key, filters[key]);
-  }
-  return `/compare.html?${query}`;
-}
+// The searched login with its email and day range: the row menus pass it to the compare pages as the main side.
+let subjectEmail = null;
+const subject = () => ({ login: filters.login, email: subjectEmail, fromUtc: filters.fromUtc, toUtc: filters.toUtc });
 
 const differentEmailButton = document.getElementById('different-email');
 
@@ -132,6 +126,7 @@ differentEmailButton.addEventListener('click', () => {
 
 function renderDifferentEmail(metadata) {
   const known = Boolean(metadata.loginEmail);
+  subjectEmail = known ? metadata.loginEmail : null;
   differentEmailButton.disabled = !known;
   differentEmailButton.setAttribute('aria-pressed', String(differentEmailOnly && known));
   document.getElementById('accounts-message').textContent = known
@@ -144,10 +139,7 @@ const SUMMARY_COLUMNS = [
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
   ...accountColumns(['name', 'group', 'balance']),
-  loginActionsColumn('relatedLogin', row => [
-    menuAction('Shared values', () => openDetails(row)),
-    actionLink(`Compare with ${filters.login}`, compareHref(row)),
-  ]),
+  loginActionsColumn('relatedLogin', row => [menuAction('Shared values', () => openDetails(row))], { subject, emailOf: row => row.email }),
 ];
 
 const DETAILS_COLUMNS = [

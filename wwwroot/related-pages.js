@@ -1,5 +1,11 @@
 // Links from a searched login or email to the other pages that take it, so it does not have to be typed again.
 // A page calls showRelatedPages with what it searched; the email of a login is read from the user directory.
+// query(value, subject) builds a page's parameters; subject is what the page searched ({ login, email, fromUtc, toUtc }),
+// so a compare link from a row carries both sides and the same day range.
+
+const subjectRange = subject => (subject?.fromUtc && subject?.toUtc ? { range: 'custom', fromUtc: subject.fromUtc, toUtc: subject.toUtc } : {});
+const otherLogin = (login, subject) => subject?.login && Number(subject.login) !== Number(login);
+const otherEmail = (email, subject) => subject?.email && subject.email.toLowerCase() !== email.toLowerCase();
 
 const RELATED_LOGIN_PAGES = [
   { title: 'Account data', permission: 'account-data.view', path: '/account-data.html', query: login => ({ login }) },
@@ -13,20 +19,29 @@ const RELATED_LOGIN_PAGES = [
     title: 'Hedge', permission: 'copy-trade.view', path: '/copy-trade.html',
     query: login => ({ kind: 'hedge', login, secondsBefore: 5, secondsAfter: 5, minCountShare: 1, volumeTolerancePercent: 10 }),
   },
-  { title: 'Compare accounts', permission: 'compare.view', path: '/compare.html', query: login => ({ login }) },
-  { title: 'Compare with logins', permission: 'compare.view', path: '/compare-logins.html', query: login => ({ login }) },
+  {
+    title: 'Compare accounts', permission: 'compare.view', path: '/compare.html',
+    query: (login, subject) => (otherLogin(login, subject) ? { login: subject.login, other: login, ...subjectRange(subject) } : { login }),
+  },
+  {
+    title: 'Compare with logins', permission: 'compare.view', path: '/compare-logins.html',
+    query: (login, subject) => (otherLogin(login, subject) ? { login: subject.login, otherLogins: login, ...subjectRange(subject) } : { login }),
+  },
 ];
 
 const RELATED_EMAIL_PAGES = [
   { title: 'Email logins', permission: 'email-logins.view', path: '/email-logins.html', query: email => ({ email }) },
-  { title: 'Compare emails', permission: 'compare-emails.view', path: '/compare-emails.html', query: email => ({ email }) },
+  {
+    title: 'Compare emails', permission: 'compare-emails.view', path: '/compare-emails.html',
+    query: (email, subject) => (otherEmail(email, subject) ? { email: subject.email, otherEmail: email, ...subjectRange(subject) } : { email }),
+  },
 ];
 
 const relatedEmails = new Map();
 let relatedRequest = 0;
 
-function relatedLink(page, value) {
-  return actionLink(page.title, page.path + toQueryString(page.query(value)));
+function relatedLink(page, value, subject) {
+  return actionLink(page.title, page.path + toQueryString(page.query(value, subject)));
 }
 
 function relatedLinks(pages, value, me) {
@@ -101,21 +116,39 @@ function menuAction(text, onClick) {
   return link;
 }
 
-// A row's "⋯" menu: the row's own actions first, then the pages that take its login(s), opened in a new browser tab.
-// With several logins (a pair row), each page item names its login.
-function relatedLoginActions(logins, actions = []) {
+// A row's "⋯" menu: the row's own actions first, then the pages that take its login(s), opened in a new browser tab,
+// then the pages that take its email when it is known. With several logins (a pair row), each page item names its login.
+// subject is what the page searched, so the compare pages get both sides; emailOf gives the row's email.
+function relatedLoginActions(logins, actions = [], { subject, emailOf } = {}) {
   const list = [logins].flat();
   const many = list.length > 1;
-  return rowMenu(`Actions for login ${list.join(' / ')}`, [...actions, ...list.flatMap(login => RELATED_LOGIN_PAGES.map(page => {
-    const link = relatedLink(page, login);
-    if (many) link.textContent = `${page.title} — ${login}`;
+  const allowedLink = (page, value, current) => {
+    const link = relatedLink(page, value, current);
     hideUnlessAllowed(link, page.permission);
     return link;
-  }))]);
+  };
+  const items = () => {
+    const current = subject?.();
+    const email = emailOf?.();
+    return [
+      ...actions,
+      ...list.flatMap(login => RELATED_LOGIN_PAGES.map(page => {
+        const link = allowedLink(page, login, current);
+        if (many) link.textContent = `${page.title} — ${login}`;
+        return link;
+      })),
+      ...(email ? RELATED_EMAIL_PAGES.map(page => allowedLink(page, email, current)) : []),
+    ];
+  };
+  return rowMenu(`Actions for login ${list.join(' / ')}`, items);
 }
 
 // An "Actions" column at the end of a table: the "⋯" menu of the row's login(s), with the row's own actions when given.
-const loginActionsColumn = (keys, actions) => ({
+// options.subject() is what the page searched ({ login, email, fromUtc, toUtc }); options.emailOf(row) is the row's email.
+const loginActionsColumn = (keys, actions, options = {}) => ({
   key: [keys].flat()[0], title: 'Actions', sortable: false, filterable: false, noExport: true,
-  format: (_, row) => relatedLoginActions([keys].flat().map(key => row[key]), actions?.(row) ?? []),
+  format: (_, row) => relatedLoginActions([keys].flat().map(key => row[key]), actions?.(row) ?? [], {
+    subject: options.subject,
+    emailOf: options.emailOf ? () => options.emailOf(row) : undefined,
+  }),
 });

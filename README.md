@@ -155,3 +155,9 @@ Account data, Login history, IP/CID similarity, Copy trade, Hedge (window 5 s, m
 Compare accounts and Compare with logins (main login filled in). The email of the login is read from the user directory (`mt5/accounts`) and adds
 Email logins and Compare emails (Email A filled in). The email pages (Email logins, Compare emails) show the email
 buttons. Only pages the account may open are shown; the links are built in `related-pages.js`.
+
+The "⋯" menu of a table row has the same pages for the row's login, and for its email when the row knows it (Email
+logins, Compare emails). On a page that searched a login (IP/CID similarity, Copy trade & hedge) the compare items carry
+both sides and the searched day range: Compare accounts and Compare with logins open with the searched login as the
+main login and the row's login as the compared one; Compare emails opens with the searched login's email as A and the
+row's email as B. The menu items are built when the menu opens, so an email loaded after the table was drawn is included.
