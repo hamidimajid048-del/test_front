@@ -32,7 +32,7 @@ const MENU_ITEMS = [
   { group: 'compare', href: '/copy-trade.html', icon: 'swap', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
   { group: 'compare', href: '/compare.html', icon: 'layers', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, a merged timeline, and transactions made from a shared IP or computer ID.' },
   { group: 'compare', href: '/compare-logins.html', icon: 'users', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
-  { group: 'compare', href: '/compare-emails.html', icon: 'mail', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
+  { group: 'compare', href: '/compare-emails.html', icon: 'mailCompare', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
   { group: 'operations', href: '/bulk-balance.html', icon: 'wallet', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
 ];
 
@@ -75,6 +75,7 @@ const ICON_PATHS = {
   pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   shield: '<path d="M12 3 5 6v5.5c0 4.3 2.9 7.6 7 8.9 4.1-1.3 7-4.6 7-8.9V6z"/><path d="m9 12 2 2 4-4"/>',
   shieldUser: '<path d="M12 3 5 6v5.5c0 4.3 2.9 7.6 7 8.9 4.1-1.3 7-4.6 7-8.9V6z"/><circle cx="12" cy="10" r="2.3"/><path d="M8.5 16c.6-1.8 1.9-2.7 3.5-2.7s2.9.9 3.5 2.7"/>',
+  mailCompare: '<rect x="2.5" y="3.5" width="12.5" height="9" rx="1.6"/><path d="m3 4.5 6.25 4.6 6.25-4.6"/><path d="M17.5 9.5h2.5a1.6 1.6 0 0 1 1.6 1.6v7.8a1.6 1.6 0 0 1-1.6 1.6H10.6A1.6 1.6 0 0 1 9 18.9v-3.4"/><path d="m11 16.2 4.25 3.1"/>',
   mailPlus: '<path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/><path d="M19 15v6M16 18h6"/>',
   alert: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5h.01"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',

@@ -30,7 +30,7 @@ const mappingColumns = (key, title, extra = []) => [
 
 const accountColumns = [
   { key: 'login', title: 'Login' },
-  { key: 'source', title: 'Status', format: source => SOURCE_LABELS[source] ?? source },
+  { key: 'source', title: 'Status', format: source => badge(SOURCE_LABELS[source] ?? source, source === 'Manager' ? 'ok' : 'muted') },
   { key: 'name', title: 'Name' },
   { key: 'group', title: 'Group' },
   {
@@ -47,7 +47,6 @@ const accountColumns = [
     format: devices => devices === undefined ? '…' : devices.length ? withSeparators(platformList(devices), ', ') : '—',
     sortValue: row => row.devices?.join(', ') ?? '',
   },
-  actionsColumn,
   {
     key: 'cids',
     title: 'Computer IDs',
@@ -55,6 +54,7 @@ const accountColumns = [
     format: cids => cids === undefined ? '…' : cids.length ? cidList(cids) : '—',
     sortValue: row => row.cids?.length ?? 0,
   },
+  actionsColumn,
 ];
 
 // Puts an unseen separator between the items of a list, so the cell's text (copied or exported) keeps them apart.
@@ -124,6 +124,7 @@ function writeState(values) {
 }
 
 function clearResults() {
+  document.querySelector('main.email-history').classList.remove('loaded');
   for (const grid of grids) grid.clear();
   for (const id of ['metadata', 'accounts', 'geo-details', 'cid-overview']) document.getElementById(id).replaceChildren();
   document.getElementById('accounts-title').textContent = 'Logins';
@@ -142,11 +143,12 @@ async function search(values) {
   showRelatedPages({ email: values.email });
 
   if (!accounts.length) {
-    renderSummary(document.getElementById('metadata'), [['Email', values.email], ['Logins', 0]]);
+    renderIconSummary(document.getElementById('metadata'), [['Email', values.email, 'mail'], ['Logins', 0, 'layers']]);
     throw new ApiError('No login was found for this email.');
   }
   renderAccounts(accounts);
   document.getElementById('accounts-title').textContent = `Logins (${accounts.length})`;
+  document.querySelector('main.email-history').classList.add('loaded');
   if (accounts.length > MAX_LOGINS)
     throw new ApiError(`This email has ${accounts.length} logins; the reports take at most ${MAX_LOGINS}.`);
 
@@ -160,11 +162,11 @@ async function search(values) {
   const [sessions] = await Promise.all(grids.map(grid => grid.start(searchParams)));
   if (current !== request) return;
 
-  renderSummary(document.getElementById('metadata'), [
-    ['Email', values.email],
-    ['Range (UTC)', values.fromUtc ? `${values.fromUtc} — ${values.toUtc}` : 'All time'],
-    ['Logins', accounts.length],
-    ['Sessions', (pagingOf(sessions.paging)?.totalRecords ?? sessions.items.length).toLocaleString('en-US')],
+  renderIconSummary(document.getElementById('metadata'), [
+    ['Email', values.email, 'mail'],
+    ['Range (UTC)', values.fromUtc ? `${values.fromUtc} — ${values.toUtc}` : 'All time', 'calendar'],
+    ['Logins', accounts.length, 'layers'],
+    ['Sessions', (pagingOf(sessions.paging)?.totalRecords ?? sessions.items.length).toLocaleString('en-US'), 'list'],
   ]);
   message.textContent = '';
 }

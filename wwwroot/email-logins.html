@@ -11,8 +11,10 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
+  <main class="login-history email-history">
+    <div class="ad-top lh-top">
+    <form class="filters ad-search" id="filters">
+      <span class="lh-badge" data-icon="mail" aria-hidden="true"></span>
       <label>Email <input name="email" type="email" maxlength="320" required autocomplete="off"></label>
       <label>Date range
         <select name="range">
@@ -27,20 +29,25 @@
       </label>
       <label>From day (UTC) <input name="fromUtc" type="date"></label>
       <label>To day (UTC) <input name="toUtc" type="date"></label>
-      <button type="submit">Search</button>
+      <button type="submit" data-icon="search">Search</button>
     </form>
-    <p class="message" id="message"></p>
     <div class="related-pages" id="related-pages"></div>
-    <div class="summary" id="metadata"></div>
+    </div>
+    <p class="message" id="message"></p>
 
-    <div class="tabs" id="tabs">
-      <button type="button" data-tab="logins">Logins</button>
-      <button type="button" data-tab="summary">Summary</button>
-      <button type="button" data-tab="details">Details</button>
+    <section class="ad-card lh-info">
+      <h3 class="ad-card-title" data-icon="mail">Email info</h3>
+      <div class="summary lh-meta" id="metadata"></div>
+    </section>
+
+    <div class="tabs pills" id="tabs">
+      <button type="button" data-tab="logins" data-icon="layers">Logins</button>
+      <button type="button" data-tab="summary" data-icon="grid">Summary</button>
+      <button type="button" data-tab="details" data-icon="list">Details</button>
     </div>
 
     <section data-panel="logins">
-      <h3 id="accounts-title">Logins</h3>
+      <h3 class="ad-card-title" data-icon="layers"><span id="accounts-title">Logins</span></h3>
       <div id="accounts"></div>
       <ul class="help">
         <li>Every MetaTrader account with this email, read from the users table of the MetaTrader backup: active ones and archived ones, marked "Archived". At most 100 logins are reported together.</li>
@@ -48,16 +55,16 @@
         <li>The buttons open that login's own report in a new browser tab.</li>
       </ul>
     </section>
-    <section data-panel="summary" hidden>
-      <div id="cid-overview"></div>
+    <section data-panel="summary" class="lh-summary" hidden>
+      <div class="ad-card lh-cids" id="cid-overview"></div>
       <div class="summary-columns">
-        <div>
-          <h3 id="ips-title">IP</h3>
+        <div class="ad-card">
+          <h3 class="ad-card-title" data-icon="mapPin"><span id="ips-title">IP</span></h3>
           <div id="ips"></div>
           <div id="ips-pager"></div>
         </div>
-        <div>
-          <h3 id="cids-title">CID</h3>
+        <div class="ad-card">
+          <h3 class="ad-card-title" data-icon="monitor"><span id="cids-title">CID</span></h3>
           <div id="cids"></div>
           <div id="cids-pager"></div>
         </div>

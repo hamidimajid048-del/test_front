@@ -32,7 +32,7 @@ const RELATED_LOGIN_PAGES = [
 const RELATED_EMAIL_PAGES = [
   { title: 'Email logins', icon: 'mailPlus', permission: 'email-logins.view', path: '/email-logins.html', query: email => ({ email }) },
   {
-    title: 'Compare emails', icon: 'mail', permission: 'compare-emails.view', path: '/compare-emails.html',
+    title: 'Compare emails', icon: 'mailCompare', permission: 'compare-emails.view', path: '/compare-emails.html',
     query: (email, subject) => (otherEmail(email, subject) ? { email: subject.email, otherEmail: email, ...subjectRange(subject) } : { email }),
   },
 ];
