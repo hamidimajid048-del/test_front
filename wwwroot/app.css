@@ -1049,3 +1049,8 @@ html.i18n-loading body { visibility: hidden; }
 :root[dir="rtl"] .language-item.active::after { transform: rotate(-45deg); }
 .login-tools { position: fixed; top: 16px; inset-inline-end: 16px; display: flex; gap: var(--space-8); align-items: center; }
 .login-page .login-tools .theme-toggle { position: static; }
+
+/* Text that is read (copied, exported, read aloud) but not shown, such as the separators between list items. */
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.cid-list { display: flex; flex-direction: column; gap: 2px; align-items: center; font-variant-numeric: tabular-nums; }
+.cid-list small { color: var(--text-muted); }

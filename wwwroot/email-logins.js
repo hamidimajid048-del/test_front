@@ -40,8 +40,84 @@ const accountColumns = [
       ? '—'
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
+  {
+    key: 'devices',
+    title: 'Devices',
+    help: 'The platforms the login signed in with in the date range (Client, Android, iPhone, Web, ...), from its login sessions.',
+    format: devices => devices === undefined ? '…' : devices.length ? withSeparators(platformList(devices), ', ') : '—',
+    sortValue: row => row.devices?.join(', ') ?? '',
+  },
   actionsColumn,
+  {
+    key: 'cids',
+    title: 'Computer IDs',
+    help: 'The computer IDs (CID) the login signed in from in the date range, the most used first, with the number of sessions.',
+    format: cids => cids === undefined ? '…' : cids.length ? cidList(cids) : '—',
+    sortValue: row => row.cids?.length ?? 0,
+  },
 ];
+
+// Puts an unseen separator between the items of a list, so the cell's text (copied or exported) keeps them apart.
+function withSeparators(list, separator) {
+  [...list.children].slice(1).forEach(item => {
+    const gap = document.createElement('span');
+    gap.className = 'visually-hidden';
+    gap.textContent = separator;
+    item.before(gap);
+  });
+  return list;
+}
+
+// One CID per line, copyable, with its session count.
+function cidList(cids) {
+  const list = document.createElement('div');
+  list.className = 'cid-list';
+  for (const { cid, sessions } of cids) {
+    const line = document.createElement('div');
+    const count = document.createElement('small');
+    count.textContent = ` (${sessions.toLocaleString('en-US')})`;
+    line.append(copyableText(cid), count);
+    list.append(line);
+  }
+  return withSeparators(list, '; ');
+}
+
+// The devices and computer IDs of each login, from every page of the CID summary of the search.
+async function readLoginDevices(params) {
+  const byLogin = new Map();
+  for (let page = 1; ; page++) {
+    const report = await apiGet('login-reports/get-logins-cid-mappings', {
+      ...params, sortItem: 'SessionCount', sortDirection: 'Desc', currentPage: page, pageSize: SERVICE_MAX_PAGE_SIZE,
+    });
+    for (const mapping of report.items) {
+      const entry = byLogin.get(mapping.login) ?? { devices: new Set(), cids: [] };
+      for (const device of String(mapping.deviceType ?? '').split(',').map(item => item.trim()).filter(Boolean)) entry.devices.add(device);
+      if (mapping.cid) entry.cids.push({ cid: mapping.cid, sessions: mapping.sessionCount });
+      byLogin.set(mapping.login, entry);
+    }
+    const totalPages = pagingOf(report.paging)?.totalPages ?? page;
+    if (report.items.length === 0 || page >= totalPages) return byLogin;
+  }
+}
+
+function renderAccounts(accounts) {
+  renderTable(document.getElementById('accounts'), accountColumns, accounts, undefined, { export: { name: 'email-logins' } });
+}
+
+// Adds the devices and computer IDs to the logins table once the CID summary is read; the rest of the page does not wait.
+async function showLoginDevices(accounts, params, isCurrent) {
+  let byLogin;
+  try {
+    byLogin = await readLoginDevices(params);
+  } catch {
+    byLogin = new Map();
+  }
+  if (!isCurrent()) return;
+  renderAccounts(accounts.map(account => {
+    const entry = byLogin.get(account.login);
+    return { ...account, devices: entry ? [...entry.devices].sort() : [], cids: entry?.cids ?? [] };
+  }));
+}
 
 function showTab(tab) {
   currentTab = ['summary', 'details'].includes(tab) ? tab : 'logins';
@@ -77,7 +153,7 @@ async function search(values) {
     renderSummary(document.getElementById('metadata'), [['Email', values.email], ['Logins', 0]]);
     throw new ApiError('No login was found for this email.');
   }
-  renderTable(document.getElementById('accounts'), accountColumns, accounts, undefined, { export: { name: 'email-logins' } });
+  renderAccounts(accounts);
   document.getElementById('accounts-title').textContent = `Logins (${accounts.length})`;
   if (accounts.length > MAX_LOGINS)
     throw new ApiError(`This email has ${accounts.length} logins; the reports take at most ${MAX_LOGINS}.`);
@@ -88,6 +164,7 @@ async function search(values) {
     fromUtc: fromDayParam(values.fromUtc),
     toUtc: toDayParam(values.toUtc),
   };
+  showLoginDevices(accounts, searchParams, () => current === request);
   const [sessions] = await Promise.all(grids.map(grid => grid.start(searchParams)));
   if (current !== request) return;
 
