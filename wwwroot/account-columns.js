@@ -3,10 +3,13 @@
 
 const NO_ACCOUNT_VALUE = '—';
 
+// An account MetaTrader no longer has is archived, never deleted. A service published before the field was renamed
+// still sends isDeleted.
 function accountName(name, row) {
-  if (row.isDeleted == null) return 'Not found';
+  const archived = row.isArchived ?? row.isDeleted;
+  if (archived == null) return 'Not found';
   if (!name) return NO_ACCOUNT_VALUE;
-  return row.isDeleted ? `${name} (archived)` : name;
+  return archived ? `${name} (archived)` : name;
 }
 
 function accountBalance(value) {
