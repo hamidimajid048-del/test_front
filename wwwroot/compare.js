@@ -679,7 +679,7 @@ function swapLink() {
   query.set('tab', activeTab);
   query.delete('currentPage');
   query.delete('pageSize');
-  return actionLink('Swap accounts', `/compare.html?${query}`);
+  return actionLink('Swap accounts', `/compare.html?${query}`, false);
 }
 
 function renderSignals(shared) {

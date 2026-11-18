@@ -162,7 +162,7 @@ function userActions(user) {
   const actions = document.createElement('div');
   actions.className = 'actions';
   if (user.isSelf) {
-    actions.append(actionLink('My account', '/account.html'));
+    actions.append(actionLink('My account', '/account.html', false));
     return actions;
   }
 

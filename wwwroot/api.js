@@ -740,7 +740,6 @@ function copyableText(value) {
   return text;
 }
 
-// A button-like link for a row's "Actions" cell; the click does not also trigger the row's own click handler.
 // A "⋯" button that opens a menu of a table row's links. The menu is fixed to the window, so the table's scroll box does
 // not cut it off; it opens below the button, or above when there is more room there (scrolling when neither side holds
 // it), and closes on a pick, a click elsewhere, Escape or scrolling.
@@ -818,10 +817,16 @@ function rowMenu(label, links) {
   return wrap;
 }
 
-function actionLink(text, href) {
+// A button-like link for a row's "Actions" cell, opened in a new tab unless it is an in-page action ("#"); the click does not
+// also trigger the row's own click handler.
+function actionLink(text, href, newTab = href !== '#') {
   const link = document.createElement('a');
   link.className = 'action-link';
   link.href = href;
+  if (newTab) {
+    link.target = '_blank';
+    link.rel = 'noopener';
+  }
   link.textContent = text;
   link.addEventListener('click', event => event.stopPropagation());
   return link;

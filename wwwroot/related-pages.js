@@ -95,8 +95,6 @@ function relatedLoginActions(...logins) {
   return rowMenu(`Open login ${logins.join(' / ')} in`, logins.flatMap(login => RELATED_LOGIN_PAGES.map(page => {
     const link = relatedLink(page, login);
     if (many) link.textContent = `${page.title} — ${login}`;
-    link.target = '_blank';
-    link.rel = 'noopener';
     hideUnlessAllowed(link, page.permission);
     return link;
   })));
