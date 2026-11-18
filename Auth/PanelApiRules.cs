@@ -11,12 +11,12 @@ public static class PanelApiRules
         ["similarity-reports"] = [PanelPermissions.SimilarityView],
         ["value-search"] = [PanelPermissions.ValueSearchView],
         ["compare-reports"] = [PanelPermissions.CompareView],
-        ["group-compare-reports"] = [PanelPermissions.CompareEmailsView],
+        ["group-compare-reports"] = [PanelPermissions.CompareView, PanelPermissions.CompareEmailsView],
         ["copy-trade-and-hedge-reports"] = [PanelPermissions.CopyTradeView],
         ["position-compare-reports"] = [PanelPermissions.CopyTradeView],
         ["transaction-reports"] = [PanelPermissions.AccountDataView],
         ["account-data"] = [PanelPermissions.AccountDataView],
-        ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView, PanelPermissions.CompareEmailsView]
+        ["meta-trader-accounts"] = [PanelPermissions.EmailLoginsView, PanelPermissions.CompareView, PanelPermissions.CompareEmailsView]
     };
 
     public static bool IsAllowed(PathString path, ClaimsPrincipal user)

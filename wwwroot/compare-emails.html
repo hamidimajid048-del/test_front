@@ -13,7 +13,7 @@
   <main>
     <form class="filters" id="filters">
       <label>Email A <input name="email" type="email" maxlength="320" required autocomplete="off"></label>
-      <label>Email B <input name="otherEmail" type="email" maxlength="320" required autocomplete="off"></label>
+      <label>Emails B <input name="otherEmail" type="email" multiple maxlength="3200" required autocomplete="off" placeholder="One or more emails, separated by commas"></label>
       <label>Date range
         <select name="range">
           <option value="">All time</option>
@@ -48,7 +48,7 @@
       <div class="summary" id="shared-facts"></div>
       <ul class="help">
         <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
-        <li>Shared values are those used by at least one login of each email within the date range.</li>
+        <li>Shared values are those used by at least one login of email A and by at least one login of the emails B within the date range. With several emails B, their logins are compared as one group.</li>
       </ul>
     </section>
     <section data-panel="logins" hidden>
@@ -83,7 +83,7 @@
       <p class="hint">Click a row to see its sessions in the Details tab.</p>
     </section>
     <section data-panel="details" hidden>
-      <p class="hint">Every session of any login of both emails that used a shared IP or CID.</p>
+      <p class="hint">Every session of any login of both sides that used a shared IP or CID.</p>
       <div id="sessions"></div>
       <div id="sessions-pager"></div>
       <div id="geo-details"></div>
@@ -99,6 +99,7 @@
   <script src="/country-flags.js"></script>
   <script src="/sessions-table.js"></script>
   <script src="/report-grid.js"></script>
+  <script src="/group-compare.js"></script>
   <script src="/compare-emails.js"></script>
 </body>
 </html>

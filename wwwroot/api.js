@@ -31,7 +31,8 @@ const MENU_ITEMS = [
   { group: 'logins', href: '/value-search.html', title: 'CID / IP search', permission: 'value-search.view', description: 'Every login that used a given CID or IP, with its login count and when it was first and last seen.' },
   { group: 'compare', href: '/copy-trade.html', title: 'Copy trade & hedge', permission: 'copy-trade.view', description: "Accounts that opened the same or the opposite trades around this login's openings." },
   { group: 'compare', href: '/compare.html', title: 'Compare accounts', permission: 'compare.view', description: 'Two logins side by side: shared IPs and CIDs with their details, near and overlapping logins, a merged timeline, and transactions made from a shared IP or computer ID.' },
-  { group: 'compare', href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of two emails compared: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
+  { group: 'compare', href: '/compare-logins.html', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
+  { group: 'compare', href: '/compare-emails.html', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
   { group: 'operations', href: '/bulk-balance.html', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
 ];
 

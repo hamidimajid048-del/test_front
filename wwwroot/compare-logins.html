@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Compare with logins — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <form class="filters" id="filters">
+      <label>Main login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+      <label>Compared logins <input name="otherLogins" type="text" maxlength="2000" required autocomplete="off" placeholder="One or more logins, separated by commas or spaces"></label>
+      <label>Date range
+        <select name="range">
+          <option value="">All time</option>
+          <option value="week">Last week</option>
+          <option value="month">Last month</option>
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="year">Last year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>From day (UTC) <input name="fromUtc" type="date"></label>
+      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <button type="submit">Compare</button>
+    </form>
+    <p class="message" id="message"></p>
+    <div class="related-pages" id="related-pages"></div>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="overview">Overview</button>
+      <button type="button" data-tab="logins">Logins</button>
+      <button type="button" data-tab="pairs">Linked pairs</button>
+      <button type="button" data-tab="ips">Shared IPs</button>
+      <button type="button" data-tab="cids">Shared CIDs</button>
+      <button type="button" data-tab="details">Details</button>
+    </div>
+
+    <section data-panel="overview">
+      <div class="summary" id="verdict"></div>
+      <p class="hint" id="verdict-reason"></p>
+      <div id="sides"></div>
+      <div class="summary" id="shared-facts"></div>
+      <ul class="help">
+        <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
+        <li>Shared values are those used by the main login and by at least one of the compared logins within the date range. The compared logins are compared as one group; the Linked pairs tab tells which of them is linked to the main login.</li>
+      </ul>
+    </section>
+    <section data-panel="logins" hidden>
+      <div class="summary-columns">
+        <div>
+          <h3 id="accounts-main-title">Main login</h3>
+          <div id="accounts-main"></div>
+        </div>
+        <div>
+          <h3 id="accounts-other-title">Compared logins</h3>
+          <div id="accounts-other"></div>
+        </div>
+      </div>
+      <p class="hint" id="accounts-hint">The account details come from the MetaTrader backup; a login missing there is still compared. The buttons open that login's own report in a new browser tab.</p>
+    </section>
+    <section data-panel="pairs" hidden>
+      <h3 id="pairs-title">Linked login pairs</h3>
+      <div id="pairs"></div>
+      <div id="pairs-pager"></div>
+      <p class="hint">How many IPs and CIDs the main login shares with each compared login.</p>
+    </section>
+    <section data-panel="ips" hidden>
+      <h3 id="ips-title">Shared IPs</h3>
+      <div id="ips"></div>
+      <div id="ips-pager"></div>
+      <p class="hint">Click a row to see its sessions in the Details tab.</p>
+    </section>
+    <section data-panel="cids" hidden>
+      <h3 id="cids-title">Shared CIDs</h3>
+      <div id="cids"></div>
+      <div id="cids-pager"></div>
+      <p class="hint">Click a row to see its sessions in the Details tab.</p>
+    </section>
+    <section data-panel="details" hidden>
+      <p class="hint">Every session of the main login and the compared logins that used a shared IP or CID.</p>
+      <div id="sessions"></div>
+      <div id="sessions-pager"></div>
+      <div id="geo-details"></div>
+    </section>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/related-pages.js"></script>
+  <script src="/platform-icons.js"></script>
+  <script src="/table-views.js"></script>
+  <script src="/table-export.js"></script>
+  <script src="/range.js"></script>
+  <script src="/country-flags.js"></script>
+  <script src="/sessions-table.js"></script>
+  <script src="/report-grid.js"></script>
+  <script src="/group-compare.js"></script>
+  <script src="/compare-logins.js"></script>
+</body>
+</html>

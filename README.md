@@ -102,15 +102,22 @@ with first/last sign-in and session count, the details list every session with i
 column filters and paging are done by the service.
 The page has three tabs: **Logins** (the accounts of the email, each with buttons that open its account data, login history, similarity, copy trade, hedge or compare page in a new browser tab), **Summary** (IPs and CIDs per login) and **Details** (every session).
 
-The **Compare emails** page (`compare-emails.html`) takes two emails and an optional UTC day range, finds the logins of
-each email as above, and compares the two groups through `group-compare-reports/*` of the service (at most 100 logins per
-email): `get-overview` (per-email totals, the shared IPs and CIDs with their share of each side, and the evidence rating),
-`get-login-pairs` (which login of one email shares how many IPs and CIDs with which login of the other),
+The **Compare emails** page (`compare-emails.html`) takes email A, one or more emails B (separated by commas) and an
+optional UTC day range, finds the logins of every email as above, and compares the logins of A with the logins of all
+emails B as one group through `group-compare-reports/*` of the service (at most 100 logins per side):
+`get-overview` (per-side totals, the shared IPs and CIDs with their share of each side, and the evidence rating),
+`get-login-pairs` (which login of A shares how many IPs and CIDs with which login of B),
 `get-shared-ips`, `get-shared-cids` and `get-sessions` (every session that used a shared value). Evidence is *Strong* for
 a valid shared CID or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter, *Medium* for a shared IP that is not,
 *Weak* when only such IPs or invalid CIDs are shared, and *None* otherwise. A row of the shared tables opens its
 sessions in the Details tab.
-The page has six tabs: **Overview** (evidence and the side-by-side totals), **Logins** (the accounts of both emails, with the same buttons for each login), **Linked pairs**, **Shared IPs**, **Shared CIDs** and **Details**; the last three tabs show their row counts.
+The page has six tabs: **Overview** (evidence and the side-by-side totals), **Logins** (the accounts of both sides, each with its email and the same buttons for each login), **Linked pairs**, **Shared IPs**, **Shared CIDs** and **Details**; the last three tabs show their row counts.
+
+The **Compare with logins** page (`compare-logins.html`, permission `compare.view`) is the same comparison for one main
+login against one or more compared logins typed directly (separated by commas or spaces, at most 100). The Logins tab
+reads the accounts of the backup with `meta-trader-accounts/get-accounts?logins=`; a login the backup does not know is
+still compared. Both pages share `group-compare.js` (tabs, tables, overview); each page only resolves its inputs to the
+two login groups.
 
 ## Run
 
@@ -144,7 +151,7 @@ Configuration, security constraints, how to turn it off and the removal checklis
 
 Every page that searches a login (Account data, Login history, IP/CID similarity, Copy trade & hedge, Compare accounts,
 Position details) shows, once the search has run, a row of buttons that open the same login on the other pages:
-Account data, Login history, IP/CID similarity, Copy trade, Hedge (window 5 s, min share 1, hedge tolerance 10 %) and
-Compare accounts (main login filled in). The email of the login is read from the user directory (`mt5/accounts`) and adds
+Account data, Login history, IP/CID similarity, Copy trade, Hedge (window 5 s, min share 1, hedge tolerance 10 %),
+Compare accounts and Compare with logins (main login filled in). The email of the login is read from the user directory (`mt5/accounts`) and adds
 Email logins and Compare emails (Email A filled in). The email pages (Email logins, Compare emails) show the email
 buttons. Only pages the account may open are shown; the links are built in `related-pages.js`.

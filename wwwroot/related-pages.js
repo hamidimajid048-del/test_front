@@ -14,6 +14,7 @@ const RELATED_LOGIN_PAGES = [
     query: login => ({ kind: 'hedge', login, secondsBefore: 5, secondsAfter: 5, minCountShare: 1, volumeTolerancePercent: 10 }),
   },
   { title: 'Compare accounts', permission: 'compare.view', path: '/compare.html', query: login => ({ login }) },
+  { title: 'Compare with logins', permission: 'compare.view', path: '/compare-logins.html', query: login => ({ login }) },
 ];
 
 const RELATED_EMAIL_PAGES = [
