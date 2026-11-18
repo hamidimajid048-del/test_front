@@ -12,7 +12,7 @@
 <body class="home">
   <nav class="menu" id="menu"></nav>
   <main>
-    <header class="home-header">
+    <header class="page-header home-header">
       <div>
         <h1 class="page-title">Violation reports</h1>
         <p class="home-subtitle">Monitor and review violations across accounts, logins, and trading activities.</p>
@@ -25,7 +25,7 @@
   <script src="/platform-icons.js"></script>
   <script src="/table-views.js"></script>
   <script>
-    document.querySelector('.home-header').prepend(icon('chart', 'home-header-icon'));
+    document.querySelector('.home-header').prepend(icon('chart', 'page-icon'));
     renderCards(document.getElementById('cards'));
     renderMenu();
   </script>

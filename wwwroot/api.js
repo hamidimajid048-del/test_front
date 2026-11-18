@@ -115,7 +115,7 @@ function renderCards(container) {
   });
 }
 
-const USERS_PAGE = { href: '/users.html', title: 'Users', permission: 'users.view' };
+const USERS_PAGE = { href: '/users.html', icon: 'users', title: 'Users', permission: 'users.view' };
 
 const TOAST_ICONS = {
   success: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>',
@@ -448,6 +448,7 @@ function createServiceStatus() {
   const pill = (iconName, title, request, isOnline) => {
     const element = document.createElement('span');
     element.className = `service-pill ${iconName}`;
+    element.title = title;
     const state = document.createElement('span');
     state.className = 'service-state';
     state.textContent = 'Checking';
@@ -631,13 +632,17 @@ function renderMenu() {
   nav.replaceChildren(brand, linkBox, actions);
   fitMenu();
 
-  // Every page gets a visible h1 taken from its title ("Account data — Violation Panel").
+  // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu entry.
   const main = document.querySelector('main');
   if (main && !main.querySelector('h1')) {
     const heading = document.createElement('h1');
     heading.className = 'page-title';
     heading.textContent = document.title.split(' — ')[0];
-    main.prepend(heading);
+    const pageIcon = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.icon ?? (location.pathname === '/account.html' ? 'user' : 'layers');
+    const header = document.createElement('header');
+    header.className = 'page-header';
+    header.append(icon(pageIcon, 'page-icon'), heading);
+    main.prepend(header);
   }
 
   currentAccount().then(me => {
