@@ -624,6 +624,7 @@ function renderOverview(data, switches, status) {
 }
 
 function clearResults() {
+  document.querySelector('main.account-data').classList.remove('loaded');
   document.getElementById('stop-out-reason').textContent = '';
   document.getElementById('passwords').hidden = true;
   document.getElementById('password-rows').replaceChildren();
@@ -670,6 +671,7 @@ async function search(login) {
   if (current !== request) return;
   overview = data;
   renderOverview(data, switches, status);
+  document.querySelector('main.account-data').classList.add('loaded');
   showRelatedPages({ login: data.login, email: data.email });
   writeState();
   message.textContent = '';

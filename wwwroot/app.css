@@ -1265,6 +1265,8 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 
 .ad-top { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-20); align-items: stretch; }
 .ad-top .related-pages:empty { display: none; }
+/* Until an account is loaded only the search shows; the tabs and their empty cards wait for the data. */
+.account-data:not(.loaded) #tabs, .account-data:not(.loaded) [data-panel] { display: none; }
 .account-data form.ad-search { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12); margin: 0; padding: var(--space-16); }
 .account-data form.ad-search label { flex-direction: row; align-items: center; gap: var(--space-12); }
 .field-name { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-16); color: var(--text); background: var(--tile-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); font-weight: 600; white-space: nowrap; }
