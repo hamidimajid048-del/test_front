@@ -370,6 +370,13 @@ nav.menu .language-button::after { content: ""; width: 6px; height: 6px; margin-
 nav.menu .language-menu { background: var(--menu-surface) padding-box, var(--edge) border-box; border-color: transparent; box-shadow: 0 12px 32px var(--menu-shadow), 0 0 18px var(--glow-soft); }
 nav.menu .language-item:hover:not(:disabled), nav.menu .language-item:focus-visible { background: var(--nav-hover); }
 
+nav.menu .page-header { flex: 0 1 auto; gap: var(--space-12); min-width: 0; margin: 0; }
+nav.menu .page-header > div { min-width: 0; }
+nav.menu .page-header .page-icon { width: 36px; height: 36px; border-radius: var(--radius-md); }
+nav.menu .page-header .page-icon svg { width: 20px; height: 20px; }
+nav.menu .page-header .page-title { overflow: hidden; font-size: var(--font-size-md); line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; }
+nav.menu .page-subtitle { overflow: hidden; margin: 0; font-size: var(--font-size-xs); line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
+
 /* ---------- Service status ---------- */
 
 .service-status { display: flex; align-items: center; padding: 3px var(--space-4); background: var(--menu-surface) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-lg); box-shadow: inset 0 1px 0 var(--nav-highlight); }
@@ -948,6 +955,7 @@ body.login-page::before { top: 0; }
 .icon svg { width: 18px; height: 18px; }
 
 @media (max-width: 720px) {
+  nav.menu .page-subtitle { display: none; }
   .nav-actions { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; }
   .nav-divider { display: none; }
   .page-header.with-subtitle { gap: var(--space-14); }

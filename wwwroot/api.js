@@ -677,7 +677,7 @@ function renderMenu() {
   nav.replaceChildren(toggle, actions);
 
   // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu
-  // entry; a page that writes its own header (with a subtitle) gets the icon only.
+  // entry; a page that writes its own header (with a subtitle) gets the icon only. The header sits in the top bar.
   const main = document.querySelector('main');
   const pageIcon = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.icon ?? (location.pathname === '/account.html' ? 'user' : 'layers');
   let header = main?.querySelector('.page-header');
@@ -691,6 +691,7 @@ function renderMenu() {
     main.prepend(header);
   }
   if (header && !header.querySelector('.page-icon')) header.prepend(icon(pageIcon, 'page-icon'));
+  if (header) actions.before(header);
   applyIcons();
 
   currentAccount().then(me => {
