@@ -720,6 +720,7 @@ function renderOverview(report) {
     ? `Both active ${formatUtc(shared.activityOverlapStartUtc)} to ${formatUtc(shared.activityOverlapEndUtc)}`
     : 'The accounts were never active in the same period';
   const rows = [
+    { metric: 'Email', main: main.email || '—', other: other.email || '—', shared: main.email && other.email ? (main.email.toLowerCase() === other.email.toLowerCase() ? 'Same email' : 'Different emails') : '' },
     { metric: 'Sessions', main: main.sessionCount, other: other.sessionCount, shared: '' },
     { metric: 'First login (UTC)', main: formatUtc(main.firstLoginAt) || '—', other: formatUtc(other.firstLoginAt) || '—', shared: both },
     { metric: 'Last login (UTC)', main: formatUtc(main.lastLoginAt) || '—', other: formatUtc(other.lastLoginAt) || '—', shared: '' },

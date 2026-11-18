@@ -112,6 +112,10 @@ a valid shared CID or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter
 *Weak* when only such IPs or invalid CIDs are shared, and *None* otherwise. A row of the shared tables opens its
 sessions in the Details tab.
 The page has six tabs: **Overview** (evidence and the side-by-side totals), **Logins** (the accounts of both sides, each with its email and the same buttons for each login), **Linked pairs**, **Shared IPs**, **Shared CIDs** and **Details**; the last three tabs show their row counts.
+Every row that names a login also carries its email from the MetaTrader backup, filled by the service: the linked pairs
+(`email`, `otherEmail`, sortable and filterable), the shared IPs and CIDs (`mainEmails`, `otherEmails`, the distinct
+emails of each side's logins) and the sessions of the Details tab (`email`, sortable and filterable). The Compare
+accounts overview shows the email of both logins the same way.
 
 The **Compare with logins** page (`compare-logins.html`, permission `compare.view`) is the same comparison for one main
 login against one or more compared logins typed directly (separated by commas or spaces, at most 100). The Logins tab

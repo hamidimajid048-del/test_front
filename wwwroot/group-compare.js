@@ -29,11 +29,16 @@ function splitValues(text) {
   return values;
 }
 
-const groupCompareLoginsCell = logins => {
-  const shown = logins.slice(0, GROUP_COMPARE_MAX_LISTED_LOGINS).map(copyableText);
-  const rest = logins.length - shown.length;
-  return inline(...shown, ...(rest > 0 ? [`+${rest}`] : []));
-};
+// A cell listing values separated by commas (so an export reads them apart), the first few copyable, the rest counted.
+function groupCompareListCell(values) {
+  if (!values?.length) return '—';
+  const shown = values.slice(0, GROUP_COMPARE_MAX_LISTED_LOGINS).map(copyableText);
+  const rest = values.length - shown.length;
+  return inline(...shown.flatMap((item, index) => (index ? [', ', item] : [item])), ...(rest > 0 ? [`, +${rest}`] : []));
+}
+
+const groupCompareLoginsCell = logins => groupCompareListCell(logins);
+const groupCompareEmailsCell = emails => groupCompareListCell(emails);
 
 const groupCompareAccountColumns = [
   { key: 'login', title: 'Login' },
@@ -64,8 +69,10 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
   ];
 
   const pairColumns = () => [
-    { key: 'login', title: `Login (${names.main})`, sortKey: 'Login' },
-    { key: 'otherLogin', title: `Login (${names.other})`, sortKey: 'OtherLogin' },
+    { key: 'login', title: 'Login', group: names.main, sortKey: 'Login' },
+    { key: 'email', title: 'Email', group: names.main, sortKey: 'Email', format: email => email || '—' },
+    { key: 'otherLogin', title: 'Login', group: names.other, sortKey: 'OtherLogin' },
+    { key: 'otherEmail', title: 'Email', group: names.other, sortKey: 'OtherEmail', format: email => email || '—' },
     { key: 'sharedIpCount', title: 'Shared IPs', sortKey: 'SharedIpCount' },
     { key: 'sharedCidCount', title: 'Shared CIDs', sortKey: 'SharedCidCount' },
     loginActionsColumn(['login', 'otherLogin']),
@@ -75,9 +82,11 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
   const sharedColumns = (valueTitle, extra) => () => [
     { key: 'value', title: valueTitle, sortKey: 'Value' },
     { key: 'mainLogins', title: 'Logins', group: names.main, format: groupCompareLoginsCell, sortable: false, filterable: false },
+    { key: 'mainEmails', title: 'Emails', group: names.main, format: groupCompareEmailsCell, sortable: false, filterable: false },
     { key: 'mainSessionCount', title: 'Sessions', group: names.main, sortKey: 'MainSessionCount' },
     seenColumn('mainFirstSeenUtc', 'mainLastSeenUtc', 'First / last seen', { group: names.main, sortKey: 'MainFirstSeenUtc' }),
     { key: 'otherLogins', title: 'Logins', group: names.other, format: groupCompareLoginsCell, sortable: false, filterable: false },
+    { key: 'otherEmails', title: 'Emails', group: names.other, format: groupCompareEmailsCell, sortable: false, filterable: false },
     { key: 'otherSessionCount', title: 'Sessions', group: names.other, sortKey: 'OtherSessionCount' },
     seenColumn('otherFirstSeenUtc', 'otherLastSeenUtc', 'First / last seen', { group: names.other, sortKey: 'OtherFirstSeenUtc' }),
     { key: 'overlapsInTime', title: 'Used in the same period', format: yesNo, sortKey: 'OverlapsInTime' },
@@ -102,6 +111,7 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
       format: login => sideOf.get(login) === 'main' ? badge(names.main, 'main') : badge(names.other, 'compared'),
     },
     { key: 'login', title: 'Login', sortKey: 'Login' },
+    { key: 'email', title: 'Email', sortKey: 'Email', format: email => email || '—' },
     ...SESSION_COLUMNS,
     { key: 'sharedIp', title: 'Shared IP', format: yesNo, sortKey: 'SharedIp' },
     { key: 'sharedCid', title: 'Shared CID', format: yesNo, sortKey: 'SharedCid' },
