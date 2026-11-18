@@ -50,16 +50,9 @@ const COLUMNS = {
     sorted(column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),
     sorted(column('closeComment', 'Close comment'), 'CloseComment'),
-    {
-      key: 'positionId', title: 'Actions', sortable: false, filterable: false, noExport: true,
-      format: (positionId, row) => {
-        const actions = document.createElement('div');
-        actions.className = 'actions';
-        if (isTrade(row)) actions.append(actionLink('Details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(positionId)}`));
-        actions.append(relatedLoginActions(row.login));
-        return actions;
-      },
-    },
+    loginActionsColumn('login', row => isTrade(row)
+      ? [actionLink('Position details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(row.positionId)}`)]
+      : []),
   ],
   orders: [
     loginColumn,

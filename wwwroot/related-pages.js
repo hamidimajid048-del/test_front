@@ -88,20 +88,33 @@ function clearRelatedPages() {
   document.getElementById('related-pages').replaceChildren();
 }
 
-// The same login links for a row's "Actions" cell, in a "⋯" menu, opened in a new browser tab. With several logins (a pair
-// row), each item names its login.
-function relatedLoginActions(...logins) {
-  const many = logins.length > 1;
-  return rowMenu(`Open login ${logins.join(' / ')} in`, logins.flatMap(login => RELATED_LOGIN_PAGES.map(page => {
+// An in-page action for a row's "⋯" menu; picking it closes the menu.
+function menuAction(text, onClick) {
+  const link = document.createElement('a');
+  link.href = '#';
+  link.textContent = text;
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    onClick();
+  });
+  return link;
+}
+
+// A row's "⋯" menu: the row's own actions first, then the pages that take its login(s), opened in a new browser tab.
+// With several logins (a pair row), each page item names its login.
+function relatedLoginActions(logins, actions = []) {
+  const list = [logins].flat();
+  const many = list.length > 1;
+  return rowMenu(`Actions for login ${list.join(' / ')}`, [...actions, ...list.flatMap(login => RELATED_LOGIN_PAGES.map(page => {
     const link = relatedLink(page, login);
     if (many) link.textContent = `${page.title} — ${login}`;
     hideUnlessAllowed(link, page.permission);
     return link;
-  })));
+  }))]);
 }
 
-// An "Actions" column at the end of a table whose only actions are the login menu.
-const loginActionsColumn = (...keys) => ({
-  key: keys[0], title: 'Actions', sortable: false, filterable: false, noExport: true,
-  format: (_, row) => relatedLoginActions(...keys.map(key => row[key])),
+// An "Actions" column at the end of a table: the "⋯" menu of the row's login(s), with the row's own actions when given.
+const loginActionsColumn = (keys, actions) => ({
+  key: [keys].flat()[0], title: 'Actions', sortable: false, filterable: false, noExport: true,
+  format: (_, row) => relatedLoginActions([keys].flat().map(key => row[key]), actions?.(row) ?? []),
 });

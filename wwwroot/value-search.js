@@ -88,18 +88,7 @@ const SUMMARY_COLUMNS = [
   ...accountColumns(),
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
-  {
-    key: 'login',
-    title: 'Actions',
-    sortable: false,
-    filterable: false,
-    format: login => {
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-      actions.append(actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`), relatedLoginActions(login));
-      return actions;
-    },
-  },
+  loginActionsColumn('login'),
 ];
 
 // The session columns shared with the login history page, with the login prepended since rows here span many logins.

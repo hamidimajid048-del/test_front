@@ -132,23 +132,10 @@ const LIST_COLUMNS = [
   { key: 'percentShare', title: 'Share (%)', format: value => `${value}%`, sortKey: 'PercentShare' },
   { key: 'profitLoss', title: 'Profit/loss', sortKey: 'ProfitLoss' },
   { key: 'hasIpShare', title: 'Shared evidence', format: (_, row) => shareLabels(row) },
-  {
-    key: 'relatedLogin',
-    title: 'Actions',
-    sortable: false,
-    filterable: false,
-    format: login => {
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-      const positions = actionLink('Positions', '#');
-      positions.addEventListener('click', event => {
-        event.preventDefault();
-        openPositions(login);
-      });
-      actions.append(actionLink('Compare logins', compareHref(login)), positions, relatedLoginActions(login));
-      return actions;
-    },
-  },
+  loginActionsColumn('relatedLogin', row => [
+    menuAction('Positions', () => openPositions(row.relatedLogin)),
+    actionLink(`Compare with ${search.login}`, compareHref(row.relatedLogin)),
+  ]),
 ];
 
 function windowItems(metadata) {

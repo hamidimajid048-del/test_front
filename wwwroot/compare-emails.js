@@ -57,7 +57,7 @@ const pairColumns = () => [
   { key: 'otherLogin', title: `Login (${emails.other})`, sortKey: 'OtherLogin' },
   { key: 'sharedIpCount', title: 'Shared IPs', sortKey: 'SharedIpCount' },
   { key: 'sharedCidCount', title: 'Shared CIDs', sortKey: 'SharedCidCount' },
-  loginActionsColumn('login', 'otherLogin'),
+  loginActionsColumn(['login', 'otherLogin']),
 ];
 
 // The shared value with, for each email, its logins, sessions and first/last sign-in.

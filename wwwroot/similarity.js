@@ -29,7 +29,7 @@ let filters = null;
 let summaryPaging = { currentPage: 1, pageSize: DEFAULT_PAGE_SIZE };
 let summaryColumnFilters = {};
 // Hides the related logins whose email equals the searched login's email; the service applies it to every page.
-let differentEmailOnly = false;
+let differentEmailOnly = true;
 // The details tabs opened from the summary, by "Type:login"; an account already open is selected, not opened twice.
 const detailsTabs = new Map();
 let activeTab = SUMMARY_TAB;
@@ -95,7 +95,7 @@ function summaryParams() {
 function writeState() {
   const state = {
     ...filters, ...columnFilterState(summaryColumnFilters),
-    ...(differentEmailOnly ? { differentEmailOnly: true } : {}),
+    ...(differentEmailOnly ? {} : { differentEmailOnly: false }),
     currentPage: summaryPaging.currentPage, pageSize: summaryPaging.pageSize,
   };
   if (detailsTabs.size) {
@@ -139,35 +139,15 @@ function renderDifferentEmail(metadata) {
     : `The email of login ${metadata.login} is unknown, so rows cannot be compared.`;
 }
 
-function detailsButton(row) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = 'Details';
-  button.addEventListener('click', () => openDetails(row));
-  return button;
-}
-
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
   ...accountColumns(['name', 'group', 'balance']),
-  {
-    key: 'relatedLogin',
-    title: 'Actions',
-    sortable: false,
-    filterable: false,
-    format: (login, row) => {
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-      actions.append(
-        detailsButton(row),
-        actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`),
-        actionLink('Compare', compareHref(row)),
-        relatedLoginActions(login));
-      return actions;
-    },
-  },
+  loginActionsColumn('relatedLogin', row => [
+    menuAction('Shared values', () => openDetails(row)),
+    actionLink(`Compare with ${filters.login}`, compareHref(row)),
+  ]),
 ];
 
 const DETAILS_COLUMNS = [
@@ -381,7 +361,7 @@ async function restoreFromQuery() {
   const query = new URLSearchParams(location.search);
   filters = formValues(form);
   summaryColumnFilters = readColumnFilters(query);
-  differentEmailOnly = query.get('differentEmailOnly') === 'true';
+  differentEmailOnly = query.get('differentEmailOnly') !== 'false';
   summaryPaging = {
     currentPage: Number(query.get('currentPage')) || 1,
     pageSize: Number(query.get('pageSize')) || DEFAULT_PAGE_SIZE,

@@ -810,9 +810,9 @@ function rowMenu(label, links) {
     else close();
   });
   menu.addEventListener('click', event => {
-    event.stopPropagation();
     if (event.target.closest('a')) close();
-  });
+  }, true);
+  menu.addEventListener('click', event => event.stopPropagation());
   wrap.append(button, menu);
   return wrap;
 }
