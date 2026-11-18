@@ -13,17 +13,9 @@ let currentTab = 'logins';
 let grids = [];
 let request = 0;
 
-const inNewTab = link => {
-  link.target = '_blank';
-  link.rel = 'noopener';
-  return link;
-};
-
-const loginTabLink = login => inNewTab(loginLink(login));
-
 const actionsColumn = { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false, noExport: true };
 
-const loginColumn = { key: 'login', title: 'Login', format: loginTabLink, sortKey: 'Login' };
+const loginColumn = { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' };
 
 const mappingColumns = (key, title, extra = []) => [
   { key, title, sortKey: title },
@@ -35,7 +27,7 @@ const mappingColumns = (key, title, extra = []) => [
 ];
 
 const accountColumns = [
-  { key: 'login', title: 'Login', format: loginTabLink },
+  { key: 'login', title: 'Login' },
   { key: 'source', title: 'Status', format: source => SOURCE_LABELS[source] ?? source },
   { key: 'name', title: 'Name' },
   { key: 'group', title: 'Group' },

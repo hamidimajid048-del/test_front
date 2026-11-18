@@ -25,19 +25,14 @@ let sideOf = new Map();
 let request = 0;
 
 const loginsCell = logins => {
-  const shown = logins.slice(0, MAX_LISTED_LOGINS).map(loginLink);
+  const shown = logins.slice(0, MAX_LISTED_LOGINS).map(copyableText);
   const rest = logins.length - shown.length;
   return inline(...shown, ...(rest > 0 ? [`+${rest}`] : []));
 };
 
-const inNewTab = link => {
-  link.target = '_blank';
-  link.rel = 'noopener';
-  return link;
-};
 
 const accountColumns = [
-  { key: 'login', title: 'Login', format: login => inNewTab(loginLink(login)) },
+  { key: 'login', title: 'Login' },
   { key: 'source', title: 'Status', format: source => SOURCE_LABELS[source] ?? source },
   { key: 'name', title: 'Name' },
   { key: 'group', title: 'Group' },
@@ -58,8 +53,8 @@ const sideColumns = () => [
 ];
 
 const pairColumns = () => [
-  { key: 'login', title: `Login (${emails.main})`, format: loginLink, sortKey: 'Login' },
-  { key: 'otherLogin', title: `Login (${emails.other})`, format: loginLink, sortKey: 'OtherLogin' },
+  { key: 'login', title: `Login (${emails.main})`, format: loginCell, sortKey: 'Login' },
+  { key: 'otherLogin', title: `Login (${emails.other})`, format: loginCell, sortKey: 'OtherLogin' },
   { key: 'sharedIpCount', title: 'Shared IPs', sortKey: 'SharedIpCount' },
   { key: 'sharedCidCount', title: 'Shared CIDs', sortKey: 'SharedCidCount' },
 ];
@@ -94,7 +89,7 @@ const detailColumns = () => [
     title: 'Email',
     format: login => sideOf.get(login) === 'main' ? badge(emails.main, 'main') : badge(emails.other, 'compared'),
   },
-  { key: 'login', title: 'Login', format: loginLink, sortKey: 'Login' },
+  { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' },
   ...SESSION_COLUMNS,
   { key: 'sharedIp', title: 'Shared IP', format: yesNo, sortKey: 'SharedIp' },
   { key: 'sharedCid', title: 'Shared CID', format: yesNo, sortKey: 'SharedCid' },

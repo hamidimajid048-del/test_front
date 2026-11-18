@@ -732,13 +732,18 @@ function renderSummary(container, items) {
   }));
 }
 
-// Link to the login history page; stops the click so a clickable row does not also open.
-function loginLink(login) {
-  const link = document.createElement('a');
-  link.href = `/logins.html?login=${encodeURIComponent(login)}`;
-  link.textContent = login;
-  link.addEventListener('click', event => event.stopPropagation());
-  return link;
+// A value a click copies, for cells and lists that show several of them.
+function copyableText(value) {
+  const text = document.createElement('span');
+  text.textContent = value;
+  makeCopyable(text, value);
+  return text;
+}
+
+// A login: the number, which a click copies, and a "⋯" menu of the pages that take it (related-pages.js), opened in a
+// new tab. Navigation is only through the menu, so a click on the number never leaves the page.
+function loginCell(login) {
+  return inline(copyableText(login), relatedLoginActions(login));
 }
 
 // A button-like link for a row's "Actions" cell; the click does not also trigger the row's own click handler.
@@ -793,8 +798,9 @@ function rowMenu(label, links) {
     const roomBelow = window.innerHeight - box.bottom - 12;
     const roomAbove = box.top - 12;
     const below = menu.offsetHeight <= roomBelow || roomBelow >= roomAbove;
-    const height = Math.min(menu.offsetHeight, below ? roomBelow : roomAbove);
-    menu.style.maxHeight = `${height}px`;
+    const room = below ? roomBelow : roomAbove;
+    const height = Math.min(menu.offsetHeight, room);
+    if (menu.offsetHeight > room) menu.style.maxHeight = `${room}px`;
     menu.style.top = `${below ? box.bottom + 4 : box.top - 4 - height}px`;
     menu.style.left = `${Math.max(8, Math.min(box.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8))}px`;
     document.addEventListener('pointerdown', onPointerDown, true);
@@ -1066,7 +1072,8 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';
-        if (COPY_KEYS.has(column.key) && column.sortable !== false && isCopyableValue(row[column.key])) makeCopyable(td, row[column.key]);
+        const copiesItself = value instanceof Element && (value.matches('.copyable') || value.querySelector('.copyable'));
+        if (COPY_KEYS.has(column.key) && column.sortable !== false && !copiesItself && isCopyableValue(row[column.key])) makeCopyable(td, row[column.key]);
       });
     }
     const filtered = serverFilter ? serverFiltered() : state.filters.some(query => query.trim());

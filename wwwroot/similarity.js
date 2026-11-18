@@ -148,7 +148,7 @@ function detailsButton(row) {
 }
 
 const SUMMARY_COLUMNS = [
-  { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
+  { key: 'relatedLogin', title: 'Related login', format: loginCell, sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
   ...accountColumns(['name', 'group', 'balance']),

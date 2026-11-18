@@ -23,15 +23,8 @@ async function loadPickerChoices() {
   }
 }
 
-const accountLink = login => {
-  const link = actionLink(String(login), `/account-data.html?login=${encodeURIComponent(login)}`);
-  link.target = '_blank';
-  link.rel = 'noopener';
-  return link;
-};
-
 const sorted = (definition, sortKey) => ({ ...definition, sortKey });
-const loginColumn = { key: 'login', title: 'Login', format: accountLink, sortKey: 'Login' };
+const loginColumn = { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' };
 
 const COLUMNS = {
   positions: [

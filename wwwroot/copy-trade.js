@@ -123,7 +123,7 @@ const sameEmail = createSameEmailToggle(
   () => Number(search.login));
 
 const LIST_COLUMNS = [
-  { key: 'relatedLogin', title: 'Related login', format: loginLink, sortKey: 'RelatedLogin' },
+  { key: 'relatedLogin', title: 'Related login', format: loginCell, sortKey: 'RelatedLogin' },
   accountsDirectory.column('Name', 'name', 'relatedLogin'),
   accountsDirectory.column('Group', 'group', 'relatedLogin'),
   accountsDirectory.column('Email', 'email', 'relatedLogin'),
