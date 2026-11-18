@@ -126,6 +126,7 @@ function writeState(values) {
 function clearResults() {
   emailLogins = [];
   positionsGrid.clear();
+  document.getElementById('positions-summary').replaceChildren();
   document.querySelector('main.email-history').classList.remove('loaded');
   for (const grid of grids) grid.clear();
   for (const id of ['metadata', 'accounts', 'geo-details', 'cid-overview']) document.getElementById(id).replaceChildren();
@@ -232,7 +233,17 @@ const positionsGrid = createReportGrid({
   containerId: 'positions',
   pagerId: 'positions-pager',
   exportName: 'email-positions',
+  onRendered: report => renderPositionCounts(report.metadata.logins),
 });
+
+// How many positions each login opened in the range (all pages, before the column filters), the total first.
+function renderPositionCounts(counts) {
+  const total = counts.reduce((sum, count) => sum + count.positionCount, 0);
+  renderIconSummary(document.getElementById('positions-summary'), [
+    ['Total positions', total.toLocaleString('en-US'), 'bars'],
+    ...counts.map(count => [`Login ${count.login}`, count.positionCount.toLocaleString('en-US'), count.positionCount ? 'layers' : 'close']),
+  ]);
+}
 
 positionsForm.addEventListener('submit', async event => {
   event.preventDefault();
