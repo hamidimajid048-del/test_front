@@ -26,7 +26,7 @@ const grids = {
       amountColumn('swap', 'Swap'),
       column('order', 'Order'),
       sourceColumn('reason', 'Source'),
-      column('comment', 'Comment'),
+      commentColumn('comment', 'Comment'),
     ],
   }),
   transactions: createLocalGrid({
@@ -59,7 +59,7 @@ const grids = {
       amountColumn('swap', 'Swap'),
       column('order', 'Order'),
       column('deal', 'Deal'),
-      codeColumn('reasonText', 'Reason', 'reason'),
+      codeColumn('reasonText', 'Reason', 'reason', (text, code) => (code ? source(code.name) : '—')),
       codeColumn('retcodeText', 'Result', 'retcode'),
       column('ip', 'IP'),
       column('platform', 'Device', platformLabel),
@@ -72,10 +72,10 @@ const grids = {
 
 const codeText = code => code ? label(code.name) : '';
 
-function codeColumn(key, title, codeKey) {
+function codeColumn(key, title, codeKey, render = (text, code) => sideLabel(stopText(text || '—'), code?.name ?? '')) {
   return column(key, title, (text, row) => {
     const cell = document.createElement('span');
-    cell.append(sideLabel(text || '—', row[codeKey]?.name ?? ''));
+    cell.append(render(text, row[codeKey]));
     cell.title = row[codeKey]?.description ?? '';
     return cell;
   });

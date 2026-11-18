@@ -67,7 +67,7 @@ const positionColumns = [
   amountColumn('swap', 'Swap'),
   utcColumn('openedAt', 'Opened'),
   sourceColumn('reason', 'Opened by'),
-  column('comment', 'Comment'),
+  commentColumn('comment', 'Comment'),
 ];
 
 const orderColumns = [
@@ -85,7 +85,7 @@ const orderColumns = [
   utcColumn('expiresAt', 'Expires', true),
   column('positionId', 'Position', value => value || '—'),
   sourceColumn('reason', 'Placed by'),
-  column('comment', 'Comment'),
+  commentColumn('comment', 'Comment'),
 ];
 
 const positionHistoryColumns = [
@@ -106,8 +106,8 @@ const positionHistoryColumns = [
   amountColumn('netProfit', 'Net profit'),
   column('isOpen', 'Status', tradeOnly(isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted'))),
   column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)),
-  column('comment', 'Comment'),
-  column('closeComment', 'Close comment'),
+  commentColumn('comment', 'Comment'),
+  commentColumn('closeComment', 'Close comment'),
   { key: 'positionId', title: 'Actions', sortable: false, filterable: false, format: tradeOnly(positionId => actionLink('Details', `/position-details.html?login=${encodeURIComponent(currentLogin)}&position=${encodeURIComponent(positionId)}`)) },
 ];
 
@@ -126,7 +126,7 @@ const dealColumns = [
   column('positionId', 'Position', value => value || '—'),
   column('order', 'Order'),
   sourceColumn('reason', 'Source'),
-  column('comment', 'Comment'),
+  commentColumn('comment', 'Comment'),
 ];
 
 const transferColumns = [
@@ -134,7 +134,7 @@ const transferColumns = [
   utcColumn('time', 'Time'),
   labelColumn('action', 'Type'),
   amountColumn('profit', 'Amount'),
-  column('comment', 'Comment'),
+  commentColumn('comment', 'Comment'),
 ];
 
 const grids = {

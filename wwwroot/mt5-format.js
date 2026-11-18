@@ -47,16 +47,28 @@ const SOURCE_LABELS = {
 const SOURCE_PLATFORMS = { CLIENT: 'system', FIRST: 'system', MOBILE: 'mobile', WEB: 'web', EXPERT: 'expert' };
 
 const source = value => {
-  const code = String(value ?? '').replace(/^((DEAL|ORDER|POSITION)_)?REASON_/, '');
+  const code = String(value ?? '').trim().toUpperCase().replace(/\s+/g, '_').replace(/^.*REASON_/, '');
   if (!code) return '—';
   const text = SOURCE_LABELS[code] ?? label(code);
-  if (!SOURCE_PLATFORMS[code] || typeof platformIcon !== 'function') return text;
+  if (!SOURCE_PLATFORMS[code] || typeof platformIcon !== 'function') return stopText(text);
   const cell = document.createElement('span');
   cell.className = 'platform-cell';
   cell.append(platformIcon(SOURCE_PLATFORMS[code]), document.createTextNode(text));
   return cell;
 };
 const sourceColumn = (key, title) => column(key, title, source);
+
+// Text that names a stop loss ("[sl 1.0850]", "Stop loss") is red and one that names a take profit is green.
+const stopText = value => {
+  const text = value ?? '';
+  const tone = /\bsl\b|stop loss/i.test(text) ? 'stop-sl' : /\btp\b|take profit/i.test(text) ? 'stop-tp' : '';
+  if (!tone) return text;
+  const element = document.createElement('span');
+  element.className = tone;
+  element.textContent = text;
+  return element;
+};
+const commentColumn = (key, title) => column(key, title, stopText);
 
 // SL and TP columns; the cell is red when the stop loss closed the row and green when the take profit did, read from
 // the comment ("[sl 1.0850]") or the reason. Positions pass their closing comment.

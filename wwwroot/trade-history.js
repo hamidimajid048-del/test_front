@@ -48,8 +48,8 @@ const COLUMNS = {
     sorted(amountColumn('netProfit', 'Net profit'), 'NetProfit'),
     { ...sorted(column('isOpen', 'Status', tradeOnly(isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted'))), 'IsOpen'), filterable: false },
     sorted(column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)), 'Reason'),
-    sorted(column('comment', 'Comment'), 'Comment'),
-    sorted(column('closeComment', 'Close comment'), 'CloseComment'),
+    sorted(commentColumn('comment', 'Comment'), 'Comment'),
+    sorted(commentColumn('closeComment', 'Close comment'), 'CloseComment'),
     loginActionsColumn('login', row => isTrade(row)
       ? [actionLink('Position details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(row.positionId)}`)]
       : []),
@@ -70,7 +70,7 @@ const COLUMNS = {
     sorted(utcColumn('expiresAt', 'Expires', true), 'ExpiresAt'),
     sorted(column('positionId', 'Position', value => value || '—'), 'PositionId'),
     sorted(sourceColumn('reason', 'Placed by'), 'Reason'),
-    sorted(column('comment', 'Comment'), 'Comment'),
+    sorted(commentColumn('comment', 'Comment'), 'Comment'),
     actionsColumn,
   ],
   deals: [
@@ -90,7 +90,7 @@ const COLUMNS = {
     sorted(column('positionId', 'Position', value => value || '—'), 'PositionId'),
     sorted(column('order', 'Order'), 'Order'),
     sorted(sourceColumn('reason', 'Source'), 'Reason'),
-    sorted(column('comment', 'Comment'), 'Comment'),
+    sorted(commentColumn('comment', 'Comment'), 'Comment'),
     actionsColumn,
   ],
 };
