@@ -60,6 +60,38 @@ const source = value => {
 };
 const sourceColumn = (key, title) => column(key, title, source);
 
+// The positions of several logins (trade history, the logins of an email), sortable by the report's field names. A
+// function, so the pages that load this file without related-pages.js (loginActionsColumn) can still use the rest.
+function loginPositionColumns() {
+  const sorted = (definition, sortKey) => ({ ...definition, sortKey });
+  return [
+    { key: 'login', title: 'Login', sortKey: 'Login' },
+    sorted(column('positionId', 'Position'), 'PositionId'),
+    sorted(column('symbol', 'Symbol'), 'Symbol'),
+    sorted(labelColumn('direction', 'Direction'), 'Direction'),
+    sorted(column('volume', 'Volume', tradeOnly(lots)), 'Volume'),
+    sorted(sourceColumn('openReason', 'Opened by'), 'OpenReason'),
+    openColumn(sorted(utcColumn('openedAt', 'Opened'), 'OpenedAt')),
+    openColumn(sorted(priceColumn('openPrice', 'Open price'), 'OpenPrice')),
+    closeColumn(sorted(utcColumn('closedAt', 'Closed'), 'ClosedAt')),
+    closeColumn(sorted(priceColumn('closePrice', 'Close price'), 'ClosePrice')),
+    ...stopColumns('closeComment', true),
+    sorted(column('durationSeconds', 'Open time', duration), 'DurationSeconds'),
+    sorted(amountColumn('profit', 'Profit'), 'Profit'),
+    sorted(amountColumn('commission', 'Commission'), 'Commission'),
+    sorted(amountColumn('swap', 'Swap'), 'Swap'),
+    sorted(amountColumn('fee', 'Fee'), 'Fee'),
+    sorted(amountColumn('netProfit', 'Net profit'), 'NetProfit'),
+    { ...sorted(column('isOpen', 'Status', tradeOnly(isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted'))), 'IsOpen'), filterable: false },
+    sorted(column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)), 'Reason'),
+    sorted(commentColumn('comment', 'Comment'), 'Comment'),
+    sorted(commentColumn('closeComment', 'Close comment'), 'CloseComment'),
+    loginActionsColumn('login', row => isTrade(row)
+      ? [actionLink('Position details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(row.positionId)}`)]
+      : []),
+  ];
+}
+
 // Text that names a stop loss ("[sl 1.0850]", "Stop loss") is red and one that names a take profit is green.
 const stopText = value => {
   const text = value ?? '';

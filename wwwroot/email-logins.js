@@ -5,7 +5,7 @@
 const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const MAX_LOGINS = 100;
-const SOURCE_LABELS = { Manager: 'Active', Archive: 'Archived' };
+const ACCOUNT_STATUS_LABELS = { Manager: 'Active', Archive: 'Archived' };
 
 const rangeControls = initRangeControls(form);
 
@@ -30,7 +30,7 @@ const mappingColumns = (key, title, extra = []) => [
 
 const accountColumns = [
   { key: 'login', title: 'Login' },
-  { key: 'source', title: 'Status', format: source => badge(SOURCE_LABELS[source] ?? source, source === 'Manager' ? 'ok' : 'muted') },
+  { key: 'source', title: 'Status', format: source => badge(ACCOUNT_STATUS_LABELS[source] ?? source, source === 'Manager' ? 'ok' : 'muted') },
   { key: 'name', title: 'Name' },
   { key: 'group', title: 'Group' },
   {
@@ -112,7 +112,7 @@ async function showLoginDevices(accounts, params, isCurrent) {
 }
 
 function showTab(tab) {
-  currentTab = ['summary', 'details'].includes(tab) ? tab : 'logins';
+  currentTab = ['summary', 'details', 'positions'].includes(tab) ? tab : 'logins';
   for (const button of document.querySelectorAll('#tabs button'))
     button.classList.toggle('active', button.dataset.tab === currentTab);
   for (const panel of document.querySelectorAll('[data-panel]'))
@@ -124,6 +124,8 @@ function writeState(values) {
 }
 
 function clearResults() {
+  emailLogins = [];
+  positionsGrid.clear();
   document.querySelector('main.email-history').classList.remove('loaded');
   for (const grid of grids) grid.clear();
   for (const id of ['metadata', 'accounts', 'geo-details', 'cid-overview']) document.getElementById(id).replaceChildren();
@@ -147,6 +149,7 @@ async function search(values) {
     throw new ApiError('No login was found for this email.');
   }
   renderAccounts(accounts);
+  emailLogins = accounts.map(account => account.login);
   document.getElementById('accounts-title').textContent = `Logins (${accounts.length})`;
   document.querySelector('main.email-history').classList.add('loaded');
   if (accounts.length > MAX_LOGINS)
@@ -215,6 +218,41 @@ grids = [
   }),
 ];
 
+// The Positions tab reads only when its own Search is pressed, for its own range of whole UTC days.
+const positionsForm = document.getElementById('positions-filters');
+const positionsMessage = document.getElementById('positions-message');
+const positionsRange = initRangeControls(positionsForm);
+let emailLogins = [];
+const positionsGrid = createReportGrid({
+  path: 'meta-trader-accounts/get-logins-positions',
+  columns: loginPositionColumns(),
+  sort: { item: 'OpenedAt', direction: 'Desc' },
+  titleId: 'positions-title',
+  title: 'Positions',
+  containerId: 'positions',
+  pagerId: 'positions-pager',
+  exportName: 'email-positions',
+});
+
+positionsForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const values = formValues(positionsForm);
+  const submitButton = positionsForm.querySelector('button[type="submit"]');
+  clearMessages(positionsForm, positionsMessage);
+  submitButton.disabled = true;
+  try {
+    if (!emailLogins.length) throw new ApiError('Search an email with logins first.');
+    validateRange(values);
+    setLoading(positionsMessage);
+    await positionsGrid.start({ logins: emailLogins, fromUtc: fromDayParam(values.fromUtc), toUtc: toDayParam(values.toUtc) });
+    positionsMessage.textContent = '';
+  } catch (error) {
+    showError(positionsForm, positionsMessage, error instanceof ApiError ? error : new ApiError(UNAVAILABLE_MESSAGE));
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
 document.getElementById('tabs').addEventListener('click', event => {
   const tab = event.target.closest('button')?.dataset.tab;
   if (!tab) return;
@@ -228,6 +266,7 @@ form.addEventListener('submit', event => {
 });
 
 renderMenu();
+positionsRange.apply();
 showTab(new URLSearchParams(location.search).get('tab'));
 const hasQuery = fillFormFromQuery(form);
 rangeControls.restore();

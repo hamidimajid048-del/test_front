@@ -28,32 +28,7 @@ const loginColumn = { key: 'login', title: 'Login', sortKey: 'Login' };
 const actionsColumn = loginActionsColumn('login');
 
 const COLUMNS = {
-  positions: [
-    loginColumn,
-    sorted(column('positionId', 'Position'), 'PositionId'),
-    sorted(column('symbol', 'Symbol'), 'Symbol'),
-    sorted(labelColumn('direction', 'Direction'), 'Direction'),
-    sorted(column('volume', 'Volume', tradeOnly(lots)), 'Volume'),
-    sorted(sourceColumn('openReason', 'Opened by'), 'OpenReason'),
-    openColumn(sorted(utcColumn('openedAt', 'Opened'), 'OpenedAt')),
-    openColumn(sorted(priceColumn('openPrice', 'Open price'), 'OpenPrice')),
-    closeColumn(sorted(utcColumn('closedAt', 'Closed'), 'ClosedAt')),
-    closeColumn(sorted(priceColumn('closePrice', 'Close price'), 'ClosePrice')),
-    ...stopColumns('closeComment', true),
-    sorted(column('durationSeconds', 'Open time', duration), 'DurationSeconds'),
-    sorted(amountColumn('profit', 'Profit'), 'Profit'),
-    sorted(amountColumn('commission', 'Commission'), 'Commission'),
-    sorted(amountColumn('swap', 'Swap'), 'Swap'),
-    sorted(amountColumn('fee', 'Fee'), 'Fee'),
-    sorted(amountColumn('netProfit', 'Net profit'), 'NetProfit'),
-    { ...sorted(column('isOpen', 'Status', tradeOnly(isOpen => badge(isOpen ? 'Open' : 'Closed', isOpen ? 'warn' : 'muted'))), 'IsOpen'), filterable: false },
-    sorted(column('reason', 'Closed by', (reason, row) => row.isOpen ? '—' : source(reason)), 'Reason'),
-    sorted(commentColumn('comment', 'Comment'), 'Comment'),
-    sorted(commentColumn('closeComment', 'Close comment'), 'CloseComment'),
-    loginActionsColumn('login', row => isTrade(row)
-      ? [actionLink('Position details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(row.positionId)}`)]
-      : []),
-  ],
+  positions: loginPositionColumns(),
   orders: [
     loginColumn,
     sorted(column('order', 'Order'), 'Order'),

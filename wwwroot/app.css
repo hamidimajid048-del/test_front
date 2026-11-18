@@ -1334,6 +1334,9 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .lh-top form.ad-search, .lh-top .related-pages { padding: 0; background: none; border: 0; box-shadow: none; }
 .lh-top .related-pages::before { inset-inline-start: -11px; }
 .lh-top .related-group .action-link { min-height: 52px; }
+.lh-range { margin-bottom: var(--space-14); padding: 0; background: none; border: 0; box-shadow: none; }
+.lh-range button[type="submit"] { display: inline-flex; align-items: center; gap: var(--space-8); }
+.lh-range button[type="submit"] .icon svg { stroke: currentColor; }
 .email-history form.ad-search { align-items: flex-end; }
 .lh-badge { display: grid; flex: none; place-items: center; align-self: center; width: 44px; height: 44px; background: var(--side-active-bg) padding-box, var(--sidebar-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
 .lh-badge .icon svg { width: 22px; height: 22px; }

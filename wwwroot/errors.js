@@ -25,6 +25,8 @@ const ERROR_MESSAGES = {
   TimeRangeIncomplete: 'Enter both the start and the end of the range, or neither',
   TimeRangeNotUtc: 'The range must be in UTC',
   TimeRangeReversed: 'The start of the range must not be after its end',
+  TimeRangeRequired: 'Choose a date range',
+  TimeRangeTooLong: 'The date range is too long for this report',
   InvalidPage: 'The page number is not valid',
   InvalidPageSize: 'The page size must be between 1 and 2000',
   InvalidSortBy: 'The sort column is not valid',

@@ -44,6 +44,7 @@
       <button type="button" data-tab="logins" data-icon="layers">Logins</button>
       <button type="button" data-tab="summary" data-icon="grid">Summary</button>
       <button type="button" data-tab="details" data-icon="list">Details</button>
+      <button type="button" data-tab="positions" data-icon="bars">Positions</button>
     </div>
 
     <section data-panel="logins">
@@ -73,6 +74,31 @@
         <li><strong>IP and CID:</strong> for each login, the IPs and computer IDs it signed in from within the date range, with the first and last sign-in and the number of sessions. Sorting, filters and paging apply to all rows.</li>
       </ul>
     </section>
+    <section data-panel="positions" hidden>
+      <form class="filters lh-range" id="positions-filters">
+        <label>Date range
+          <select name="range">
+            <option value="day">Last day</option>
+            <option value="week" selected>Last week</option>
+            <option value="month">Last month</option>
+            <option value="3months">Last 3 months</option>
+            <option value="6months">Last 6 months</option>
+            <option value="year">Last year</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+        <label>From day (UTC) <input name="fromUtc" type="date" required></label>
+        <label>To day (UTC) <input name="toUtc" type="date" required></label>
+        <button type="submit" data-icon="search">Search</button>
+      </form>
+      <p class="message" id="positions-message"></p>
+      <h3 class="ad-card-title" data-icon="bars"><span id="positions-title">Positions</span></h3>
+      <div id="positions"></div>
+      <div id="positions-pager"></div>
+      <ul class="help">
+        <li>The positions of every login of the email that were opened in the date range, at most a year, read from the MetaTrader backup; a position still open at the end of the range shows where it stands now.</li>
+      </ul>
+    </section>
     <section data-panel="details" hidden>
       <div id="sessions"></div>
       <div id="sessions-pager"></div>
@@ -83,6 +109,7 @@
   <script src="/api.js"></script>
   <script src="/related-pages.js"></script>
   <script src="/platform-icons.js"></script>
+  <script src="/mt5-format.js"></script>
   <script src="/table-views.js"></script>
   <script src="/table-export.js"></script>
   <script src="/range.js"></script>
