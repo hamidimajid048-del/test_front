@@ -43,7 +43,7 @@ const accountColumns = [
       ? '—'
       : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   },
-  { key: 'login', title: 'Actions', format: relatedLoginActions, sortable: false, filterable: false, noExport: true },
+  loginActionsColumn('login'),
 ];
 
 const sideColumns = () => [
@@ -53,10 +53,11 @@ const sideColumns = () => [
 ];
 
 const pairColumns = () => [
-  { key: 'login', title: `Login (${emails.main})`, format: loginCell, sortKey: 'Login' },
-  { key: 'otherLogin', title: `Login (${emails.other})`, format: loginCell, sortKey: 'OtherLogin' },
+  { key: 'login', title: `Login (${emails.main})`, sortKey: 'Login' },
+  { key: 'otherLogin', title: `Login (${emails.other})`, sortKey: 'OtherLogin' },
   { key: 'sharedIpCount', title: 'Shared IPs', sortKey: 'SharedIpCount' },
   { key: 'sharedCidCount', title: 'Shared CIDs', sortKey: 'SharedCidCount' },
+  loginActionsColumn('login', 'otherLogin'),
 ];
 
 // The shared value with, for each email, its logins, sessions and first/last sign-in.
@@ -89,10 +90,11 @@ const detailColumns = () => [
     title: 'Email',
     format: login => sideOf.get(login) === 'main' ? badge(emails.main, 'main') : badge(emails.other, 'compared'),
   },
-  { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' },
+  { key: 'login', title: 'Login', sortKey: 'Login' },
   ...SESSION_COLUMNS,
   { key: 'sharedIp', title: 'Shared IP', format: yesNo, sortKey: 'SharedIp' },
   { key: 'sharedCid', title: 'Shared CID', format: yesNo, sortKey: 'SharedCid' },
+  loginActionsColumn('login'),
 ];
 
 function showTab(tab) {

@@ -740,12 +740,6 @@ function copyableText(value) {
   return text;
 }
 
-// A login: the number, which a click copies, and a "⋯" menu of the pages that take it (related-pages.js), opened in a
-// new tab. Navigation is only through the menu, so a click on the number never leaves the page.
-function loginCell(login) {
-  return inline(copyableText(login), relatedLoginActions(login));
-}
-
 // A button-like link for a row's "Actions" cell; the click does not also trigger the row's own click handler.
 // A "⋯" button that opens a menu of a table row's links. The menu is fixed to the window, so the table's scroll box does
 // not cut it off; it opens below the button, or above when there is more room there (scrolling when neither side holds

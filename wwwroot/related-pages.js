@@ -88,13 +88,22 @@ function clearRelatedPages() {
   document.getElementById('related-pages').replaceChildren();
 }
 
-// The same login links for a row's "Actions" cell, in a "⋯" menu, opened in a new browser tab.
-function relatedLoginActions(login) {
-  return rowMenu(`Open login ${login} in`, RELATED_LOGIN_PAGES.map(page => {
+// The same login links for a row's "Actions" cell, in a "⋯" menu, opened in a new browser tab. With several logins (a pair
+// row), each item names its login.
+function relatedLoginActions(...logins) {
+  const many = logins.length > 1;
+  return rowMenu(`Open login ${logins.join(' / ')} in`, logins.flatMap(login => RELATED_LOGIN_PAGES.map(page => {
     const link = relatedLink(page, login);
+    if (many) link.textContent = `${page.title} — ${login}`;
     link.target = '_blank';
     link.rel = 'noopener';
     hideUnlessAllowed(link, page.permission);
     return link;
-  }));
+  })));
 }
+
+// An "Actions" column at the end of a table whose only actions are the login menu.
+const loginActionsColumn = (...keys) => ({
+  key: keys[0], title: 'Actions', sortable: false, filterable: false, noExport: true,
+  format: (_, row) => relatedLoginActions(...keys.map(key => row[key])),
+});

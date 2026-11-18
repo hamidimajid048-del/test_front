@@ -123,7 +123,7 @@ const sameEmail = createSameEmailToggle(
   () => Number(search.login));
 
 const LIST_COLUMNS = [
-  { key: 'relatedLogin', title: 'Related login', format: loginCell, sortKey: 'RelatedLogin' },
+  { key: 'relatedLogin', title: 'Related login', sortKey: 'RelatedLogin' },
   accountsDirectory.column('Name', 'name', 'relatedLogin'),
   accountsDirectory.column('Group', 'group', 'relatedLogin'),
   accountsDirectory.column('Email', 'email', 'relatedLogin'),
@@ -145,7 +145,7 @@ const LIST_COLUMNS = [
         event.preventDefault();
         openPositions(login);
       });
-      actions.append(actionLink('Compare logins', compareHref(login)), positions);
+      actions.append(actionLink('Compare logins', compareHref(login)), positions, relatedLoginActions(login));
       return actions;
     },
   },

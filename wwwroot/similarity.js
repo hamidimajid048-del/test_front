@@ -148,7 +148,7 @@ function detailsButton(row) {
 }
 
 const SUMMARY_COLUMNS = [
-  { key: 'relatedLogin', title: 'Related login', format: loginCell, sortKey: 'RelatedLogin' },
+  { key: 'relatedLogin', title: 'Related login', sortKey: 'RelatedLogin' },
   { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
   ...accountColumns(['name', 'group', 'balance']),
@@ -163,7 +163,8 @@ const SUMMARY_COLUMNS = [
       actions.append(
         detailsButton(row),
         actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`),
-        actionLink('Compare', compareHref(row)));
+        actionLink('Compare', compareHref(row)),
+        relatedLoginActions(login));
       return actions;
     },
   },

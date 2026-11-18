@@ -84,7 +84,7 @@ function renderMetadata(metadata) {
 }
 
 const SUMMARY_COLUMNS = [
-  { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' },
+  { key: 'login', title: 'Login', sortKey: 'Login' },
   ...accountColumns(),
   { key: 'loginCount', title: 'Logins', sortKey: 'LoginCount' },
   seenColumn('firstSeenUtc', 'lastSeenUtc', 'First / last seen', { sortKey: 'FirstSeenUtc' }),
@@ -96,7 +96,7 @@ const SUMMARY_COLUMNS = [
     format: login => {
       const actions = document.createElement('div');
       actions.className = 'actions';
-      actions.append(actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`));
+      actions.append(actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`), relatedLoginActions(login));
       return actions;
     },
   },
@@ -104,8 +104,9 @@ const SUMMARY_COLUMNS = [
 
 // The session columns shared with the login history page, with the login prepended since rows here span many logins.
 const DETAILS_COLUMNS = [
-  { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' },
+  { key: 'login', title: 'Login', sortKey: 'Login' },
   ...SESSION_COLUMNS,
+  loginActionsColumn('login'),
 ];
 
 async function withDetailsLoading(load) {

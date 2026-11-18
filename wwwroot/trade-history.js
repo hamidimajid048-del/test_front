@@ -24,7 +24,8 @@ async function loadPickerChoices() {
 }
 
 const sorted = (definition, sortKey) => ({ ...definition, sortKey });
-const loginColumn = { key: 'login', title: 'Login', format: loginCell, sortKey: 'Login' };
+const loginColumn = { key: 'login', title: 'Login', sortKey: 'Login' };
+const actionsColumn = loginActionsColumn('login');
 
 const COLUMNS = {
   positions: [
@@ -51,7 +52,13 @@ const COLUMNS = {
     sorted(column('closeComment', 'Close comment'), 'CloseComment'),
     {
       key: 'positionId', title: 'Actions', sortable: false, filterable: false, noExport: true,
-      format: tradeOnly((positionId, row) => actionLink('Details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(positionId)}`)),
+      format: (positionId, row) => {
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        if (isTrade(row)) actions.append(actionLink('Details', `/position-details.html?login=${encodeURIComponent(row.login)}&position=${encodeURIComponent(positionId)}`));
+        actions.append(relatedLoginActions(row.login));
+        return actions;
+      },
     },
   ],
   orders: [
@@ -71,6 +78,7 @@ const COLUMNS = {
     sorted(column('positionId', 'Position', value => value || '—'), 'PositionId'),
     sorted(sourceColumn('reason', 'Placed by'), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),
+    actionsColumn,
   ],
   deals: [
     loginColumn,
@@ -90,6 +98,7 @@ const COLUMNS = {
     sorted(column('order', 'Order'), 'Order'),
     sorted(sourceColumn('reason', 'Source'), 'Reason'),
     sorted(column('comment', 'Comment'), 'Comment'),
+    actionsColumn,
   ],
 };
 
