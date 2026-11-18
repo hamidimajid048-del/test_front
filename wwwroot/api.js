@@ -51,10 +51,20 @@ const ICON_PATHS = {
   chart: '<path d="M4 20h16"/><path d="M7 16v-5M11 16V7M15 16v-7M19 16V5"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/>',
   server: '<rect x="3.5" y="4" width="17" height="7" rx="1.5"/><rect x="3.5" y="13" width="17" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/>',
-  trend: '<path d="M3 20h18"/><path d="m4 15 5-5 4 4 7-8"/>',
+  candles: '<path d="M7 3v3M7 15v6M17 3v5M17 17v4"/><rect x="5" y="6" width="4" height="9" rx="1"/><rect x="15" y="8" width="4" height="9" rx="1"/>',
+  logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
 };
 
+// One gradient shared by every line icon (stroke: url(#icon-gradient)); user space, so straight lines are painted too.
+function ensureIconGradient() {
+  if (document.getElementById('icon-gradient')) return;
+  const defs = document.createElement('div');
+  defs.innerHTML = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="icon-gradient" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="var(--icon-from)"/><stop offset="1" stop-color="var(--icon-to)"/></linearGradient></defs></svg>';
+  document.body.append(defs.firstChild);
+}
+
 function icon(name, className = 'icon') {
+  ensureIconGradient();
   const span = document.createElement('span');
   span.className = className;
   span.setAttribute('aria-hidden', 'true');
@@ -437,14 +447,14 @@ function createServiceStatus() {
   box.className = 'service-status';
   const pill = (iconName, title, request, isOnline) => {
     const element = document.createElement('span');
-    element.className = 'service-pill';
+    element.className = `service-pill ${iconName}`;
     const state = document.createElement('span');
     state.className = 'service-state';
     state.textContent = 'Checking';
     const label = document.createElement('span');
     label.className = 'service-name';
     label.textContent = title;
-    element.append(icon(iconName), label, state);
+    element.append(icon(iconName, 'service-icon'), label, state);
     request()
       .then(response => {
         if (response.status === 403 || response.status === 503) return null;
@@ -463,7 +473,7 @@ function createServiceStatus() {
   };
   box.append(
     pill('server', 'Backend Service', () => fetch('/service-status', { cache: 'no-store' }), body => Boolean(body.available)),
-    pill('trend', 'MetaTrader Service', () => fetch('/panel-api/mt5/status', { cache: 'no-store' }), body => Boolean(body.manager?.connected)));
+    pill('candles', 'MetaTrader Service', () => fetch('/panel-api/mt5/status', { cache: 'no-store' }), body => Boolean(body.manager?.connected)));
   return box;
 }
 
@@ -475,6 +485,7 @@ function renderMenu() {
   brand.href = '/';
   const mark = document.createElement('span');
   mark.className = 'brand-mark';
+  ensureIconGradient();
   mark.innerHTML = BRAND_ICON;
   brand.append(mark, 'Violation Panel');
 
@@ -527,36 +538,56 @@ function renderMenu() {
     if (!event.target.closest?.('.nav-group')) closeGroups(null);
   });
 
+  // The signed-in account opens a menu with its Account page, the front-end version and Sign out.
+  const account = document.createElement('div');
+  account.className = 'nav-group nav-account';
+  account.hidden = true;
+  const accountButton = document.createElement('button');
+  accountButton.type = 'button';
+  accountButton.className = 'nav-group-button';
+  accountButton.setAttribute('aria-haspopup', 'true');
+  accountButton.setAttribute('aria-expanded', 'false');
+  if (location.pathname === '/account.html') accountButton.classList.add('active');
+  const username = document.createElement('span');
+  username.translate = false;
+  accountButton.append(icon('user', 'icon nav-avatar'), username);
+  accountButton.addEventListener('click', () => {
+    const open = !account.classList.contains('open');
+    closeGroups(account);
+    account.classList.toggle('open', open);
+    accountButton.setAttribute('aria-expanded', String(open));
+  });
+  const accountLink = document.createElement('a');
+  accountLink.className = 'nav-item';
+  accountLink.href = '/account.html';
+  if (location.pathname === '/account.html') accountLink.classList.add('active');
+  accountLink.append(icon('user'), 'Account');
   const logout = document.createElement('form');
   logout.method = 'post';
   logout.action = '/auth/logout';
-  const button = document.createElement('button');
-  button.type = 'submit';
-  button.className = 'logout';
-  button.textContent = 'Sign out';
-  logout.append(button);
-
-  // The signed-in account links to its Account page; super admins also get the Users page.
-  const signedInAs = document.createElement('a');
-  signedInAs.className = 'nav-user';
-  signedInAs.href = '/account.html';
-  signedInAs.title = 'Account';
-  if (location.pathname === '/account.html') signedInAs.classList.add('active');
-
-  const actions = document.createElement('div');
-  actions.className = 'nav-actions';
-  signedInAs.hidden = true;
-  actions.append(createServiceStatus(), signedInAs, createLanguageSwitcher(), createThemeToggle(), logout);
-
+  const logoutButton = document.createElement('button');
+  logoutButton.type = 'submit';
+  logoutButton.className = 'nav-item logout';
+  logoutButton.append(icon('logout'), 'Sign out');
+  logout.append(logoutButton);
   // The version of the pages on this server: it changes with any edit of the front end, so it shows what is deployed.
   const version = document.createElement('span');
   version.className = 'nav-version';
   version.title = 'Front-end version on this server';
-  actions.prepend(version);
   fetch('/version', { headers: { Accept: 'application/json' }, cache: 'no-store' })
     .then(response => response.ok ? response.json() : null)
-    .then(body => { if (body?.frontend) { version.textContent = `v ${body.frontend}`; fitMenu(); } })
+    .then(body => { if (body?.frontend) version.textContent = `v ${body.frontend}`; })
     .catch(() => {});
+  const accountMenu = document.createElement('div');
+  accountMenu.className = 'nav-group-menu';
+  accountMenu.append(accountLink, logout, version);
+  account.append(accountButton, accountMenu);
+
+  const divider = document.createElement('span');
+  divider.className = 'nav-divider';
+  const actions = document.createElement('div');
+  actions.className = 'nav-actions';
+  actions.append(createServiceStatus(), divider, createThemeToggle(), createLanguageSwitcher(), account);
 
   const linkBox = document.createElement('div');
   linkBox.className = 'nav-links';
@@ -611,8 +642,8 @@ function renderMenu() {
 
   currentAccount().then(me => {
     if (!me) return;
-    signedInAs.replaceChildren(icon('user'), me.username);
-    signedInAs.hidden = false;
+    username.textContent = me.username;
+    account.hidden = false;
     for (const { element, items, links } of groups) {
       items.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
       element.hidden = links.every(link => link.hidden);
