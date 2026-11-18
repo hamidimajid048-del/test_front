@@ -478,8 +478,29 @@ function createServiceStatus() {
   return box;
 }
 
+const SIDEBAR_CLOSED_KEY = 'violation-panel-sidebar-closed';
+
+function closedSidebarGroups() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SIDEBAR_CLOSED_KEY) ?? '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveClosedSidebarGroups(keys) {
+  try {
+    localStorage.setItem(SIDEBAR_CLOSED_KEY, JSON.stringify([...keys]));
+  } catch {
+    // Storage may be unavailable (private mode); the groups still fold for this page.
+  }
+}
+
+// The pages are in a sidebar of folding groups (the folded ones are remembered on this device); the top bar keeps the
+// service status, theme, language and the account menu. On a narrow screen the sidebar slides in from the menu button.
 function renderMenu() {
   const nav = document.getElementById('menu');
+  document.body.classList.add('has-sidebar');
 
   const brand = document.createElement('a');
   brand.className = 'brand';
@@ -490,54 +511,57 @@ function renderMenu() {
   mark.innerHTML = BRAND_ICON;
   brand.append(mark, 'Violation Panel');
 
-  // One dropdown per group; a group shows once the account may open one of its pages.
-  const closeGroups = except => {
-    for (const other of nav.querySelectorAll('.nav-group.open')) {
-      if (other === except) continue;
-      other.classList.remove('open');
-      other.querySelector('.nav-group-button').setAttribute('aria-expanded', 'false');
-    }
-  };
+  const closed = closedSidebarGroups();
   const groups = MENU_GROUPS.map(group => {
     const items = MENU_ITEMS.filter(item => item.group === group.key);
+    const current = items.some(item => item.href === location.pathname);
     const element = document.createElement('div');
-    element.className = 'nav-group';
+    element.className = 'side-group';
     element.hidden = true;
+    element.classList.toggle('open', current || !closed.has(group.key));
+    element.classList.toggle('active', current);
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'nav-group-button';
+    button.className = 'side-group-button';
+    button.setAttribute('aria-expanded', String(element.classList.contains('open')));
     button.append(icon(group.icon), group.title);
-    button.setAttribute('aria-haspopup', 'true');
-    button.setAttribute('aria-expanded', 'false');
-    if (items.some(item => item.href === location.pathname)) button.classList.add('active');
-    const panel = document.createElement('div');
-    panel.className = 'nav-group-menu';
+    const list = document.createElement('div');
+    list.className = 'side-items';
     const links = items.map(item => {
       const link = document.createElement('a');
-      link.className = 'nav-item';
+      link.className = 'side-item';
       link.href = item.href;
       link.hidden = true;
+      link.title = item.description;
+      link.textContent = item.title;
       if (location.pathname === item.href) {
         link.classList.add('active');
         link.setAttribute('aria-current', 'page');
       }
-      link.append(icon(item.icon), item.title);
-      link.title = item.description;
       return link;
     });
-    panel.append(...links);
+    list.append(...links);
     button.addEventListener('click', () => {
-      const open = !element.classList.contains('open');
-      closeGroups(element);
-      element.classList.toggle('open', open);
+      const open = element.classList.toggle('open');
       button.setAttribute('aria-expanded', String(open));
+      if (open) closed.delete(group.key);
+      else closed.add(group.key);
+      saveClosedSidebarGroups(closed);
     });
-    element.append(button, panel);
+    element.append(button, list);
     return { element, items, links };
   });
-  document.addEventListener('pointerdown', event => {
-    if (!event.target.closest?.('.nav-group')) closeGroups(null);
-  });
+
+  const pages = document.createElement('div');
+  pages.className = 'side-pages';
+  pages.append(...groups.map(group => group.element));
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'sidebar';
+  sidebar.id = 'sidebar';
+  sidebar.append(brand, pages);
+  const shade = document.createElement('div');
+  shade.className = 'sidebar-shade';
+  nav.before(sidebar, shade);
 
   // The signed-in account opens a menu with its Account page, the front-end version and Sign out.
   const account = document.createElement('div');
@@ -552,11 +576,13 @@ function renderMenu() {
   const username = document.createElement('span');
   username.translate = false;
   accountButton.append(icon('user', 'icon nav-avatar'), username);
-  accountButton.addEventListener('click', () => {
-    const open = !account.classList.contains('open');
-    closeGroups(account);
+  const setAccountOpen = open => {
     account.classList.toggle('open', open);
     accountButton.setAttribute('aria-expanded', String(open));
+  };
+  accountButton.addEventListener('click', () => setAccountOpen(!account.classList.contains('open')));
+  document.addEventListener('pointerdown', event => {
+    if (!account.contains(event.target)) setAccountOpen(false);
   });
   const accountLink = document.createElement('a');
   accountLink.className = 'nav-item';
@@ -584,53 +610,37 @@ function renderMenu() {
   accountMenu.append(accountLink, logout, version);
   account.append(accountButton, accountMenu);
 
-  const divider = document.createElement('span');
-  divider.className = 'nav-divider';
-  const actions = document.createElement('div');
-  actions.className = 'nav-actions';
-  actions.append(createServiceStatus(), divider, createThemeToggle(), createLanguageSwitcher(), account);
-
-  const linkBox = document.createElement('div');
-  linkBox.className = 'nav-links';
-  linkBox.id = 'nav-links';
-  linkBox.append(...groups.map(group => group.element));
-
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'nav-toggle';
   toggle.title = 'Menu';
   toggle.setAttribute('aria-label', 'Menu');
-  toggle.setAttribute('aria-controls', 'nav-links');
+  toggle.setAttribute('aria-controls', 'sidebar');
   toggle.setAttribute('aria-expanded', 'false');
   toggle.innerHTML = NAV_TOGGLE_ICON;
-  const setOpen = open => {
-    nav.classList.toggle('open', open);
+  const setSidebarOpen = open => {
+    document.body.classList.toggle('sidebar-open', open);
     toggle.setAttribute('aria-expanded', String(open));
   };
-  toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
-  nav.addEventListener('keydown', event => {
+  toggle.addEventListener('click', () => setSidebarOpen(!document.body.classList.contains('sidebar-open')));
+  shade.addEventListener('click', () => setSidebarOpen(false));
+  document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
-    const group = nav.querySelector('.nav-group.open');
-    if (group) {
-      closeGroups(null);
-      group.querySelector('.nav-group-button').focus();
-    } else if (nav.classList.contains('open')) {
-      setOpen(false);
+    if (account.classList.contains('open')) {
+      setAccountOpen(false);
+      accountButton.focus();
+    } else if (document.body.classList.contains('sidebar-open')) {
+      setSidebarOpen(false);
       toggle.focus();
     }
   });
-  actions.append(toggle);
 
-  // The links collapse behind the menu button only when they no longer fit in one row.
-  const fitMenu = () => {
-    nav.classList.remove('compact');
-    if (nav.scrollWidth > nav.clientWidth) nav.classList.add('compact');
-    else setOpen(false);
-  };
-  window.addEventListener('resize', fitMenu);
-
-  nav.replaceChildren(brand, linkBox, actions);
-  fitMenu();
+  const divider = document.createElement('span');
+  divider.className = 'nav-divider';
+  const actions = document.createElement('div');
+  actions.className = 'nav-actions';
+  actions.append(createServiceStatus(), divider, createThemeToggle(), createLanguageSwitcher(), account);
+  nav.replaceChildren(toggle, actions);
 
   // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu entry.
   const main = document.querySelector('main');
@@ -655,13 +665,15 @@ function renderMenu() {
     }
     if (can(me, USERS_PAGE.permission)) {
       const users = document.createElement('a');
-      users.className = 'nav-link';
+      users.className = 'side-link';
       users.href = USERS_PAGE.href;
-      users.append(icon('users'), USERS_PAGE.title);
-      if (location.pathname === USERS_PAGE.href) users.classList.add('active');
-      linkBox.append(users);
+      users.append(icon(USERS_PAGE.icon), USERS_PAGE.title);
+      if (location.pathname === USERS_PAGE.href) {
+        users.classList.add('active');
+        users.setAttribute('aria-current', 'page');
+      }
+      pages.append(users);
     }
-    fitMenu();
     applyPermissions(me);
     guardPage(me);
     if (!me.twoFactor && location.pathname !== '/account.html') {
