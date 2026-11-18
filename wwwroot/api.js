@@ -78,6 +78,8 @@ const ICON_PATHS = {
   mailPlus: '<path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/><path d="M19 15v6M16 18h6"/>',
   alert: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5h.01"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  arrowUp: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+  arrowDown: '<path d="M12 5v14M6 13l6 6 6-6"/>',
   logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
 };
 
@@ -458,6 +460,16 @@ function badge(text, kind = 'muted') {
   element.className = `badge ${kind}`;
   element.textContent = text;
   return element;
+}
+
+// A trade side (any MetaTrader code with BUY or SELL in it) gets an up or down arrow in front of its text.
+function sideLabel(text, code) {
+  const side = /BUY/i.test(code) ? 'buy' : /SELL/i.test(code) ? 'sell' : '';
+  if (!side) return text;
+  const cell = document.createElement('span');
+  cell.className = `side-cell ${side}`;
+  cell.append(icon(side === 'buy' ? 'arrowUp' : 'arrowDown', 'side-icon'), text);
+  return cell;
 }
 
 // Wraps nodes or text in a flex row, e.g. several badges in one table cell.

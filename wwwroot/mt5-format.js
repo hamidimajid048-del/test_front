@@ -33,7 +33,7 @@ const column = (key, title, format) => ({ key, title, format });
 // A position-history row that is a trade; the others are deposits, withdrawals and other balance operations.
 const isTrade = row => /(^|_)(BUY|SELL)$/.test(String(row.direction ?? ''));
 const tradeOnly = format => (value, row) => isTrade(row) ? format(value, row) : '—';
-const labelColumn = (key, title) => column(key, title, label);
+const labelColumn = (key, title) => column(key, title, value => sideLabel(label(value), value));
 const priceColumn = (key, title) => column(key, title, price);
 const amountColumn = (key, title) => column(key, title, amount);
 
@@ -44,7 +44,7 @@ const SOURCE_LABELS = {
   SL: 'Stop loss', TP: 'Take profit', SO: 'Stop out', EXTERNAL_CLIENT: 'External client', VMARGIN: 'Variation margin',
   CORPORATE_ACTION: 'Corporate action', LAST: 'Corporate action', EXTERNAL_SERVICE: 'External service',
 };
-const SOURCE_PLATFORMS = { CLIENT: 'system', FIRST: 'system', MOBILE: 'mobile', WEB: 'web' };
+const SOURCE_PLATFORMS = { CLIENT: 'system', FIRST: 'system', MOBILE: 'mobile', WEB: 'web', EXPERT: 'expert' };
 
 const source = value => {
   const code = String(value ?? '').replace(/^((DEAL|ORDER|POSITION)_)?REASON_/, '');

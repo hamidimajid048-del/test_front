@@ -69,6 +69,7 @@
   --platform-web: #2f7de1;
   --platform-mobile: #1f9d6b;
   --platform-system: #7a5af8;
+  --platform-expert: #d9770b;
   --switch-knob: #ffffff;
   --qr-bg: #ffffff;
   --overlay: rgba(8, 15, 30, 0.45);
@@ -141,6 +142,7 @@
   --platform-web: #6aa8f7;
   --platform-mobile: #3ccf8e;
   --platform-system: #a592ff;
+  --platform-expert: #f5a547;
   --switch-knob: #ffffff;
   --qr-bg: #ffffff;
   --overlay: rgba(2, 6, 14, 0.65);
@@ -1385,6 +1387,13 @@ img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radi
 .platform-icon.web { color: var(--platform-web); }
 .platform-icon.mobile { color: var(--platform-mobile); }
 .platform-icon.system { color: var(--platform-system); }
+.platform-icon.expert { color: var(--platform-expert); }
+.side-cell { display: inline-flex; align-items: center; gap: var(--space-4); white-space: nowrap; }
+.side-icon { display: inline-grid; flex: none; place-items: center; }
+.side-icon svg { width: 15px; height: 15px; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.side-cell.buy .side-icon svg { stroke: var(--success); }
+.side-cell.sell .side-icon svg { stroke: var(--danger); }
+.badge .side-cell { vertical-align: middle; }
 
 form.filters .device-type-field { position: relative; display: flex; flex-direction: column; gap: var(--space-6); color: var(--text-muted); font-size: var(--font-size-sm); font-weight: 500; }
 .device-type-button { min-width: 140px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; font-weight: 400; }

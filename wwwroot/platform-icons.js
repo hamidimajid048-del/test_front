@@ -1,4 +1,5 @@
-// Icons for the device type of a session: web (a globe), mobile (a phone: Android or iOS) and system (a desktop client).
+// Icons for the device type of a session: web (a globe), mobile (a phone: Android or iOS) and system (a desktop client),
+// and expert (a robot) for trades an expert advisor made.
 // The icon is drawn beside the text and carries no text of its own, so sorting, filtering and exports use the text only.
 
 const PLATFORM_KINDS = {
@@ -13,6 +14,10 @@ const PLATFORM_KINDS = {
   system: {
     label: 'System',
     paths: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  },
+  expert: {
+    label: 'Expert',
+    paths: '<rect x="4.5" y="8" width="15" height="11" rx="3"/><path d="M12 8V5M9.5 12.5v1.5M14.5 12.5v1.5M9.5 16.5h5M2.5 12v3M21.5 12v3"/><circle cx="12" cy="3.8" r="1.2"/>',
   },
 };
 

@@ -75,7 +75,7 @@ const codeText = code => code ? label(code.name) : '';
 function codeColumn(key, title, codeKey) {
   return column(key, title, (text, row) => {
     const cell = document.createElement('span');
-    cell.textContent = text || '—';
+    cell.append(sideLabel(text || '—', row[codeKey]?.name ?? ''));
     cell.title = row[codeKey]?.description ?? '';
     return cell;
   });
@@ -114,7 +114,7 @@ function renderPosition(login, { position, deals }) {
     ['Account', login],
     ['Position', position.positionId],
     ['Symbol', position.symbol],
-    ['Direction', label(position.direction)],
+    ['Direction', sideLabel(label(position.direction), position.direction)],
     ['Volume', lots(position.volume)],
     ['Opened by', source(position.openReason)],
     ['Opened (UTC)', formatUtc(position.openedAt)],

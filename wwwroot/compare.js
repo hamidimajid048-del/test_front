@@ -120,7 +120,7 @@ const TIMELINE_COLUMNS = [
   { key: 'sharedCid', title: 'Shared CID', format: shared => shared ? badge('CID', 'warn') : '', filterKey: 'SharedCid' },
 ];
 
-const codeLabel = name => name ? label(name) : '—';
+const codeLabel = name => name ? sideLabel(label(name), name) : '—';
 
 const TRANSACTION_COLUMNS = [
   TIMELINE_COLUMNS[0],

@@ -111,7 +111,11 @@ function pnl(value) {
 // The API sends a position's direction as its deal type: BUY or SELL.
 const DIRECTION_LABELS = { BUY: 'Buy', SELL: 'Sell' };
 const directionLabel = direction => DIRECTION_LABELS[direction] ?? direction;
-const directionBadge = direction => badge(directionLabel(direction), direction === 'BUY' ? 'ok' : 'danger');
+const directionBadge = direction => {
+  const element = badge('', direction === 'BUY' ? 'ok' : 'danger');
+  element.append(sideLabel(directionLabel(direction), direction));
+  return element;
+};
 
 const stopsText = value => (value === null || value === undefined ? '—' : price(value));
 
@@ -302,7 +306,7 @@ function comparePanel(main, child, kindKey) {
     ['Closed (UTC)', main.closeTimeUtc ? formatUtc(main.closeTimeUtc) : 'Open', related.closeTimeUtc ? formatUtc(related.closeTimeUtc) : 'Open', signedDuration(comparison.relatedMinusMainCloseSeconds)],
     ['Held for', hold(main), hold(related), signedDuration(comparison.durationDiffSeconds)],
     ['Time both were open', '', '', comparison.overlapSeconds === null || comparison.overlapSeconds === undefined ? '—' : duration(comparison.overlapSeconds)],
-    ['Direction', directionLabel(main.direction), directionLabel(related.direction), main.direction === related.direction ? 'Same' : 'Opposite'],
+    ['Direction', sideLabel(directionLabel(main.direction), main.direction), sideLabel(directionLabel(related.direction), related.direction), main.direction === related.direction ? 'Same' : 'Opposite'],
     ['Volume', main.volume, related.volume, `×${comparison.volumeRatio} (${comparison.volumeDiffPercent > 0 ? '+' : ''}${comparison.volumeDiffPercent}%)`],
     ['Entry price', price(main.openPrice), price(related.openPrice), signedMoney(comparison.openPriceDiff)],
     ['Exit price', price(main.closePrice), price(related.closePrice), main.closePrice !== null && related.closePrice !== null ? signedMoney(related.closePrice - main.closePrice) : '—'],
