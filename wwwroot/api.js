@@ -1282,6 +1282,19 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
   const compact = columns.map(column => isCompactColumn(column, allRows));
   const numeric = columns.map(column => isNumberColumn(column, allRows));
   const body = table.createTBody();
+  // A column with linkRows ties rows with the same value (an open and a close order of one position): hovering one
+  // marks the others on the page.
+  const linkColumn = allColumns.find(column => column.linkRows);
+  const markLinked = (event, on) => {
+    const tr = event.target.closest?.('tr[data-link]');
+    if (!tr) return;
+    for (const other of body.querySelectorAll(`tr[data-link="${CSS.escape(tr.dataset.link)}"]`))
+      if (other !== tr) other.classList.toggle('linked', on);
+  };
+  if (linkColumn) {
+    body.addEventListener('mouseover', event => markLinked(event, true));
+    body.addEventListener('mouseout', event => markLinked(event, false));
+  }
   const meta = document.createElement('div');
   meta.className = 'grid-meta';
 
@@ -1320,6 +1333,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
     }
     for (const row of shown) {
       const tr = body.insertRow();
+      if (linkColumn && row[linkColumn.key]) tr.dataset.link = row[linkColumn.key];
       if (onRowClick) {
         tr.classList.add('clickable');
         tr.tabIndex = 0;
@@ -1335,6 +1349,7 @@ function renderTable(container, allColumns, rows, onRowClick, options = {}) {
         const cellClass = column.cellClass?.(row);
         if (cellClass) td.classList.add(cellClass);
         if (column.phase) td.classList.add(`phase-${column.phase}`);
+        if (column === linkColumn) td.classList.add('link-cell');
         const value = column.format ? column.format(row[column.key], row) : row[column.key];
         if (value instanceof Node) td.append(value);
         else td.textContent = value ?? '';

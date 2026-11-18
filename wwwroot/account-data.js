@@ -83,7 +83,7 @@ const orderColumns = [
   utcColumn('setupAt', 'Placed'),
   utcColumn('doneAt', 'Done'),
   utcColumn('expiresAt', 'Expires', true),
-  column('positionId', 'Position', value => value || '—'),
+  { ...column('positionId', 'Position', value => value || '—'), linkRows: true },
   sourceColumn('reason', 'Placed by'),
   commentColumn('comment', 'Comment'),
 ];
@@ -123,7 +123,7 @@ const dealColumns = [
   amountColumn('profit', 'Profit'),
   amountColumn('commission', 'Commission'),
   amountColumn('swap', 'Swap'),
-  column('positionId', 'Position', value => value || '—'),
+  { ...column('positionId', 'Position', value => value || '—'), linkRows: true },
   column('order', 'Order'),
   sourceColumn('reason', 'Source'),
   commentColumn('comment', 'Comment'),

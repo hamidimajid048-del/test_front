@@ -701,6 +701,10 @@ tbody tr:nth-child(even) { background: var(--row-stripe); }
 tbody tr:last-child td { border-bottom: 0; }
 tr.clickable { cursor: pointer; transition: background-color .1s ease; }
 tr.clickable:hover { background: var(--row-hover); }
+tbody tr[data-link]:hover > td { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+tbody tr.linked > td:not(.hit-sl, .hit-tp) { background: color-mix(in srgb, var(--primary) 16%, transparent); }
+tbody tr.linked > td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
+tbody tr[data-link]:hover > td.link-cell, tbody tr.linked > td.link-cell { color: var(--primary); font-weight: 700; }
 tr.clickable:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; }
 .actions[hidden], .actions > [hidden] { display: none; }
