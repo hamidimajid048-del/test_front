@@ -78,7 +78,7 @@ const COLUMNS = {
     sorted(column('deal', 'Deal'), 'Deal'),
     sorted(utcColumn('time', 'Time'), 'Time'),
     sorted(labelColumn('action', 'Action'), 'Action'),
-    sorted(labelColumn('entry', 'Entry'), 'Entry'),
+    sorted(entryColumn('entry', 'Entry'), 'Entry'),
     sorted(column('symbol', 'Symbol'), 'Symbol'),
     sorted(column('volume', 'Volume', lots), 'Volume'),
     sorted(priceColumn('price', 'Price'), 'Price'),

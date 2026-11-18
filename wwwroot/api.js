@@ -80,6 +80,8 @@ const ICON_PATHS = {
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   arrowUp: '<path d="M12 19V5M6 11l6-6 6 6"/>',
   arrowDown: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+  entryIn: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M3 12h11M10 8l4 4-4 4"/>',
+  entryOut: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M9 12h11M16 8l4 4-4 4"/>',
   logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
 };
 
@@ -465,10 +467,22 @@ function badge(text, kind = 'muted') {
 // A trade side (any MetaTrader code with BUY or SELL in it) gets an up or down arrow in front of its text.
 function sideLabel(text, code) {
   const side = /BUY/i.test(code) ? 'buy' : /SELL/i.test(code) ? 'sell' : '';
-  if (!side) return text;
+  return side ? iconLabel(text, side === 'buy' ? 'arrowUp' : 'arrowDown', side) : text;
+}
+
+const ENTRY_ICONS = { in: 'entryIn', out: 'entryOut', inout: 'swap' };
+
+// A deal entry (IN, OUT, INOUT or OUT_BY, with or without its ENTRY_ prefix) gets an icon in front of its text.
+function entryLabel(text, code) {
+  const entry = String(code ?? '').toUpperCase().replace(/[\s/]+/g, '_').replace(/^.*ENTRY_/, '');
+  const kind = /^IN_?OUT$/.test(entry) ? 'inout' : /^OUT(_BY)?$/.test(entry) ? 'out' : entry === 'IN' ? 'in' : '';
+  return kind ? iconLabel(text, ENTRY_ICONS[kind], `entry-${kind}`) : text;
+}
+
+function iconLabel(text, iconName, tone) {
   const cell = document.createElement('span');
-  cell.className = `side-cell ${side}`;
-  cell.append(icon(side === 'buy' ? 'arrowUp' : 'arrowDown', 'side-icon'), text);
+  cell.className = `side-cell ${tone}`;
+  cell.append(icon(iconName, 'side-icon'), text);
   return cell;
 }
 

@@ -70,6 +70,9 @@
   --platform-mobile: #1f9d6b;
   --platform-system: #7a5af8;
   --platform-expert: #d9770b;
+  --entry-in: #0d9488;
+  --entry-out: #e8590c;
+  --entry-inout: #9c36b5;
   --switch-knob: #ffffff;
   --qr-bg: #ffffff;
   --overlay: rgba(8, 15, 30, 0.45);
@@ -143,6 +146,9 @@
   --platform-mobile: #3ccf8e;
   --platform-system: #a592ff;
   --platform-expert: #f5a547;
+  --entry-in: #2dd4bf;
+  --entry-out: #ff8a4c;
+  --entry-inout: #d07be6;
   --switch-knob: #ffffff;
   --qr-bg: #ffffff;
   --overlay: rgba(2, 6, 14, 0.65);
@@ -1395,6 +1401,10 @@ img.flag { width: 20px; height: 15px; flex: none; object-fit: cover; border-radi
 .side-icon svg { width: 15px; height: 15px; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .side-cell.buy .side-icon svg { stroke: var(--success); }
 .side-cell.sell .side-icon svg { stroke: var(--danger); }
+.side-cell[class*="entry-"] .side-icon svg { stroke-width: 2; }
+.side-cell.entry-in .side-icon svg { stroke: var(--entry-in); }
+.side-cell.entry-out .side-icon svg { stroke: var(--entry-out); }
+.side-cell.entry-inout .side-icon svg { stroke: var(--entry-inout); }
 .badge .side-cell { vertical-align: middle; }
 
 form.filters .device-type-field { position: relative; display: flex; flex-direction: column; gap: var(--space-6); color: var(--text-muted); font-size: var(--font-size-sm); font-weight: 500; }

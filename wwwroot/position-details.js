@@ -16,7 +16,7 @@ const grids = {
       column('deal', 'Deal'),
       utcColumn('time', 'Time'),
       labelColumn('action', 'Action'),
-      labelColumn('entry', 'Entry'),
+      entryColumn('entry', 'Entry'),
       column('symbol', 'Symbol'),
       column('volume', 'Volume', lots),
       priceColumn('price', 'Price'),
@@ -32,18 +32,18 @@ const grids = {
   transactions: createLocalGrid({
     containerId: 'transactions',
     pagerId: 'transactions-pager',
-    sort: { item: 'Time (UTC)', direction: 'Asc' },
+    sort: { item: 'Record', direction: 'Asc' },
     columns: [
       column('recordNo', 'Record'),
       utcColumn('time', 'Time', true),
       {
         key: 'timeDifference', title: 'Time difference (s)',
-        help: 'Seconds since the record before it, in time order. The tracker keeps whole seconds, so this is to the second.',
+        help: 'Seconds since the record before it, in record order. The tracker keeps whole seconds, so this is to the second.',
         format: seconds => (seconds === null ? '—' : String(seconds)),
       },
       codeColumn('actionText', 'Action', 'action'),
       codeColumn('typeText', 'Type', 'type'),
-      codeColumn('entryText', 'Entry', 'entry'),
+      codeColumn('entryText', 'Entry', 'entry', (text, code) => entryLabel(text || '—', code?.name ?? '')),
       column('symbol', 'Symbol'),
       column('lots', 'Volume', value => value === null ? '—' : lots(value)),
       priceColumn('price', 'Price'),
@@ -81,9 +81,9 @@ function codeColumn(key, title, codeKey, render = (text, code) => sideLabel(stop
   });
 }
 
-// The records in time order (record number breaks ties), each with the seconds since the one before it.
+// The records in the order the tracker wrote them (their record number), each with the seconds since the one before it.
 function transactionRows(items) {
-  const ordered = [...items].sort((a, b) => Date.parse(a.time) - Date.parse(b.time) || a.recordNo - b.recordNo);
+  const ordered = [...items].sort((a, b) => a.recordNo - b.recordNo);
   return ordered.map((item, index) => ({
     ...transactionRow(item),
     timeDifference: index === 0 ? null : (Date.parse(item.time) - Date.parse(ordered[index - 1].time)) / 1000,

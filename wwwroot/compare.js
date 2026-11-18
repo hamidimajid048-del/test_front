@@ -127,7 +127,7 @@ const TRANSACTION_COLUMNS = [
   { ...utcColumn('time', 'Time', true), sortKey: 'Time' },
   { key: 'action', title: 'Action', format: codeLabel, filterKey: 'Action' },
   { key: 'type', title: 'Type', format: codeLabel, filterKey: 'Type' },
-  { key: 'entry', title: 'Entry', format: codeLabel, filterKey: 'Entry' },
+  { key: 'entry', title: 'Entry', format: name => name ? entryLabel(label(name), name) : '—', filterKey: 'Entry' },
   { key: 'symbol', title: 'Symbol', filterKey: 'Symbol' },
   { key: 'lots', title: 'Volume', format: value => value === null ? '—' : lots(value), filterKey: 'Lots' },
   { key: 'price', title: 'Price', format: price, filterKey: 'Price' },

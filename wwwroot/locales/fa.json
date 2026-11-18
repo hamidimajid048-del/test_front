@@ -698,7 +698,7 @@
     "Search by": "جستجو بر اساس",
     "Seconds after": "ثانیه پس از",
     "Seconds before": "ثانیه پیش از",
-    "Seconds since the record before it, in time order. The tracker keeps whole seconds, so this is to the second.": "ثانیه‌های سپری‌شده از رکورد قبلی به ترتیب زمانی. ردیاب فقط ثانیه‌های کامل را ثبت می‌کند، بنابراین این مقدار با دقت ثانیه است.",
+    "Seconds since the record before it, in record order. The tracker keeps whole seconds, so this is to the second.": "ثانیه‌های سپری‌شده از رکورد قبلی به ترتیب شماره رکورد. ردیاب فقط ثانیه‌های کامل را ثبت می‌کند، بنابراین این مقدار با دقت ثانیه است.",
     "See accounts": "مشاهدهٔ حساب‌ها",
     "Select a type (IP or CID)": "یک نوع انتخاب کنید (IP یا CID)",
     "Select shown": "انتخاب موارد نمایش‌داده‌شده",

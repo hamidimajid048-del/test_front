@@ -115,7 +115,7 @@ const dealColumns = [
   column('deal', 'Deal'),
   utcColumn('time', 'Time'),
   labelColumn('action', 'Action'),
-  labelColumn('entry', 'Entry'),
+  entryColumn('entry', 'Entry'),
   column('symbol', 'Symbol'),
   column('volume', 'Volume', lots),
   priceColumn('price', 'Price'),
