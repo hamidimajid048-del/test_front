@@ -2,19 +2,7 @@ namespace Sgb.Trading.Violation.Panel.Mt5;
 
 public static class Mt5Extensions
 {
-    public const int MaxAccountLogins = 500;
-    public const string UsersDataSourceKey = "mt5-users";
-    private const string UsersConnectionStringName = "Mt5Users";
     private const int MaxChangeEntries = 500;
-
-    public static void AddMt5UserDirectory(this WebApplicationBuilder builder)
-    {
-        if (builder.Configuration.GetConnectionString(UsersConnectionStringName) is not { Length: > 0 } connectionString)
-            return;
-
-        builder.Services.AddKeyedSingleton(UsersDataSourceKey, (_, _) => NpgsqlDataSource.Create(connectionString));
-        builder.Services.AddSingleton<Mt5AccountReader>();
-    }
 
     public static void AddMt5Connection(this WebApplicationBuilder builder)
     {
@@ -39,10 +27,6 @@ public static class Mt5Extensions
         var mt5 = app.MapGroup($"{PanelUserEndpoints.Prefix}/mt5");
         mt5.MapGet("/account-changes", ReadAccountChanges).RequirePermission(PanelPermissions.AccountChangesView);
         mt5.MapMt5AccountSwitchEndpoints();
-        if (app.Services.GetService<Mt5AccountReader>() is not null)
-        {
-            mt5.MapGet("/accounts", ReadAccounts).RequirePermission(PanelPermissions.AllReportViews);
-        }
 
         if (app.Services.GetService<Mt5ConnectionService>() is null)
         {
@@ -63,25 +47,6 @@ public static class Mt5Extensions
         ulong.TryParse(login, out var parsed) && parsed > 0
             ? Results.Ok(await changeLog.ListAsync(parsed, MaxChangeEntries, cancellationToken))
             : Error(StatusCodes.Status400BadRequest, "Enter a valid account number.");
-
-    private static async Task<IResult> ReadAccounts(string? logins, Mt5AccountReader reader, CancellationToken cancellationToken)
-    {
-        var parsed = (logins ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(text => ulong.TryParse(text, out var login) && login > 0 ? login : (ulong?)null)
-            .ToArray();
-        if (parsed.Length is 0 or > MaxAccountLogins || parsed.Any(login => login is null))
-            return Error(StatusCodes.Status400BadRequest, $"Send 1 to {MaxAccountLogins} logins, separated by commas.");
-
-        try
-        {
-            return Results.Ok(await reader.ReadAsync([.. parsed.Select(login => login!.Value).Distinct()], cancellationToken));
-        }
-        catch (Mt5UnavailableException exception)
-        {
-            return Error(StatusCodes.Status503ServiceUnavailable, exception.Message);
-        }
-    }
 
     internal static IResult Error(int statusCode, string message) => Results.Json(new { error = message }, statusCode: statusCode);
 }

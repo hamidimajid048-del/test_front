@@ -17,9 +17,9 @@ forwards `/api/*` to the Violation API through a reverse proxy (YARP). The brows
 
 ## MetaTrader user directory
 
-Name, group, email and balance of logins, and the login search by email, are read from the `Mt5Users` PostgreSQL database
-(table `mt5.users`, filled every 30 minutes by Sgb.Trading.Violation.Mt5UserSync), not from MetaTrader. Set
-`ConnectionStrings:Mt5Users`; without it those endpoints answer 503. The data is as fresh as the last sync run.
+Name, group, email and balance of logins, and the login search by email, come from the Violation service
+(`meta-trader-accounts/get-accounts`, `meta-trader-accounts/get-logins-by-email`), which reads `mt5_backup.mt5_users`.
+The panel has no connection to a user database of its own.
 
 ## MetaTrader connection
 
@@ -40,11 +40,8 @@ never in `appsettings.json`. `GET /panel-api/mt5/status` (signed-in users) repor
 last check and last error. Code that needs the server uses `Mt5ConnectionService.RunManager` or `RunAdmin`, which
 serialise the native calls. The panel is built for x64; the MetaQuotes libraries are in `Mt5Native/`.
 
-`GET /panel-api/mt5/accounts?logins=1,2,3` (1 to 500 logins) returns each account's name, group, email and balance.
-Active accounts are read from the Manager; a login the Manager does not have is looked up in the Administrator
-archive (deleted accounts). `source` is `Manager`, `Archive`, `NotFound`, or `Unavailable` when the archive cannot be
-read. It answers 503 when the Manager is not connected or `Mt5:Enabled` is `false`. The Copy trade & hedge page calls it
-after its table has loaded and fills the Name, Group, Email and Balance columns. The IP/CID similarity and CID/IP search
+The Copy trade & hedge page calls `meta-trader-accounts/get-accounts` (1 to 500 logins, `source` is `Manager`, `Archive` or
+`NotFound`) after its table has loaded and fills the Name, Group, Email and Balance columns. The IP/CID similarity and CID/IP search
 reports do not: the service returns those columns (from `mt5_backup.mt5_users`) and sorts, filters and exports them, and
 applies **Different email only** on the similarity summary (`differentEmailOnly=true`).
 
@@ -189,7 +186,7 @@ run `i18nMissing()`.
 Every page that searches a login (Account data, Login history, IP/CID similarity, Copy trade & hedge, Compare accounts,
 Position details) shows, once the search has run, a row of buttons that open the same login on the other pages:
 Account data, Login history, IP/CID similarity, Copy trade, Hedge (window 5 s, min share 1, hedge tolerance 10 %),
-Compare accounts and Compare with logins (main login filled in). The email of the login is read from the user directory (`mt5/accounts`) and adds
+Compare accounts and Compare with logins (main login filled in). The email of the login is read with `meta-trader-accounts/get-accounts` and adds
 Email logins and Compare emails (Email A filled in). The email pages (Email logins, Compare emails) show the email
 buttons. Only pages the account may open are shown; the links are built in `related-pages.js`.
 

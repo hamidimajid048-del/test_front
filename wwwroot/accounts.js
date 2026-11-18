@@ -1,4 +1,4 @@
-// Name, group, email and balance of logins, read from MetaTrader in a second request after a table is shown; the
+// Name, group, email and balance of logins, read from the service's MetaTrader backup in a second request after a table is shown; the
 // cells show a placeholder until it answers.
 
 const NO_VALUE = '—';
@@ -66,7 +66,7 @@ function createAccountDirectory(messageElement) {
       try {
         for (let start = 0; start < unique.length; start += ACCOUNT_BATCH_SIZE) {
           const batch = unique.slice(start, start + ACCOUNT_BATCH_SIZE);
-          const found = await panelRequest('GET', `mt5/accounts?logins=${batch.join(',')}`);
+          const found = await apiGet('meta-trader-accounts/get-accounts', { logins: batch });
           if (current !== request) return;
           for (const account of found) accounts.set(account.login, account);
           fillPending();

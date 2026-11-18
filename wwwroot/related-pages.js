@@ -51,7 +51,7 @@ function relatedLinks(pages, value, me) {
 function emailOfLogin(login) {
   const key = String(login);
   if (!relatedEmails.has(key))
-    relatedEmails.set(key, panelRequest('GET', `mt5/accounts${toQueryString({ logins: key })}`)
+    relatedEmails.set(key, apiGet('meta-trader-accounts/get-accounts', { logins: [key] })
       .then(accounts => accounts[0]?.email || null)
       .catch(() => null));
   return relatedEmails.get(key);
