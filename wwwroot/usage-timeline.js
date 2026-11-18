@@ -80,7 +80,7 @@ function parseUse(use) {
   return Number.isFinite(from) && Number.isFinite(to) ? { ...use, from, to, kind: timelineKind(use.deviceType) } : null;
 }
 
-// rows for one login: [{ value, firstSeen, lastSeen, sessionCount, deviceType?, geo? }].
+// rows for one login: [{ value, firstSeen, lastSeen, sessionCount, transactionCount?, deviceType?, geo? }].
 // rows for two logins (options.sides = [{ name, login }, { name, login }]): [{ value, geo?, uses: [use|null, use|null] }],
 // where a use is { firstSeen, lastSeen, sessionCount, deviceType? }.
 // options.kind is 'cid' or 'ip'; options.onSelect(row) makes the rows clickable; options.empty replaces the empty text.
@@ -195,6 +195,7 @@ function renderUsageTimeline(container, rows, { kind, onSelect, sides, empty: em
         `First sign-in: ${formatUtc(use.firstSeen)}`,
         `Last sign-in: ${formatUtc(use.lastSeen)}`,
         `Sign-ins: ${Number(use.sessionCount).toLocaleString('en-US')}`,
+        Number.isFinite(use.transactionCount) ? `Transactions: ${use.transactionCount.toLocaleString('en-US')}` : null,
       ];
     }
     const both = together(item);
