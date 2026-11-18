@@ -1011,3 +1011,41 @@ td .actions { flex-wrap: nowrap; justify-content: center; }
   thead th { position: static; }
   section, .card { box-shadow: none; }
 }
+
+/* ---------- Language and direction (i18n.js) ---------- */
+
+/* The page stays hidden while the catalog of a non-English language loads, so English text never flashes. */
+html.i18n-loading body { visibility: hidden; }
+
+:root[dir="rtl"] body { font-family: Vazirmatn, "Segoe UI", Tahoma, system-ui, sans-serif; line-height: 1.7; }
+:root[dir="rtl"] code, :root[dir="rtl"] .secret-key { direction: ltr; unicode-bidi: isolate; }
+
+/* Values keep their own direction inside right-to-left text: numbers, signs, IPs, emails and dates read as written. */
+:root[dir="rtl"] th, :root[dir="rtl"] td, :root[dir="rtl"] .copyable, :root[dir="rtl"] .summary strong, :root[dir="rtl"] .badge { unicode-bidi: plaintext; }
+:root[dir="rtl"] input[type="email"], :root[dir="rtl"] input[type="date"], :root[dir="rtl"] input[type="datetime-local"],
+:root[dir="rtl"] input[inputmode="numeric"], :root[dir="rtl"] input[data-numeric], :root[dir="rtl"] input[type="password"],
+:root[dir="rtl"] input[name="username"], :root[dir="rtl"] .login-box textarea { direction: ltr; text-align: right; }
+:root[dir="rtl"] input::placeholder, :root[dir="rtl"] textarea::placeholder { direction: rtl; }
+
+/* Charts and time lines read from left (earlier) to right (later) in both languages. */
+:root[dir="rtl"] .chart-frame, :root[dir="rtl"] .balance-chart, :root[dir="rtl"] .usage-timeline .ut-track, :root[dir="rtl"] .usage-timeline .ut-gridlines, :root[dir="rtl"] .ut-axis { direction: ltr; }
+
+:root[dir="rtl"] .switch span { left: auto; right: 3px; }
+:root[dir="rtl"] .switch.on span { transform: translateX(-24px); }
+:root[dir="rtl"] .switch.unknown span { transform: translateX(-12px); }
+:root[dir="rtl"] .toast.leaving { transform: translateX(-12px); }
+:root[dir="rtl"] .toast { animation-name: toast-in-rtl; }
+@keyframes toast-in-rtl { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+
+.language-switcher { position: relative; }
+.language-button { display: inline-flex; align-items: center; gap: var(--space-4); height: var(--control-md); padding: 0 var(--space-10); border-radius: var(--radius-md); font-size: var(--font-size-sm); font-weight: 600; letter-spacing: .02em; }
+.language-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.language-menu { position: absolute; top: calc(100% + 6px); inset-inline-end: 0; z-index: 60; display: flex; flex-direction: column; gap: 2px; min-width: 150px; padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.language-menu[hidden] { display: none; }
+.language-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-12); width: 100%; height: auto; padding: var(--space-8) var(--space-12); color: var(--text); background: none; border: 0; border-radius: var(--radius-sm); box-shadow: none; font-weight: 500; text-align: start; }
+.language-item:hover:not(:disabled), .language-item:focus-visible { background: var(--surface-2); }
+.language-item.active { color: var(--primary); font-weight: 700; }
+.language-item.active::after { content: ""; width: 6px; height: 11px; margin-top: -3px; border-inline-end: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+:root[dir="rtl"] .language-item.active::after { transform: rotate(-45deg); }
+.login-tools { position: fixed; top: 16px; inset-inline-end: 16px; display: flex; gap: var(--space-8); align-items: center; }
+.login-page .login-tools .theme-toggle { position: static; }

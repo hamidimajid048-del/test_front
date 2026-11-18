@@ -7,6 +7,7 @@
   <title>Sign in — Violation Panel</title>
   <link rel="stylesheet" href="/app.css">
   <script src="/theme.js"></script>
+  <script src="/i18n.js"></script>
 </head>
 <body class="login-page">
   <form class="login-box" id="login-form" method="post" action="/auth/login">
@@ -44,7 +45,10 @@
     <a class="secondary-link" href="/login.html">Start again</a>
   </form>
   <script>
-    document.body.append(createThemeToggle());
+    const tools = document.createElement('div');
+    tools.className = 'login-tools';
+    tools.append(createLanguageSwitcher(), createThemeToggle());
+    document.body.append(tools);
     document.getElementById('show-password').addEventListener('change', event => {
       document.querySelector('#login-form [name="password"]').type = event.target.checked ? 'text' : 'password';
     });

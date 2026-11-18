@@ -347,7 +347,7 @@ function showHelpTip(button, text) {
     document.addEventListener('pointerdown', event => { if (!event.target.closest?.('.col-help')) hideHelpTip(); }, true);
   }
   hideHelpTip();
-  helpTip.textContent = text;
+  helpTip.textContent = t(text);
   helpTip.hidden = false;
   const box = button.getBoundingClientRect();
   const left = box.left + box.width / 2 - helpTip.offsetWidth / 2;
@@ -473,7 +473,7 @@ function renderMenu() {
 
   const actions = document.createElement('div');
   actions.className = 'nav-actions';
-  actions.append(signedInAs, createThemeToggle(), logout);
+  actions.append(signedInAs, createLanguageSwitcher(), createThemeToggle(), logout);
 
   // The version of the pages on this server: it changes with any edit of the front end, so it shows what is deployed.
   const version = document.createElement('span');
@@ -803,7 +803,8 @@ function rowMenu(label, links) {
     const height = Math.min(menu.offsetHeight, room);
     if (menu.offsetHeight > room) menu.style.maxHeight = `${room}px`;
     menu.style.top = `${below ? box.bottom + 4 : box.top - 4 - height}px`;
-    menu.style.left = `${Math.max(8, Math.min(box.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8))}px`;
+    const start = document.documentElement.dir === 'rtl' ? box.left : box.right - menu.offsetWidth;
+    menu.style.left = `${Math.max(8, Math.min(start, window.innerWidth - menu.offsetWidth - 8))}px`;
     document.addEventListener('pointerdown', onPointerDown, true);
     document.addEventListener('keydown', onKeyDown);
     window.addEventListener('scroll', close, true);

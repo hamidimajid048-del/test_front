@@ -160,6 +160,30 @@ The panel listens on `http://localhost:5180`.
 
 Configuration, security constraints, how to turn it off and the removal checklist: [`../docs/temporary-panel-access.md`](../docs/temporary-panel-access.md).
 
+## Languages (English / Persian)
+
+Every page, help text, message and the sign-in page are available in English and Persian. The globe button in the
+menu (and at the top of the sign-in page) switches the language at once, without reloading. The choice is kept in the
+browser's local storage, so it belongs to the device; a device without a choice starts in the browser's preferred
+language. Persian switches the whole layout to right-to-left; values (logins, IPs, emails, numbers, dates) keep their
+own direction, and the charts and time lines still run from left (earlier) to right (later). Excel/CSV downloads made in
+the page use the headers of the language shown; the service's own exports keep their English keys.
+
+How it works (`wwwroot/i18n.js`, loaded in every page's `<head>`):
+
+- The pages and scripts are written in English only. `wwwroot/locales/fa.json` is the Persian catalog keyed by the
+  English text: `strings` (exact texts; `null` keeps a text in English on purpose), `templates` (texts with values,
+  `"Logins of {0} ({1})"`), and `blocks` (help paragraphs with `<strong>`/`<em>`, keyed by their HTML).
+- A MutationObserver translates every text, `title`, `placeholder` and `aria-label` as the scripts build the page, and
+  restores the English source when the language goes back to English. An element with `translate="no"` (or the
+  copyable value cells) is never translated. `t('text')` translates a text that never reaches the page.
+- While the Persian catalog loads, the page stays hidden, so English never flashes.
+
+Adding or changing a text: write it in English in the page or script as usual, then add the same text with its Persian
+translation to `locales/fa.json` (a text built with values goes under `templates` with `{0}`, `{1}`). To find texts the
+catalog misses, set `localStorage['violation-panel-i18n-debug'] = '1'` in the browser console, open the pages, and
+run `i18nMissing()`.
+
 ## Related pages
 
 Every page that searches a login (Account data, Login history, IP/CID similarity, Copy trade & hedge, Compare accounts,

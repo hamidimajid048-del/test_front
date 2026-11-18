@@ -8,7 +8,7 @@ const string AuthCookieName = "violation-panel.session";
 // TEMPORARY-PANEL-ACCESS: the header and minimum key length of the service's temporary panel access mode.
 const string PanelAccessHeader = "X-Panel-Key";
 const int MinimumPanelAccessKeyLength = 32;
-string[] publicPaths = [LoginPage, "/app.css", "/theme.js", "/favicon.svg"];
+string[] publicPaths = [LoginPage, "/app.css", "/theme.js", "/i18n.js", "/locales/fa.json", "/favicon.svg"];
 
 var builder = WebApplication.CreateBuilder(args);
 // Machine-specific settings (connection string, keys) kept next to the app and out of appsettings.json; they override
@@ -238,7 +238,7 @@ var staticFiles = new StaticFileOptions
     OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = "no-cache"
 };
 
-// The login page, its stylesheet, theme script and favicon are the only files served before authentication.
+// The login page, its stylesheet, theme and language scripts, the Persian catalog and the favicon are the only files served before authentication.
 app.UseWhen(
     context => publicPaths.Contains(context.Request.Path.Value, StringComparer.OrdinalIgnoreCase),
     branch => branch.UseStaticFiles(staticFiles));

@@ -16,8 +16,8 @@ function exportCell(text) {
 
 function tableMatrix(columns, rows) {
   return [
-    columns.map(column => (column.group ? `${column.group} ${column.title}` : column.title)),
-    ...rows.map(row => columns.map(column => exportCell(cellText(column, row)))),
+    columns.map(column => (column.group ? `${t(column.group)} ${t(column.title)}` : t(column.title))),
+    ...rows.map(row => columns.map(column => exportCell(t(cellText(column, row))))),
   ];
 }
 
