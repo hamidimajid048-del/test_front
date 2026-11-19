@@ -25,6 +25,9 @@ const SHARED_SIGNINS_HELP = 'How many times this related account signed in from 
 const TRANSACTIONS_HELP = 'Transactions the account made from this value in the range. The IP is the one recorded on the transaction; '
   + 'the computer (CID) is the one of the login session that covers the transaction time and, when possible, its IP.';
 const DETAIL_SIGNINS_HELP ='How many times the related account signed in from this value. Compare it with Logins, the sign-ins of the searched account.';
+const SHARED_VALUES_HELP = 'The IPs or CIDs both accounts used, the most used first, each with how many times the related account signed in from it. '
+  + 'An IP shows the flag of its country. Shared values opens all of them with their dates.';
+const SHARED_VALUES_SHOWN = 5;
 
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
 let filters = null;
@@ -138,9 +141,28 @@ function renderDifferentEmail(metadata) {
     : `The email of login ${metadata.login} is unknown, so rows cannot be compared.`;
 }
 
+// The shared IPs or CIDs of a summary row, one per line and copyable, each with the related account's sign-ins from it;
+// the rest of a long list opens in the row's details tab.
+function sharedValueList(values, row) {
+  if (!values?.length) return '—';
+  const list = document.createElement('div');
+  list.className = 'cid-list';
+  for (const { value, loginCount } of values.slice(0, SHARED_VALUES_SHOWN)) {
+    const line = document.createElement('div');
+    const count = document.createElement('small');
+    count.textContent = ` (${loginCount.toLocaleString('en-US')})`;
+    line.append(copyableText(value), count);
+    list.append(line);
+  }
+  const rest = values.length - SHARED_VALUES_SHOWN;
+  if (rest > 0) list.append(menuAction(`+${rest} more`, () => openDetails(row)));
+  return list;
+}
+
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', sortKey: 'RelatedLogin' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
+  { key: 'sharedValues', title: 'Shared values', format: sharedValueList, sortable: false, filterable: false, help: SHARED_VALUES_HELP },
   ...accountColumns(['name', 'group', 'balance']),
   loginActionsColumn('relatedLogin', row => [menuAction('Shared values', () => openDetails(row))], { subject, emailOf: row => row.email }),
 ];
