@@ -222,34 +222,6 @@ function renderSymbols(container, rows) {
   ], rows);
 }
 
-// Vertical columns, one per item. items: [{ label, value, tip }]
-function renderColumns(container, items, emptyText) {
-  if (!items.length || items.every(item => !item.value)) {
-    container.textContent = emptyText;
-    container.className = 'empty-note';
-    return;
-  }
-  const most = Math.max(1, ...items.map(item => item.value));
-  const chart = document.createElement('div');
-  chart.className = 'columns';
-  for (const item of items) {
-    const column = document.createElement('div');
-    column.className = 'column';
-    column.title = item.tip ?? `${item.label}: ${item.value}`;
-    const value = document.createElement('small');
-    value.textContent = item.value;
-    const bar = document.createElement('i');
-    bar.style.height = `${item.value ? Math.max(3, item.value / most * 100) : 0}%`;
-    const label = document.createElement('small');
-    label.className = 'column-label';
-    label.textContent = item.label;
-    column.append(value, bar, label);
-    chart.append(column);
-  }
-  container.className = '';
-  container.replaceChildren(chart);
-}
-
 // One row per main position of the tree page: the main position and each related position as bars from their open to
 // their close on the row's own time scale, with the main open and close drawn through every lane, so how closely the
 // two accounts opened and closed shows at a glance. A position still open runs to the end of the row.
@@ -336,9 +308,6 @@ function renderPositionTimeline(container, nodes) {
   container.replaceChildren(list);
 }
 
-function renderOffsets(container, buckets) {
-  renderColumns(container, buckets.map(bucket => ({ label: bucket.label, value: bucket.count })), 'No pairs in this range.');
-}
 
 // ---- tree ----
 

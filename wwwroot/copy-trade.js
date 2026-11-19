@@ -21,7 +21,7 @@ const KINDS = {
 const WINDOW_KEYS = ['secondsBefore', 'secondsAfter', 'volumeTolerancePercent'];
 const LIST_KEYS = ['minPercentShare', 'minCountShare', 'sortItem', 'sortDirection'];
 const FILTER_KEYS = ['symbol', 'direction', 'minSignalSeverity'];
-const TABS = ['tree', 'symbols', 'timeline', 'offsets'];
+const TABS = ['tree', 'symbols', 'timeline'];
 
 const shareLabels = row => [row.hasIpShare && 'Shared IP', row.hasCidShare && 'Shared CID'].filter(Boolean).join(', ');
 
@@ -244,7 +244,6 @@ async function loadStats() {
   renderRisk(document.getElementById('positions-risk'), stats.risk);
   renderStatCards(document.getElementById('positions-stats'), stats, search.kind);
   renderSymbols(document.getElementById('symbols-table'), stats.bySymbol);
-  renderOffsets(document.getElementById('offsets-chart'), stats.timing.histogram);
 }
 
 // The tree and the statistics are independent requests; the page waits for both so an error shows once.
@@ -282,7 +281,7 @@ function showPositionsSection() {
 }
 
 function resetPositionsView() {
-  for (const id of ['positions-metadata', 'positions-risk', 'positions-stats', 'positions', 'symbols-table', 'timeline-chart', 'offsets-chart']) {
+  for (const id of ['positions-metadata', 'positions-risk', 'positions-stats', 'positions', 'symbols-table', 'timeline-chart']) {
     document.getElementById(id).replaceChildren();
   }
   clearPager(document.getElementById('positions-pager'));

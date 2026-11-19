@@ -1039,11 +1039,6 @@ label.check input { width: auto; }
 .empty-note { color: var(--text-muted); padding: var(--space-16) 0; }
 .meter { display: inline-block; width: 90px; height: 8px; background: var(--surface-3); border-radius: var(--radius-xs); overflow: hidden; vertical-align: middle; }
 .meter i { display: block; height: 100%; background: var(--primary); border-radius: var(--radius-xs); }
-.columns { display: flex; align-items: stretch; gap: var(--space-6); height: 220px; overflow-x: auto; padding: var(--space-4) var(--space-4) 0; }
-.column { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-width: 38px; flex: 1 0 38px; gap: var(--space-4); }
-.column i { display: block; width: 70%; background: var(--primary); border-radius: var(--radius-xs) var(--radius-xs) 0 0; min-height: 0; }
-.column small { color: var(--text-muted); font-size: var(--font-size-2xs); }
-.column .column-label { white-space: nowrap; }
 table.tree .tree-toggle { width: 28px; text-align: center; color: var(--text-muted); }
 table.tree tr.tree-parent td { font-weight: 600; background: var(--surface-2); border-top: 1px solid var(--border-strong); }
 table.tree tr.tree-parent:focus-visible, table.tree tr.tree-child:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
