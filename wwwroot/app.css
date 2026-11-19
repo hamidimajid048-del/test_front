@@ -1575,7 +1575,7 @@ form.filters.vs-filters { display: block; }
 .vs-overview-title { min-width: 0; }
 .vs-overview-title h2 { margin: 0; font-size: var(--font-size-xl); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
 .vs-overview-title p { margin: 2px 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
-.vs-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-12); }
+.vs-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-12); }
 .vs-kpi { display: flex; align-items: center; gap: var(--space-12); min-width: 0; padding: var(--space-14) var(--space-16); background: var(--tile-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-lg); }
 .vs-kpi-icon { display: grid; flex: none; place-items: center; width: 44px; height: 44px; background: var(--side-active-bg) padding-box, var(--sidebar-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
 .vs-kpi-icon svg { width: 22px; height: 22px; }
@@ -1622,10 +1622,14 @@ form.filters.vs-filters { display: block; }
 .vs-legend.ok::before { background: var(--success); }
 .vs-legend.warn::before { background: var(--warning); }
 .vs-legend b { color: var(--text); font-variant-numeric: tabular-nums; }
+@media (max-width: 1760px) {
+  .vs-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 1280px) {
   .vs-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
+  .vs-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .vs-panels { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 860px) {

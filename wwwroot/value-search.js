@@ -87,7 +87,7 @@ function element(tag, className, ...children) {
 
 function kpi(iconName, label, value, ...notes) {
   return element('div', 'vs-kpi',
-    icon(iconName, 'vs-kpi-icon'),
+    icon(iconName, 'icon vs-kpi-icon'),
     element('div', 'vs-kpi-text', element('span', 'vs-kpi-label', label), element('strong', 'vs-kpi-value', value),
       notes.length ? element('small', 'vs-kpi-note', ...notes) : null));
 }
