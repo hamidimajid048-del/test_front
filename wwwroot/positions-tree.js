@@ -531,12 +531,11 @@ const TREE_GROUPS = ['Main', 'Related'];
 const TREE_HEADERS = { Main: PARENT_HEADERS, Related: CHILD_HEADERS };
 const treeColumnStates = new WeakMap();
 
-// The hidden-column state of one group of one tree container, restored from the browser on first use.
+// The hidden-column state of one group of one tree container, kept while the page is open.
 function treeColumnState(container, group) {
   let groups = treeColumnStates.get(container);
   if (!groups) treeColumnStates.set(container, groups = {});
-  const signature = `tree-${group}`;
-  return groups[group] ??= { signature, hidden: loadHiddenColumns(container, signature), pickerOpen: false };
+  return groups[group] ??= { hidden: new Set(), pickerOpen: false };
 }
 
 // Hides cells by position. The toggle column (0) always stays; a detail row spans what is left.
