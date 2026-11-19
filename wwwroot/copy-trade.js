@@ -146,12 +146,18 @@ const LIST_COLUMNS = [
 
 function windowItems(metadata) {
   const items = [
-    ['Range (UTC)', `${formatUtc(metadata.fromUtc)} — ${formatUtc(metadata.toUtc)}`],
-    ['Seconds before', metadata.secondsBefore],
-    ['Seconds after', metadata.secondsAfter],
+    ['Range (UTC)', `${formatUtc(metadata.fromUtc)} — ${formatUtc(metadata.toUtc)}`, 'calendar'],
+    ['Seconds before', metadata.secondsBefore, 'timer'],
+    ['Seconds after', metadata.secondsAfter, 'timer'],
   ];
-  if (kind().hasVolumeTolerance) items.push(['Volume tolerance (%)', metadata.volumeTolerancePercent]);
+  if (kind().hasVolumeTolerance) items.push(['Volume tolerance (%)', metadata.volumeTolerancePercent, 'scale']);
   return items;
+}
+
+// Summary chips with an icon in front: items are [label, value, icon].
+function renderIconChips(container, items) {
+  renderSummary(container, items);
+  [...container.children].forEach((chip, index) => chip.prepend(icon(items[index][2])));
 }
 
 async function loadList() {
@@ -207,12 +213,11 @@ async function loadTree() {
   const paging = pagingOf(report.paging);
   positionsPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? positionsPaging.pageSize };
 
-  renderSummary(document.getElementById('positions-metadata'), [
-    ['Related login', relatedLogin],
+  renderIconChips(document.getElementById('positions-metadata'), [
     ...windowItems(report.metadata),
-    ['Main positions shown', report.metadata.nodeCount],
-    ['Related positions shown', report.metadata.childCount],
-    ['Counted in the share', report.metadata.assignedCount],
+    ['Main positions shown', report.metadata.nodeCount, 'layers'],
+    ['Related positions shown', report.metadata.childCount, 'layers'],
+    ['Counted in the share', report.metadata.assignedCount, 'check'],
   ]);
   treeState.window = { before: Number(report.metadata.secondsBefore), after: Number(report.metadata.secondsAfter) };
   treeState.sort = {
@@ -263,8 +268,8 @@ function showView(next) {
 }
 
 function showPositionsSection() {
-  document.getElementById('positions-title').textContent =
-    `Position comparison (${kind().title}): ${search.login} and ${relatedLogin}`;
+  document.getElementById('positions-title').textContent = `Position comparison (${kind().title})`;
+  renderSummary(document.getElementById('positions-logins'), [['Main login', search.login], ['Related login', relatedLogin]]);
   document.getElementById('positions-compare').href = compareHref(relatedLogin);
   document.getElementById('positions-profile').href = `/logins.html?login=${encodeURIComponent(relatedLogin)}`;
   document.getElementById('positions-help').replaceChildren(...KIND_VIEWS[search.kind].help.map(text => {

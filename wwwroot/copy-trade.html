@@ -11,21 +11,23 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
-      <label>Report type
+  <main class="copy-trade">
+    <form class="filters ct-filters" id="filters">
+      <h2 class="vs-filter-title" data-icon="filter">Search &amp; Filters</h2>
+      <label class="icon-field">Report type
         <select name="kind">
           <option value="copy-trade">Copy trade</option>
           <option value="hedge">Hedge</option>
         </select>
+        <span class="field-icon" data-icon="layers"></span>
       </label>
-      <label>Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <label>Seconds before <input name="secondsBefore" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" max="120" step="1" required></label>
-      <label>Seconds after <input name="secondsAfter" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" max="120" step="1" required></label>
-      <label>Min share (%) <input name="minPercentShare" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" max="100" step="0.01"></label>
-      <label>Min share (count) <input name="minCountShare" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"></label>
-      <label id="volume-tolerance" hidden>Volume tolerance (%) <input name="volumeTolerancePercent" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" max="100" step="0.01"></label>
-      <label>Date range
+      <label class="icon-field">Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required><span class="field-icon" data-icon="user"></span></label>
+      <label class="icon-field">Seconds before <input name="secondsBefore" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" max="120" step="1" required><span class="field-icon" data-icon="timer"></span></label>
+      <label class="icon-field">Seconds after <input name="secondsAfter" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="0" max="120" step="1" required><span class="field-icon" data-icon="timer"></span></label>
+      <label class="icon-field">Min share (%) <input name="minPercentShare" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" max="100" step="0.01"><span class="field-icon" data-icon="percent"></span></label>
+      <label class="icon-field">Min share (count) <input name="minCountShare" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"><span class="field-icon" data-icon="hash"></span></label>
+      <label class="icon-field" id="volume-tolerance" hidden>Volume tolerance (%) <input name="volumeTolerancePercent" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" max="100" step="0.01"><span class="field-icon" data-icon="scale"></span></label>
+      <label class="icon-field">Date range
         <select name="range">
           <option value="">Whole account history</option>
           <option value="week">Last week</option>
@@ -35,27 +37,30 @@
           <option value="year">Last year</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="calendar"></span>
       </label>
-      <label>From day (UTC) <input name="fromUtc" type="date"></label>
-      <label>To day (UTC) <input name="toUtc" type="date"></label>
-      <label>Sort by
+      <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="icon-field">Sort by
         <select name="sortItem">
           <option value="CountShare">Share count</option>
           <option value="PercentShare">Share (%)</option>
           <option value="ProfitLoss">Profit/loss</option>
           <option value="RelatedLogin">Related login</option>
         </select>
+        <span class="field-icon" data-icon="swap"></span>
       </label>
-      <label>Direction
+      <label class="icon-field">Direction
         <select name="sortDirection">
           <option value="Desc">Descending</option>
           <option value="Asc">Ascending</option>
         </select>
+        <span class="field-icon" data-icon="sort"></span>
       </label>
-      <button type="submit">Search</button>
+      <button type="submit" data-icon="search">Search</button>
     </form>
     <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
+    <div class="related-pages ct-related" id="related-pages"></div>
 
     <div class="tabs" id="page-tabs" hidden>
       <button type="button" data-view="list">List</button>
@@ -65,10 +70,10 @@
       </span>
     </div>
 
-    <section id="list-section" hidden>
+    <section class="ad-card" id="list-section" hidden>
       <div class="section-head">
-        <h2 id="list-title"></h2>
-        <button type="button" id="different-email" aria-pressed="false" disabled>Different email only</button>
+        <h2 class="ad-card-title" data-icon="users"><span id="list-title"></span></h2>
+        <button type="button" id="different-email" aria-pressed="false" disabled data-icon="filter">Different email only</button>
       </div>
       <div class="summary" id="list-metadata"></div>
       <p class="message" id="accounts-message"></p>
@@ -83,71 +88,76 @@
       </ul>
     </section>
 
-    <section id="positions-section" hidden>
-      <div class="section-head">
-        <h2 id="positions-title"></h2>
+    <section class="ad-card" id="positions-section" hidden>
+      <div class="ct-head">
+        <div>
+          <h2 class="ad-card-title" data-icon="trend"><span id="positions-title"></span></h2>
+          <p class="ct-logins" id="positions-logins"></p>
+        </div>
         <div class="actions">
-          <a class="action-link" id="positions-profile" href="#" target="_blank" rel="noopener">Related profile</a>
-          <a class="action-link" id="positions-compare" href="#" target="_blank" rel="noopener">Compare logins</a>
-          <button type="button" data-export="pairs" data-format="csv">Pairs CSV</button>
-          <button type="button" data-export="pairs" data-format="xlsx">Pairs Excel</button>
-          <button type="button" data-export="stats" data-dataset="Overview" data-format="csv">Statistics CSV</button>
+          <a class="action-link" id="positions-profile" href="#" target="_blank" rel="noopener" data-icon="user">Related profile</a>
+          <a class="action-link" id="positions-compare" href="#" target="_blank" rel="noopener" data-icon="swap">Compare logins</a>
+          <button type="button" data-export="pairs" data-format="csv" data-icon="download">Pairs CSV</button>
+          <button type="button" data-export="pairs" data-format="xlsx" data-icon="sheet">Pairs Excel</button>
+          <button type="button" data-export="stats" data-dataset="Overview" data-format="csv" data-icon="bars">Statistics CSV</button>
         </div>
       </div>
       <p class="message" id="export-message"></p>
-      <div class="summary" id="positions-metadata"></div>
-      <div class="risk" id="positions-risk"></div>
-      <div class="stat-grid" id="positions-stats"></div>
+      <div class="summary ct-chips" id="positions-metadata"></div>
+      <div class="ct-overview">
+        <div class="risk" id="positions-risk"></div>
+        <div class="stat-grid" id="positions-stats"></div>
+      </div>
 
-      <form class="filters" id="positions-filters">
-        <label>Symbol <input name="symbol" type="text" placeholder="All symbols" autocomplete="off"></label>
-        <label>Direction
-          <select name="direction">
+      <div class="tabs pills" id="positions-tabs">
+        <button type="button" data-tab="tree" class="active" data-icon="list">Position tree</button>
+        <button type="button" data-tab="symbols" data-icon="bars">By symbol</button>
+        <button type="button" data-tab="timeline" data-icon="timer">Timeline</button>
+        <button type="button" data-tab="offsets" data-icon="swap">Time offsets</button>
+      </div>
+
+      <form class="filters ct-tree-filters" id="positions-filters">
+        <label class="icon-field">Symbol <span class="field-box"><input name="symbol" type="text" placeholder="All symbols" autocomplete="off"><span class="field-icon" data-icon="layers"></span></span></label>
+        <label class="icon-field">Direction
+          <span class="field-box"><select name="direction">
             <option value="">Both</option>
             <option value="BUY">Buy</option>
             <option value="SELL">Sell</option>
-          </select>
+          </select><span class="field-icon" data-icon="sort"></span></span>
         </label>
-        <label>Minimum signal
-          <select name="minSignalSeverity">
+        <label class="icon-field">Minimum signal
+          <span class="field-box"><select name="minSignalSeverity">
             <option value="">Any</option>
             <option value="Low">Low</option>
             <option value="Medium">Medium</option>
             <option value="High">High</option>
-          </select>
+          </select><span class="field-icon" data-icon="bars"></span></span>
         </label>
         <label class="check"><input name="onlyAssigned" type="checkbox" value="true"> Only pairs counted in the share</label>
-        <label>Sort by
-          <select name="sortItem" id="positions-sort">
+        <label class="icon-field">Sort by
+          <span class="field-box"><select name="sortItem" id="positions-sort">
             <option value="MainOpenTime">Main open time</option>
             <option value="ChildCount">Number of matches</option>
             <option value="ClosestOffset">Smallest time offset</option>
             <option value="MainProfitLoss">Main profit/loss</option>
             <option value="NetProfitLoss">Net profit/loss</option>
             <option value="Severity">Signal severity</option>
-          </select>
+          </select><span class="field-icon" data-icon="swap"></span></span>
         </label>
-        <label>Order
-          <select name="sortDirection">
+        <label class="icon-field">Order
+          <span class="field-box"><select name="sortDirection">
             <option value="Asc">Ascending</option>
             <option value="Desc">Descending</option>
-          </select>
+          </select><span class="field-icon" data-icon="list"></span></span>
         </label>
-        <button type="submit">Apply</button>
+        <button type="submit" data-icon="check">Apply</button>
       </form>
       <p class="message" id="positions-message"></p>
 
-      <div class="tabs" id="positions-tabs">
-        <button type="button" data-tab="tree" class="active">Position tree</button>
-        <button type="button" data-tab="symbols">By symbol</button>
-        <button type="button" data-tab="timeline">Timeline</button>
-        <button type="button" data-tab="offsets">Time offsets</button>
-      </div>
-
       <div id="tab-tree">
         <div class="actions tree-actions">
-          <button type="button" id="expand-all">Expand all</button>
-          <button type="button" id="collapse-all">Collapse all</button>
+          <button type="button" id="expand-all" data-icon="plusBox">Expand all</button>
+          <button type="button" id="collapse-all" data-icon="minusBox">Collapse all</button>
           <span class="muted">Click a related position to compare it side by side.</span>
         </div>
         <div id="positions"></div>

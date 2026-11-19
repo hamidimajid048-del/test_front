@@ -47,13 +47,13 @@ const KIND_VIEWS = {
     cards: stats => {
       const copy = stats.copyTrade;
       return [
-        ['Leader', copy.leader === 'Main' ? 'Main opens first' : copy.leader === 'Related' ? 'Related opens first' : copy.leader === 'Mixed' ? 'No clear leader' : '—'],
-        ['Same stop loss', percent(copy.sameStopLossPercent)],
-        ['Same take profit', percent(copy.sameTakeProfitPercent)],
-        ['Closed together', percent(copy.closedTogetherPercent)],
-        ['Same result', percent(copy.sameResultPercent)],
-        ['Near entry price', percent(copy.nearPricePercent)],
-        ['Volume multiplier', copy.isConstantVolumeRatio ? `×${copy.dominantVolumeRatio} (constant)` : copy.dominantVolumeRatio ? `×${copy.dominantVolumeRatio} (varies)` : '—'],
+        ['Leader', copy.leader === 'Main' ? 'Main opens first' : copy.leader === 'Related' ? 'Related opens first' : copy.leader === 'Mixed' ? 'No clear leader' : '—', 'crown'],
+        ['Same stop loss', percent(copy.sameStopLossPercent), 'shield'],
+        ['Same take profit', percent(copy.sameTakeProfitPercent), 'target'],
+        ['Closed together', percent(copy.closedTogetherPercent), 'layers'],
+        ['Same result', percent(copy.sameResultPercent), 'check'],
+        ['Near entry price', percent(copy.nearPricePercent), 'mapPin'],
+        ['Volume multiplier', copy.isConstantVolumeRatio ? `×${copy.dominantVolumeRatio} (constant)` : copy.dominantVolumeRatio ? `×${copy.dominantVolumeRatio} (varies)` : '—', 'scale'],
       ];
     },
   },
@@ -68,12 +68,12 @@ const KIND_VIEWS = {
     cards: stats => {
       const hedge = stats.hedge;
       return [
-        ['Pairs that offset', percent(hedge.offsettingPercent)],
-        ['Offset efficiency', percent(hedge.averageOffsetEfficiency * 100)],
-        ['Average volume difference', percent(hedge.averageAbsVolumeDiffPercent)],
-        ['Same volume', percent(hedge.sameVolumePercent)],
-        ['Closed together', percent(hedge.closedTogetherPercent)],
-        ['Loss transfer', hedge.lossTransferDetected ? `To ${hedge.lossTransferTo.toLowerCase()}` : 'Not detected'],
+        ['Pairs that offset', percent(hedge.offsettingPercent), 'swap'],
+        ['Offset efficiency', percent(hedge.averageOffsetEfficiency * 100), 'percent'],
+        ['Average volume difference', percent(hedge.averageAbsVolumeDiffPercent), 'scale'],
+        ['Same volume', percent(hedge.sameVolumePercent), 'scale'],
+        ['Closed together', percent(hedge.closedTogetherPercent), 'layers'],
+        ['Loss transfer', hedge.lossTransferDetected ? `To ${hedge.lossTransferTo.toLowerCase()}` : 'Not detected', 'trendDown'],
       ];
     },
   },
@@ -131,6 +131,16 @@ function severityBadge(severity) {
 
 // ---- statistics ----
 
+// A half-circle gauge filled to the score (0-100), coloured by the risk level.
+function riskGauge(score, level) {
+  const fill = Math.min(100, Math.max(0, Number(score) || 0));
+  const gauge = document.createElement('div');
+  gauge.className = `risk-gauge ${RISK_LEVEL_KINDS[level] ?? 'muted'}`;
+  gauge.innerHTML = '<svg viewBox="0 0 120 66" aria-hidden="true"><path class="track" d="M10 60a50 50 0 0 1 100 0" pathLength="100"/>'
+    + `<path class="fill" d="M10 60a50 50 0 0 1 100 0" pathLength="100" stroke-dasharray="${fill} 100"/></svg>`;
+  return gauge;
+}
+
 function renderRisk(container, risk) {
   const score = document.createElement('div');
   score.className = 'risk-score';
@@ -138,7 +148,7 @@ function renderRisk(container, risk) {
   number.textContent = risk.score;
   const label = document.createElement('span');
   label.textContent = 'Risk score';
-  score.append(number, label, badge(risk.level, RISK_LEVEL_KINDS[risk.level] ?? 'muted'));
+  score.append(riskGauge(risk.score, risk.level), number, label, badge(risk.level, RISK_LEVEL_KINDS[risk.level] ?? 'muted'));
 
   const details = document.createElement('details');
   const summary = document.createElement('summary');
@@ -159,29 +169,33 @@ function renderRisk(container, risk) {
 
 function renderStatCards(container, stats, kindKey) {
   const overview = stats.overview;
+  const signed = value => (value > 0 ? 'pnl-pos' : value < 0 ? 'pnl-neg' : '');
   const cards = [
-    ['Matched pairs', overview.pairCount],
-    ['Share of positions', `${percent(overview.sharePercent)} of ${overview.mainPositionCount}`],
-    ['Main profit/loss', money(overview.mainProfitLoss)],
-    ['Related profit/loss', money(overview.relatedProfitLoss)],
-    ['Net profit/loss', money(overview.netProfitLoss)],
-    ['Median time offset', duration(stats.timing.medianAbsOffsetSeconds)],
-    ['Related opened later', percent(stats.timing.relatedAfterPercent)],
-    ['Same volume', percent(stats.volume.sameVolumePercent)],
-    ['Median volume ratio', stats.volume.medianRatio ? `×${stats.volume.medianRatio}` : '—'],
-    ['Shared IP / CID', [overview.sharesIp && 'IP', overview.sharesCid && 'CID'].filter(Boolean).join(' + ') || 'None'],
+    ['Matched pairs', overview.pairCount, 'link'],
+    ['Share of positions', `${percent(overview.sharePercent)} of ${overview.mainPositionCount}`, 'layers'],
+    ['Main profit/loss', money(overview.mainProfitLoss), 'bars', signed(overview.mainProfitLoss)],
+    ['Related profit/loss', money(overview.relatedProfitLoss), 'bars', signed(overview.relatedProfitLoss)],
+    ['Net profit/loss', money(overview.netProfitLoss), 'wallet', signed(overview.netProfitLoss)],
+    ['Median time offset', duration(stats.timing.medianAbsOffsetSeconds), 'timer'],
+    ['Related opened later', percent(stats.timing.relatedAfterPercent), 'history'],
+    ['Same volume', percent(stats.volume.sameVolumePercent), 'scale'],
+    ['Median volume ratio', stats.volume.medianRatio ? `×${stats.volume.medianRatio}` : '—', 'chart'],
+    ['Shared IP / CID', [overview.sharesIp && 'IP', overview.sharesCid && 'CID'].filter(Boolean).join(' + ') || 'None', 'grid'],
   ];
   const view = KIND_VIEWS[kindKey];
   if (view && (stats.copyTrade || stats.hedge)) cards.push(...view.cards(stats));
 
-  container.replaceChildren(...cards.map(([title, value]) => {
+  container.replaceChildren(...cards.map(([title, value, iconName, tone]) => {
     const card = document.createElement('div');
     card.className = 'stat';
+    const text = document.createElement('div');
     const small = document.createElement('small');
     small.textContent = title;
     const strong = document.createElement('strong');
     strong.textContent = value;
-    card.append(small, strong);
+    if (tone) strong.className = tone;
+    text.append(small, strong);
+    card.append(icon(iconName, 'icon stat-icon'), text);
     return card;
   }));
 }

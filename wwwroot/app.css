@@ -1347,8 +1347,8 @@ dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-h
 .email-history .related-group { display: flex; flex-wrap: wrap; }
 .email-history .related-group .action-link { flex: none; min-width: 120px; padding-inline: var(--space-14); }
 .lh-info .ad-card-title .icon { display: grid; place-items: center; width: 40px; height: 40px; background: var(--side-active-bg) padding-box, var(--sidebar-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
-.login-history .help { position: relative; padding-inline-start: 76px; }
-.login-history .help::before { content: ""; position: absolute; top: 50%; inset-inline-start: 18px; width: 22px; height: 22px; background: var(--primary); transform: translateY(-50%); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.5h.01'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.5h.01'/%3E%3C/svg%3E") center / contain no-repeat; }
+:is(.login-history, .copy-trade) .help { position: relative; padding-inline-start: 76px; }
+:is(.login-history, .copy-trade) .help::before { content: ""; position: absolute; top: 50%; inset-inline-start: 18px; width: 22px; height: 22px; background: var(--primary); transform: translateY(-50%); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.5h.01'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5.5M12 7.5h.01'/%3E%3C/svg%3E") center / contain no-repeat; }
 .email-history form.ad-search label { flex-direction: column; align-items: stretch; gap: var(--space-4); }
 .lh-info { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12) var(--space-24); margin-bottom: var(--space-16); padding-block: var(--space-12); }
 .lh-info .ad-card-title { margin: 0; }
@@ -1587,12 +1587,12 @@ form.filters.sim-filters { display: flex; align-items: center; gap: var(--space-
 .sim-fields .device-type-button { width: 100%; max-width: none; }
 .sim-filters > button[type="submit"] { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: var(--space-8); min-width: 170px; height: var(--control-lg); }
 .sim-filters > button[type="submit"] .icon svg { stroke: currentColor; }
-form.filters label.date-field { position: relative; }
-.date-field input { padding-inline-start: 40px; }
+form.filters :is(label.date-field, label.icon-field) { position: relative; }
+:is(.date-field, .icon-field) :is(input, select) { padding-inline-start: 40px; }
 .date-field input::-webkit-calendar-picker-indicator { display: none; }
 .date-field input:not(:disabled) { cursor: pointer; }
-.date-field .field-icon { position: absolute; inset-inline-start: 12px; bottom: calc(var(--control-md) / 2 - 9px); display: flex; pointer-events: none; }
-.date-field .field-icon svg { width: 18px; height: 18px; }
+:is(.date-field, .icon-field) .field-icon { position: absolute; inset-inline-start: 12px; bottom: calc(var(--control-md) / 2 - 9px); display: flex; pointer-events: none; }
+:is(.date-field, .icon-field) .field-icon svg { width: 18px; height: 18px; }
 .sim-range { margin: 0 0 var(--space-14); padding: var(--space-10) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); }
 .sim-range .icon svg { width: 18px; height: 18px; }
 .sim-range button { display: inline-flex; align-items: center; gap: var(--space-6); margin-inline-start: var(--space-12); }
@@ -1635,4 +1635,48 @@ form.filters.vs-filters { display: block; padding: var(--space-14) var(--space-2
   .vs-group, .vs-group:nth-child(n) { flex: 1 1 100%; flex-wrap: wrap; }
   .vs-group + .vs-group { padding: 0; border: 0; }
   .vs-group > label { flex-basis: 140px; }
+}
+
+/* Copy trade & hedge */
+form.filters.ct-filters { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--space-12) var(--space-14); padding: var(--space-14) var(--space-20) var(--space-16); }
+.ct-filters > .vs-filter-title { grid-column: 1 / -1; margin: 0; }
+.ct-filters > button[type="submit"] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); height: var(--control-md); }
+.ct-filters > button[type="submit"] .icon svg, .ct-tree-filters > button[type="submit"] .icon svg { stroke: currentColor; }
+.ct-related:not(:empty) { flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--space-8) var(--space-16); padding: var(--space-10) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow); }
+.copy-trade .ad-card { margin-bottom: var(--space-16); }
+.copy-trade .ad-card .section-head button, .ct-head .actions :is(button, .action-link), .tree-actions button { display: inline-flex; align-items: center; gap: var(--space-6); }
+.copy-trade .ad-card .icon svg { width: 16px; height: 16px; }
+.copy-trade .ad-card .ad-card-title .icon svg { width: 26px; height: 26px; }
+.ct-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-12); margin-bottom: var(--space-10); }
+.ct-head .ad-card-title { margin: 0; }
+.ct-head .actions { margin-inline-start: auto; }
+.ct-logins { display: flex; flex-wrap: wrap; gap: var(--space-14); margin: var(--space-4) 0 0; padding-inline-start: 38px; color: var(--text-muted); font-size: var(--font-size-sm); }
+.ct-logins strong { color: var(--text); }
+.ct-chips > span { display: inline-flex; align-items: center; gap: var(--space-6); }
+.ct-overview { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--space-14); align-items: stretch; margin-bottom: var(--space-16); }
+.ct-overview .risk, .ct-overview .stat-grid { margin: 0; }
+.ct-overview .risk { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.ct-overview .risk-score { flex-direction: column; align-items: center; gap: var(--space-4); }
+.risk-gauge { width: 160px; margin-bottom: -52px; }
+.risk-gauge svg { display: block; width: 100%; }
+.risk-gauge path { fill: none; stroke-width: 10; stroke-linecap: round; }
+.risk-gauge .track { stroke: var(--border-strong); opacity: .6; }
+.risk-gauge.ok .fill { stroke: var(--success); }
+.risk-gauge.warn .fill { stroke: var(--warning, #f59e0b); }
+.risk-gauge.danger .fill { stroke: var(--danger); }
+.ct-overview .risk-score strong { position: relative; font-size: 34px; line-height: 1; }
+.ct-overview .stat-grid { grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); }
+.ct-overview .stat { display: flex; align-items: center; gap: var(--space-10); }
+.stat-icon { display: grid; flex: none; place-items: center; width: 38px; height: 38px; background: var(--side-active-bg) padding-box, var(--sidebar-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
+.copy-trade .stat-icon svg { width: 20px; height: 20px; }
+.copy-trade #positions-tabs { display: inline-flex; margin-bottom: var(--space-14); }
+.copy-trade #positions-tabs button { display: inline-flex; align-items: center; gap: var(--space-8); }
+form.filters.ct-tree-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-10) var(--space-16); margin-bottom: var(--space-12); padding: var(--space-10) var(--space-14); background: var(--tile-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-lg); }
+form.filters.ct-tree-filters > label { flex-direction: row; align-items: center; gap: var(--space-8); }
+.ct-tree-filters .field-box :is(input, select) { width: 165px; }
+.ct-tree-filters .field-box { position: relative; display: inline-flex; }
+.ct-tree-filters .field-icon { bottom: calc(50% - 9px); }
+.ct-tree-filters > button[type="submit"] { display: inline-flex; align-items: center; gap: var(--space-8); margin-inline-start: auto; min-width: 120px; }
+@media (max-width: 1100px) {
+  .ct-overview { grid-template-columns: 1fr; }
 }
