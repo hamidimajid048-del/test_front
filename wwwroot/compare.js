@@ -26,13 +26,6 @@ const formatGap = seconds => `${seconds < 0 ? '-' : '+'}${formatSpan(seconds)}`;
 
 const yesBadge = (value, kind) => value ? badge('Yes', kind) : 'No';
 
-// "Name (n), Name (n) +2 more"
-function topList(counts, limit = 4) {
-  if (!counts?.length) return '—';
-  const shown = counts.slice(0, limit).map(count => `${count.name} (${count.count})`).join(', ');
-  return counts.length > limit ? `${shown} +${counts.length - limit} more` : shown;
-}
-
 // ---- columns ----
 
 const TRANSACTIONS_HELP = 'Transactions the login made from this value in the range. The IP is the one recorded on the transaction; '
@@ -692,94 +685,37 @@ function tradeLink(kind, label) {
 }
 
 function renderSignals(shared) {
-  const signals = [
-    [shared.ipCount, 'Shared IPs', 'shared-ips', 'mapPin'],
-    [shared.cidCount, 'Shared CIDs', 'shared-cids', 'fingerprint'],
-    [shared.coOccurrenceDays, 'Shared active days', 'timeline', 'calendar'],
-    [shared.nearLoginPairCount, 'Near logins', 'near-logins', 'users'],
-    [shared.overlappingSessionCount, 'Overlapping sessions', 'overlapping-sessions', 'layers'],
-  ];
-  document.getElementById('signals').replaceChildren(...signals.map(([count, text, tab, iconName]) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = count > 0 ? 'signal hot' : 'signal';
-    const number = document.createElement('strong');
-    number.textContent = count;
-    const caption = document.createElement('span');
-    caption.textContent = text;
-    const words = document.createElement('span');
-    words.className = 'signal-text';
-    words.append(number, caption);
-    button.append(icon(iconName), words);
-    button.addEventListener('click', () => selectTab(tab));
-    return button;
-  }));
+  renderSignalTiles(document.getElementById('signals'), [
+    { count: shared.ipCount, text: 'Shared IPs', tab: 'shared-ips', icon: 'mapPin' },
+    { count: shared.cidCount, text: 'Shared CIDs', tab: 'shared-cids', icon: 'fingerprint' },
+    { count: shared.coOccurrenceDays, text: 'Shared active days', tab: 'timeline', icon: 'calendar' },
+    { count: shared.nearLoginPairCount, text: 'Near logins', tab: 'near-logins', icon: 'users' },
+    { count: shared.overlappingSessionCount, text: 'Overlapping sessions', tab: 'overlapping-sessions', icon: 'layers' },
+  ], selectTab);
 }
 
-// One side of the comparison: its login and email, its "⋯" menu of the pages that take it, and its main figures.
+// One side of the comparison with the "⋯" menu of the pages that take its login; the main side also opens the copy
+// trade and hedge reports of the pair.
 function accountCard(account, side, other) {
-  const card = document.createElement('div');
-  card.className = `cmp-account ${side}`;
-  const head = document.createElement('div');
-  head.className = 'cmp-account-head';
-  const avatar = icon('user', 'icon cmp-avatar');
-  const name = document.createElement('div');
-  const caption = document.createElement('small');
-  caption.textContent = side === 'main' ? 'Main Account' : 'Compared Account';
-  const login = document.createElement('strong');
-  login.textContent = account.login;
-  name.append(caption, login);
-  const email = document.createElement('span');
-  email.className = 'cmp-email';
-  email.append(icon('mail'), account.email || '—');
   const pairLinks = side === 'main'
     ? [tradeLink('copy-trade', 'Copy trade of this pair'), tradeLink('hedge', 'Hedge of this pair')]
     : [];
-  const menu = relatedLoginActions(account.login, pairLinks, {
-    subject: () => ({ login: other.login, email: other.email, fromUtc: context.fromDay, toUtc: context.toDay }),
-    emailOf: () => account.email,
+  return compareSideCard({
+    side: side === 'main' ? 'main' : 'compared',
+    caption: side === 'main' ? 'Main Account' : 'Compared Account',
+    title: account.login,
+    email: account.email,
+    menu: relatedLoginActions(account.login, pairLinks, {
+      subject: () => ({ login: other.login, email: other.email, fromUtc: context.fromDay, toUtc: context.toDay }),
+      emailOf: () => account.email,
+    }),
+    figures: accountFigures(account),
   });
-  head.append(avatar, name, email, menu);
-
-  const figures = document.createElement('div');
-  figures.className = 'cmp-account-figures';
-  for (const [label, value, iconName] of [
-    ['Sessions', account.sessionCount, 'layers'],
-    ['Active days', account.activeDays, 'calendar'],
-    ['Platforms', account.platforms?.length ?? 0, 'monitor'],
-    ['Countries', topList(account.countries, 1), 'globe'],
-  ]) {
-    const figure = document.createElement('div');
-    const text = document.createElement('div');
-    const small = document.createElement('small');
-    small.textContent = label;
-    const strong = document.createElement('strong');
-    strong.textContent = value ?? '—';
-    text.append(small, strong);
-    figure.append(icon(iconName), text);
-    figures.append(figure);
-  }
-  card.append(head, figures);
-  return card;
 }
 
 function renderAccounts(main, other) {
-  const versus = document.createElement('span');
-  versus.className = 'cmp-vs';
-  versus.textContent = 'VS';
-  document.getElementById('accounts').replaceChildren(accountCard(main, 'main', other), versus, accountCard(other, 'compared', main));
+  document.getElementById('accounts').replaceChildren(accountCard(main, 'main', other), compareVersus(), accountCard(other, 'compared', main));
 }
-
-// A result with its verdict: a check when nothing is shared, a warning sign when something is.
-function resultBadge(text, tone) {
-  if (!text) return '—';
-  if (!tone) return text;
-  const element = badge(text, tone);
-  element.prepend(icon(tone === 'ok' ? 'check' : 'alert'));
-  return element;
-}
-
-const toneOf = (count, shared = 'danger') => (count > 0 ? shared : 'ok');
 
 function renderOverview(report) {
   const [main, other] = report.accounts;
@@ -820,12 +756,7 @@ function renderOverview(report) {
     { key: 'shared', title: 'Result', format: (text, row) => resultBadge(text, row.tone) },
   ], rows, undefined, { tools: false });
 
-  document.getElementById('findings').replaceChildren(...rows.filter(row => row.tone).map(row => {
-    const item = document.createElement('li');
-    item.className = row.tone;
-    item.append(icon(row.tone === 'ok' ? 'check' : 'alert'), row.finding ?? row.shared);
-    return item;
-  }));
+  renderFindings(document.getElementById('findings'), rows.filter(row => row.tone).map(row => ({ tone: row.tone, text: row.finding ?? row.shared })));
 }
 
 // ---- form ----

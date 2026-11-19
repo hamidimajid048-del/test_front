@@ -11,11 +11,12 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
-      <label>Main login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <label>Compared logins <input name="otherLogins" type="text" maxlength="2000" required autocomplete="off" placeholder="One or more logins, separated by commas or spaces"></label>
-      <label>Date range
+  <main class="compare-page compare-logins">
+    <form class="filters cmp-setup" id="filters">
+      <h2 class="vs-filter-title" data-icon="filter">Comparison Setup</h2>
+      <label class="icon-field">Main login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required><span class="field-icon" data-icon="user"></span></label>
+      <label class="icon-field cmp-wide">Compared logins <input name="otherLogins" type="text" maxlength="2000" required autocomplete="off" placeholder="One or more logins, separated by commas or spaces"><span class="field-icon" data-icon="users"></span></label>
+      <label class="icon-field">Date range
         <select name="range">
           <option value="">All time</option>
           <option value="week">Last week</option>
@@ -25,70 +26,110 @@
           <option value="year">Last year</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="calendar"></span>
       </label>
-      <label>From day (UTC) <input name="fromUtc" type="date"></label>
-      <label>To day (UTC) <input name="toUtc" type="date"></label>
-      <button type="submit">Compare</button>
+      <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="icon-field">Proximity window
+        <select name="windowPreset">
+          <option value="60">1 minute</option>
+          <option value="300" selected>5 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="3600">1 hour</option>
+          <option value="21600">6 hours</option>
+          <option value="86400">24 hours</option>
+        </select>
+        <span class="field-icon" data-icon="timer"></span>
+      </label>
+      <label class="icon-field">Proximity match
+        <select name="match">
+          <option value="Ip">Same IP</option>
+          <option value="Subnet">Same network (/24, /64)</option>
+          <option value="Asn">Same ASN</option>
+        </select>
+        <span class="field-icon" data-icon="layers"></span>
+      </label>
+      <button type="submit" data-icon="search">Compare</button>
     </form>
     <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
 
-    <div class="tabs" id="tabs">
-      <button type="button" data-tab="overview">Overview</button>
-      <button type="button" data-tab="logins">Logins</button>
-      <button type="button" data-tab="pairs">Linked pairs</button>
-      <button type="button" data-tab="ips">Shared IPs</button>
-      <button type="button" data-tab="cids">Shared CIDs</button>
-      <button type="button" data-tab="details">Details</button>
-    </div>
+    <div class="cmp-results" id="results" hidden>
+      <div class="cmp-accounts" id="accounts"></div>
 
-    <section data-panel="overview">
-      <div class="summary" id="verdict"></div>
-      <p class="hint" id="verdict-reason"></p>
-      <div id="sides"></div>
-      <div class="summary" id="shared-facts"></div>
-      <ul class="help">
-        <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
-        <li>Shared values are those used by the main login and by at least one of the compared logins within the date range. The compared logins are compared as one group; the Linked pairs tab tells which of them is linked to the main login.</li>
-      </ul>
-    </section>
-    <section data-panel="logins" hidden>
-      <div class="summary-columns">
-        <div>
-          <h3 id="accounts-main-title">Main login</h3>
-          <div id="accounts-main"></div>
-        </div>
-        <div>
-          <h3 id="accounts-other-title">Compared logins</h3>
-          <div id="accounts-other"></div>
-        </div>
+      <div class="tabs pills" id="tabs">
+        <button type="button" data-tab="overview" data-icon="grid">Overview</button>
+        <button type="button" data-tab="logins" data-icon="users">Logins</button>
+        <button type="button" data-tab="pairs" data-icon="link">Linked pairs</button>
+        <button type="button" data-tab="ips" data-icon="mapPin">Shared IPs</button>
+        <button type="button" data-tab="cids" data-icon="fingerprint">Shared CIDs</button>
+        <button type="button" data-tab="details" data-icon="list">Details</button>
       </div>
-      <p class="hint" id="accounts-hint">The account details come from the MetaTrader backup; a login missing there is still compared. The buttons open that login's own report in a new browser tab.</p>
-    </section>
-    <section data-panel="pairs" hidden>
-      <h3 id="pairs-title">Linked login pairs</h3>
-      <div id="pairs"></div>
-      <div id="pairs-pager"></div>
-      <p class="hint">How many IPs and CIDs the main login shares with each compared login.</p>
-    </section>
-    <section data-panel="ips" hidden>
-      <h3 id="ips-title">Shared IPs</h3>
-      <div id="ips"></div>
-      <div id="ips-pager"></div>
-      <p class="hint">Click a row to see its sessions in the Details tab.</p>
-    </section>
-    <section data-panel="cids" hidden>
-      <h3 id="cids-title">Shared CIDs</h3>
-      <div id="cids"></div>
-      <div id="cids-pager"></div>
-      <p class="hint">Click a row to see its sessions in the Details tab.</p>
-    </section>
-    <section data-panel="details" hidden>
-      <p class="hint">Every session of the main login and the compared logins that used a shared IP or CID.</p>
-      <div id="sessions"></div>
-      <div id="sessions-pager"></div>
-      <div id="geo-details"></div>
-    </section>
+
+      <section class="cmp-plain" data-panel="overview">
+        <div class="cmp-overview">
+          <div class="ad-card">
+            <h2 class="ad-card-title" data-icon="layers">Overview — Key Findings</h2>
+            <div class="signals" id="signals"></div>
+            <div id="sides"></div>
+            <div class="summary" id="shared-facts"></div>
+          </div>
+          <div class="ad-card cmp-findings">
+            <h2 class="ad-card-title" data-icon="target">Key Findings</h2>
+            <div class="summary" id="verdict"></div>
+            <p class="hint" id="verdict-reason"></p>
+            <ul id="findings"></ul>
+          </div>
+        </div>
+        <div class="ad-card cmp-per-login">
+          <h2 class="ad-card-title" data-icon="users"><span id="per-login-title">Each compared login</span></h2>
+          <p class="message" id="per-login-message"></p>
+          <div id="per-login"></div>
+          <ul class="help">
+            <li>One row per compared login, measured against the main login exactly like the Compare accounts page, in the same date range, proximity window and match. Red numbers are something the two logins share; <strong>Signals</strong> counts how many of the six checks (same email, shared IP, shared CID, shared active day, near login, overlapping session) are found.</li>
+            <li><strong>Evidence:</strong> <em>Strong</em> = a valid shared CID, or 3 or more shared IPs that are not VPN/proxy/Tor/datacenter. <em>Medium</em> = a shared IP that is not VPN/proxy/Tor/datacenter. <em>Weak</em> = only VPN/proxy/Tor/datacenter IPs or invalid CIDs are shared. <em>None</em> = nothing shared. It is a pointer for the reviewer, not a verdict.</li>
+            <li>The figures above the table treat the compared logins as one group; the Linked pairs tab tells which of them is linked to the main login.</li>
+          </ul>
+        </div>
+      </section>
+      <section data-panel="logins" hidden>
+        <div class="summary-columns">
+          <div>
+            <h3 class="ad-card-title" data-icon="user"><span id="accounts-main-title">Main login</span></h3>
+            <div id="accounts-main"></div>
+          </div>
+          <div>
+            <h3 class="ad-card-title" data-icon="users"><span id="accounts-other-title">Compared logins</span></h3>
+            <div id="accounts-other"></div>
+          </div>
+        </div>
+        <p class="hint" id="accounts-hint">The account details come from the MetaTrader backup; a login missing there is still compared. The buttons open that login's own report in a new browser tab.</p>
+      </section>
+      <section data-panel="pairs" hidden>
+        <h3 class="ad-card-title" data-icon="link"><span id="pairs-title">Linked login pairs</span></h3>
+        <div id="pairs"></div>
+        <div id="pairs-pager"></div>
+        <p class="hint">How many IPs and CIDs the main login shares with each compared login.</p>
+      </section>
+      <section data-panel="ips" hidden>
+        <h3 class="ad-card-title" data-icon="mapPin"><span id="ips-title">Shared IPs</span></h3>
+        <div id="ips"></div>
+        <div id="ips-pager"></div>
+        <p class="hint">Click a row to see its sessions in the Details tab.</p>
+      </section>
+      <section data-panel="cids" hidden>
+        <h3 class="ad-card-title" data-icon="fingerprint"><span id="cids-title">Shared CIDs</span></h3>
+        <div id="cids"></div>
+        <div id="cids-pager"></div>
+        <p class="hint">Click a row to see its sessions in the Details tab.</p>
+      </section>
+      <section data-panel="details" hidden>
+        <h3 class="ad-card-title" data-icon="list">Sessions on shared values</h3>
+        <p class="hint">Every session of the main login and the compared logins that used a shared IP or CID.</p>
+        <div id="sessions"></div>
+        <div id="sessions-pager"></div>
+        <div id="geo-details"></div>
+      </section>
+    </div>
   </main>
   <script src="/errors.js"></script>
   <script src="/api.js"></script>
@@ -101,6 +142,7 @@
   <script src="/sessions-table.js"></script>
   <script src="/report-grid.js"></script>
   <script src="/group-compare.js"></script>
+  <script src="/compare-cards.js"></script>
   <script src="/compare-logins.js"></script>
 </body>
 </html>

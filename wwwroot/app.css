@@ -1739,7 +1739,7 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .signal-text { display: flex; flex-direction: column; line-height: 1.25; }
 .cmp-overview .signal.hot .icon svg { stroke: var(--danger); }
 .cmp-overview td .icon svg { width: 16px; height: 16px; }
-.cmp-overview #overview td:first-child { text-align: start; }
+.cmp-overview :is(#overview, #sides) td:first-child { text-align: start; }
 .cmp-overview .badge { display: inline-flex; align-items: center; gap: var(--space-4); }
 .cmp-overview .badge .icon svg { width: 13px; height: 13px; stroke: currentColor; }
 .cmp-findings ul { display: flex; flex-direction: column; gap: var(--space-10); margin: 0; padding: 0; list-style: none; }
@@ -1758,3 +1758,11 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
   .cmp-vs { justify-self: center; }
   .cmp-account-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Compare with logins */
+.compare-page section.cmp-plain { margin-top: 0; padding: 0; background: none; border: 0; box-shadow: none; }
+.cmp-setup > label.cmp-wide { flex: 3 1 280px; }
+.cmp-per-login { margin-top: var(--space-16); }
+.compare-logins section[data-panel]:not(.cmp-plain) { margin-top: 0; }
+.compare-logins section .ad-card-title .icon svg { width: 22px; height: 22px; }
+.compare-logins .cmp-findings .summary { margin-bottom: var(--space-6); }

@@ -132,12 +132,12 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
 
   function showCount(tab, report) {
     const total = pagingOf(report.paging)?.totalRecords ?? report.items.length;
-    document.querySelector(`#tabs [data-tab="${tab}"]`).textContent = `${GROUP_COMPARE_TAB_TITLES[tab]} (${total.toLocaleString('en-US')})`;
+    document.querySelector(`#tabs [data-tab="${tab}"]`).lastChild.textContent = `${GROUP_COMPARE_TAB_TITLES[tab]} (${total.toLocaleString('en-US')})`;
   }
 
   function resetCounts() {
     for (const [tab, title] of Object.entries(GROUP_COMPARE_TAB_TITLES))
-      document.querySelector(`#tabs [data-tab="${tab}"]`).textContent = title;
+      document.querySelector(`#tabs [data-tab="${tab}"]`).lastChild.textContent = title;
   }
 
   function writeState(values) {
@@ -251,7 +251,7 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
   }
 
   // Compares the two login groups. names labels the sides; accounts are the rows of the Logins tab per side; isStale says
-  // whether a newer search has started, so a late answer is not drawn over it.
+  // whether a newer search has started, so a late answer is not drawn over it. Returns the overview, or null when stale.
   async function run({ sideNames, accounts, logins, otherLogins, fromUtc, toUtc }, isStale) {
     names = sideNames;
     sideOf = new Map([
@@ -267,9 +267,10 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
       apiGet('group-compare-reports/get-overview', params),
       ...Object.values(grids).map(grid => grid.start(params)),
     ]);
-    if (isStale()) return;
+    if (isStale()) return null;
     renderOverview(overview);
     message.textContent = '';
+    return overview;
   }
 
   document.getElementById('tabs').addEventListener('click', event => {
