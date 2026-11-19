@@ -250,12 +250,90 @@ function renderColumns(container, items, emptyText) {
   container.replaceChildren(chart);
 }
 
-function renderTimeline(container, days) {
-  renderColumns(container, days.map(day => ({
-    label: day.day.slice(5),
-    value: day.pairCount,
-    tip: `${day.day}: ${day.pairCount} pairs, main ${money(day.mainProfitLoss)}, related ${money(day.relatedProfitLoss)}, net ${money(day.netProfitLoss)}`,
-  })), 'No pairs in this range.');
+// One row per main position of the tree page: the main position and each related position as bars from their open to
+// their close on the row's own time scale, with the main open and close drawn through every lane, so how closely the
+// two accounts opened and closed shows at a glance. A position still open runs to the end of the row.
+function renderPositionTimeline(container, nodes) {
+  if (!nodes.length) {
+    container.className = 'empty-note';
+    container.textContent = 'No pairs in this range.';
+    return;
+  }
+  const time = value => (value ? Date.parse(value) : null);
+  const list = document.createElement('div');
+  list.className = 'pt-list';
+
+  const legend = document.createElement('div');
+  legend.className = 'pt-legend';
+  for (const [className, text] of [['main', 'Main position'], ['related', 'Related position'], ['guide', 'Main open and close']]) {
+    const item = document.createElement('span');
+    const swatch = document.createElement('i');
+    swatch.className = className;
+    item.append(swatch, text);
+    legend.append(item);
+  }
+  list.append(legend);
+
+  for (const node of nodes) {
+    const positions = [node.main, ...node.children.map(child => child.related)];
+    const start = Math.min(...positions.map(position => time(position.openTimeUtc)));
+    const closes = positions.map(position => time(position.closeTimeUtc)).filter(value => value !== null);
+    const end = Math.max(start + 1000, ...closes, ...positions.map(position => time(position.openTimeUtc)));
+    const at = value => ((value - start) / (end - start)) * 100;
+
+    const lane = (position, kind, tag, note) => {
+      const row = document.createElement('div');
+      row.className = `pt-lane ${kind}`;
+      const label = document.createElement('span');
+      label.className = 'pt-tag';
+      label.append(tag);
+      const track = document.createElement('div');
+      track.className = 'pt-track';
+      for (const value of [time(node.main.openTimeUtc), time(node.main.closeTimeUtc)].filter(item => item !== null)) {
+        const guide = document.createElement('b');
+        guide.className = 'pt-guide';
+        guide.style.insetInlineStart = `${at(value)}%`;
+        track.append(guide);
+      }
+      const open = time(position.openTimeUtc);
+      const close = time(position.closeTimeUtc);
+      const bar = document.createElement('i');
+      bar.className = `pt-bar${close === null ? ' running' : ''}`;
+      bar.style.insetInlineStart = `${at(open)}%`;
+      bar.style.width = `${Math.max(0.6, at(close ?? end) - at(open))}%`;
+      bar.title = `${formatUtc(position.openTimeUtc)} → ${close === null ? '…' : formatUtc(position.closeTimeUtc)}`
+        + (close === null ? '' : ` (${duration((close - open) / 1000)})`);
+      track.append(bar);
+      row.append(label, track, note ?? document.createElement('span'));
+      return row;
+    };
+
+    const offsets = comparison => {
+      const note = document.createElement('small');
+      note.className = 'pt-offsets';
+      note.append('Open', ` ${signedDuration(comparison.relatedMinusMainOpenSeconds)}`, document.createElement('br'),
+        'Close', ` ${comparison.relatedMinusMainCloseSeconds === null || comparison.relatedMinusMainCloseSeconds === undefined ? '—' : signedDuration(comparison.relatedMinusMainCloseSeconds)}`);
+      return note;
+    };
+
+    const group = document.createElement('div');
+    group.className = 'pt-row';
+    const head = document.createElement('div');
+    head.className = 'pt-head';
+    const ticket = document.createElement('strong');
+    ticket.textContent = node.main.positionTicket;
+    const scale = document.createElement('small');
+    scale.className = 'pt-scale';
+    scale.textContent = `${formatUtc(new Date(start).toISOString())} — ${formatUtc(new Date(end).toISOString())}`;
+    head.append(ticket, ` ${node.main.symbol} `, directionBadge(node.main.direction), scale);
+    group.append(head, lane(node.main, 'main', 'Main'));
+    for (const child of node.children) {
+      group.append(lane(child.related, `related${child.isAssigned ? ' counted' : ''}`, `${child.related.positionTicket}`, offsets(child.comparison)));
+    }
+    list.append(group);
+  }
+  container.className = '';
+  container.replaceChildren(list);
 }
 
 function renderOffsets(container, buckets) {

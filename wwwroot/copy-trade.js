@@ -231,6 +231,7 @@ async function loadTree() {
     },
   };
   renderPositionsTree(document.getElementById('positions'), search.kind, report.items, treeState);
+  renderPositionTimeline(document.getElementById('timeline-chart'), report.items);
   renderPager(document.getElementById('positions-pager'), paging, (page, pageSize) => {
     positionsPaging = { currentPage: page, pageSize };
     return withLoading(positionsForm, positionsMessage, loadTree);
@@ -243,7 +244,6 @@ async function loadStats() {
   renderRisk(document.getElementById('positions-risk'), stats.risk);
   renderStatCards(document.getElementById('positions-stats'), stats, search.kind);
   renderSymbols(document.getElementById('symbols-table'), stats.bySymbol);
-  renderTimeline(document.getElementById('timeline-chart'), stats.byDay);
   renderOffsets(document.getElementById('offsets-chart'), stats.timing.histogram);
 }
 
