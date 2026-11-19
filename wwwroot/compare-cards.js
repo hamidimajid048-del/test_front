@@ -101,7 +101,15 @@ async function compareEachLogin(logins, compare, isStale) {
   const results = new Map();
   const queue = [...logins];
   let done = 0;
-  const show = () => { progress.textContent = `Comparing each login: ${done} of ${logins.length}`; };
+  const bar = document.createElement('span');
+  bar.className = 'meter';
+  const fill = document.createElement('i');
+  bar.append(fill);
+  const text = document.createElement('span');
+  const show = () => {
+    fill.style.width = `${(done / logins.length) * 100}%`;
+    text.textContent = `Comparing each login: ${done} of ${logins.length}`;
+  };
   const worker = async () => {
     while (queue.length) {
       const login = queue.shift();
@@ -114,10 +122,11 @@ async function compareEachLogin(logins, compare, isStale) {
       if (!isStale()) show();
     }
   };
-  progress.className = 'message';
+  progress.className = 'cmp-progress';
+  progress.replaceChildren(bar, text);
   show();
   await Promise.all(Array.from({ length: Math.min(4, logins.length) }, worker));
-  if (!isStale()) progress.textContent = '';
+  if (!isStale()) progress.replaceChildren();
   return results;
 }
 

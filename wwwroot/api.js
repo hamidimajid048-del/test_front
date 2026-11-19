@@ -337,8 +337,63 @@ function logRequest(method, url, started, outcome, detail = '') {
   else console.debug(line);
 }
 
-// Calls GET /api/{path} and returns `result`, or throws ApiError with a Persian message.
-async function apiGet(path, params) {
+// While a request of the page runs longer than a moment, a bar moves along the top of the page and a note tells how
+// long the data has been loading; requests running at the same time share it.
+const LOADING_DELAY_MS = 400;
+let pendingRequests = 0;
+let loadingStarted = 0;
+let loadingTimers = [];
+
+function loadingIndicator() {
+  let indicator = document.getElementById('page-loading');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'page-loading';
+    indicator.className = 'page-loading';
+    indicator.setAttribute('role', 'status');
+    indicator.hidden = true;
+    const bar = document.createElement('i');
+    bar.className = 'page-loading-bar';
+    const note = document.createElement('span');
+    note.className = 'page-loading-note';
+    note.append(document.createElement('b'), document.createElement('span'));
+    indicator.append(bar, note);
+    document.body.append(indicator);
+  }
+  return indicator;
+}
+
+function showLoadingTime() {
+  const seconds = Math.floor((performance.now() - loadingStarted) / 1000);
+  loadingIndicator().querySelector('.page-loading-note span').textContent = seconds >= 2 ? `Loading data... ${seconds}s` : 'Loading data...';
+}
+
+async function trackRequest(run) {
+  if (pendingRequests++ === 0) {
+    loadingStarted = performance.now();
+    loadingTimers = [setTimeout(() => {
+      showLoadingTime();
+      loadingIndicator().hidden = false;
+      loadingTimers.push(setInterval(showLoadingTime, 1000));
+    }, LOADING_DELAY_MS)];
+  }
+  try {
+    return await run();
+  } finally {
+    if (--pendingRequests === 0) {
+      loadingTimers.forEach(timer => { clearTimeout(timer); clearInterval(timer); });
+      document.getElementById('page-loading')?.setAttribute('hidden', '');
+    }
+  }
+}
+
+// Calls GET /api/{path} and returns `result`, or throws ApiError with a Persian message. A background request (one the
+// user did not wait for, such as the country flags) does not show the loading indicator.
+function apiGet(path, params, { background = false } = {}) {
+  return background ? requestApi(path, params) : trackRequest(() => requestApi(path, params));
+}
+
+async function requestApi(path, params) {
   let response;
   const url = API_PREFIX + path + toQueryString(params);
   const started = performance.now();
@@ -386,7 +441,7 @@ function fileNameFrom(contentDisposition) {
 async function saveExport(path, params) {
   let response;
   try {
-    response = await fetch(apiUrl(path, params));
+    response = await trackRequest(() => fetch(apiUrl(path, params)));
   } catch {
     throw new ApiError(UNAVAILABLE_MESSAGE);
   }
@@ -883,7 +938,7 @@ async function panelRequest(method, path, body) {
   const url = `/panel-api/${path}`;
   const started = performance.now();
   try {
-    response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    response = await trackRequest(() => fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }));
   } catch (error) {
     logRequest(method, url, started, 'network error', error?.message);
     throw new ApiError(UNAVAILABLE_MESSAGE);

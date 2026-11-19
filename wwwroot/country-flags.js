@@ -86,7 +86,7 @@ async function lookupIpCountries() {
   for (const ip of ips) ipCountries.set(ip, null);
   for (let start = 0; start < ips.length; start += IP_COUNTRY_BATCH) {
     try {
-      const found = await apiGet('ip-geo/get-countries', { ips: ips.slice(start, start + IP_COUNTRY_BATCH) });
+      const found = await apiGet('ip-geo/get-countries', { ips: ips.slice(start, start + IP_COUNTRY_BATCH) }, { background: true });
       for (const { ip, country } of found ?? []) ipCountries.set(ip, country);
     } catch {
       continue;

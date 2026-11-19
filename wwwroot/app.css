@@ -1766,3 +1766,14 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .compare-logins section[data-panel]:not(.cmp-plain) { margin-top: 0; }
 .compare-logins section .ad-card-title .icon svg { width: 22px; height: 22px; }
 .compare-logins .cmp-findings .summary { margin-bottom: var(--space-6); }
+
+/* Loading indicator of slow requests (api.js trackRequest) */
+.page-loading { position: fixed; inset: 0 0 auto; z-index: 200; pointer-events: none; }
+.page-loading[hidden] { display: none; }
+.page-loading-bar { display: block; height: 3px; background: linear-gradient(90deg, transparent, var(--primary), transparent) no-repeat; background-size: 35% 100%; box-shadow: 0 0 10px var(--glow-soft); animation: page-loading 1.2s ease-in-out infinite; }
+@keyframes page-loading { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+.page-loading-note { position: absolute; top: 12px; left: 50%; display: inline-flex; align-items: center; gap: var(--space-8); padding: var(--space-6) var(--space-14); color: var(--text); background: var(--menu-surface) padding-box, var(--edge) border-box; border: 1px solid transparent; border-radius: var(--radius-pill); box-shadow: 0 10px 28px var(--menu-shadow), 0 0 16px var(--glow-faint); font-size: var(--font-size-sm); font-weight: 600; transform: translateX(-50%); }
+.page-loading-note b { width: 14px; height: 14px; border: 2px solid var(--border-strong); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+.cmp-progress:not(:empty) { display: flex; align-items: center; gap: var(--space-12); margin: 0 0 var(--space-12); color: var(--text-muted); font-size: var(--font-size-sm); }
+.cmp-progress .meter { width: 260px; height: 10px; }
+.cmp-progress .meter i { transition: width .3s ease; }
