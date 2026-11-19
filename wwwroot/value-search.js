@@ -95,6 +95,7 @@ const SUMMARY_COLUMNS = [
 // The session columns shared with the login history page, with the login prepended since rows here span many logins.
 const DETAILS_COLUMNS = [
   { key: 'login', title: 'Login', sortKey: 'Login' },
+  { key: 'email', title: 'Email', format: email => email || '—', filterable: false },
   ...SESSION_COLUMNS,
   loginActionsColumn('login'),
 ];
