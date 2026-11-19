@@ -72,15 +72,128 @@ function writeState() {
   writeQuery(state);
 }
 
-function renderMetadata(metadata) {
+// ---- Overview: who used the searched value, from which devices, and how the accounts stand ----
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const number = value => Number(value ?? 0).toLocaleString('en-US');
+const money = value => Number(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function element(tag, className, ...children) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.append(...children.filter(child => child !== null && child !== undefined));
+  return node;
+}
+
+function kpi(iconName, label, value, ...notes) {
+  return element('div', 'vs-kpi',
+    icon(iconName, 'vs-kpi-icon'),
+    element('div', 'vs-kpi-text', element('span', 'vs-kpi-label', label), element('strong', 'vs-kpi-value', value),
+      notes.length ? element('small', 'vs-kpi-note', ...notes) : null));
+}
+
+function panel(iconName, title, ...content) {
+  return element('div', 'vs-panel', element('h3', 'vs-panel-title', icon(iconName), title), ...content);
+}
+
+function emptyNote() {
+  return element('p', 'vs-empty', 'No data');
+}
+
+// Sessions per kind of device (Android, iOS, desktop, web), each with its share of all the sessions on the value.
+function devicePanel(devices) {
+  const kinds = new Map();
+  for (const { name, count } of devices) {
+    const kind = platformKind(name) ?? 'other';
+    const entry = kinds.get(kind) ?? { count: 0, names: [] };
+    entry.count += count;
+    entry.names.push(name);
+    kinds.set(kind, entry);
+  }
+  const total = [...kinds.values()].reduce((sum, entry) => sum + entry.count, 0);
+  const rows = [...kinds].sort((a, b) => b[1].count - a[1].count).map(([kind, { count, names }]) => {
+    const share = total ? (count / total) * 100 : 0;
+    const bar = element('span', `vs-bar ${kind}`);
+    bar.style.width = `${Math.max(share, 2)}%`;
+    const row = element('div', 'vs-device',
+      kind === 'other' ? element('span', 'vs-device-icon') : element('span', 'vs-device-icon', platformIcon(kind)),
+      element('span', 'vs-device-name', kind === 'other' ? 'Other' : PLATFORM_KINDS[kind].label),
+      element('span', 'vs-device-count', number(count), element('small', null, ` ${share.toFixed(share < 10 ? 1 : 0)}%`)),
+      element('span', 'vs-track', bar));
+    row.title = names.join(', ');
+    return row;
+  });
+  return panel('monitor', 'Devices', ...(rows.length ? rows : [emptyNote()]));
+}
+
+// The emails of the logins, the most shared first; an email used by several logins is the strongest hint.
+function emailPanel(overview) {
+  const rows = overview.emails.map(({ name, count }) => element('li', count > 1 ? 'shared' : null,
+    element('span', 'vs-email', copyableText(name)), element('span', 'vs-count', number(count))));
+  const rest = overview.emailCount - overview.emails.length;
+  return panel('mail', 'Emails',
+    rows.length ? element('ul', 'vs-list', ...rows) : emptyNote(),
+    rest > 0 ? element('p', 'vs-more', `+${number(rest)} more`) : null);
+}
+
+function accountPanel(overview) {
+  const states = [
+    ['ok', 'Active', overview.activeCount],
+    ['warn', 'Archived', overview.archivedCount],
+    ['muted', 'Not found', overview.notFoundCount],
+  ];
+  const total = states.reduce((sum, [, , count]) => sum + count, 0);
+  const bar = element('div', 'vs-status-bar');
+  const legend = element('div', 'vs-status-legend');
+  for (const [tone, label, count] of states) {
+    if (count) {
+      const part = element('span', tone);
+      part.style.flexGrow = String(count);
+      part.title = label;
+      bar.append(part);
+    }
+    legend.append(element('span', `vs-legend ${tone}`, label, element('b', null, number(count))));
+  }
+  const groups = overview.groups.map(({ name, count }) => element('li', null, element('span', 'vs-email', name), element('span', 'vs-count', number(count))));
+  return panel('shield', 'Accounts',
+    total ? bar : null, legend,
+    element('h4', 'vs-subtitle', 'Groups'),
+    groups.length ? element('ul', 'vs-list', ...groups) : emptyNote());
+}
+
+function renderOverview(metadata) {
+  const container = document.getElementById('overview');
+  const overview = metadata.overview;
+  if (!overview) {
+    container.replaceChildren();
+    return;
+  }
   const range = metadata.fromUtc
     ? `${toDayValue(new Date(metadata.fromUtc))} — ${toDayValue(new Date(metadata.toUtc))}`
     : 'All time';
-  renderSummary(document.getElementById('summary-metadata'), [
-    ['Type', TYPE_LABELS[metadata.type] ?? metadata.type],
-    ['Value', metadata.value],
-    ['Range (UTC)', range],
-  ]);
+  const value = copyableText(metadata.value);
+  value.dir = 'ltr';
+  const head = element('div', 'vs-overview-head',
+    element('span', 'vs-type', icon(metadata.type === 'Ip' ? 'mapPin' : 'fingerprint'), TYPE_LABELS[metadata.type] ?? metadata.type),
+    element('div', 'vs-overview-title', element('h2', null, value), element('p', null, element('span', null, 'Range (UTC)'), ': ', range)));
+
+  const first = overview.firstSeenUtc ? new Date(overview.firstSeenUtc) : null;
+  const last = overview.lastSeenUtc ? new Date(overview.lastSeenUtc) : null;
+  const days = first && last ? Math.max(1, Math.ceil((last - first) / DAY_MS)) : 0;
+  const perLogin = overview.loginCount ? Math.round(overview.sessionCount / overview.loginCount) : 0;
+  const kpis = element('div', 'vs-kpis',
+    kpi('users', 'Unique logins', number(overview.loginCount),
+      element('span', 'ok', number(overview.activeCount), ' ', 'Active'), ' · ',
+      element('span', 'warn', number(overview.archivedCount), ' ', 'Archived')),
+    kpi('mail', 'Unique emails', number(overview.emailCount)),
+    kpi('history', 'Sign-ins', number(overview.sessionCount), '≈ ', number(perLogin), ' ', 'per login'),
+    kpi('swap', 'Transactions', number(overview.transactionCount)),
+    kpi('wallet', 'Total balance', money(overview.balanceTotal)),
+    kpi('calendar', 'Activity', days ? element('span', null, number(days), ' ', 'days') : '—',
+      first ? element('span', null, toDayValue(first), ' — ', toDayValue(last)) : null));
+
+  container.replaceChildren(head, kpis,
+    element('div', 'vs-panels', devicePanel(overview.devices), emailPanel(overview), accountPanel(overview)));
 }
 
 const SUMMARY_COLUMNS = [
@@ -116,7 +229,7 @@ async function loadSummary() {
   const report = await apiGet('value-search/get-summary', summaryParams());
   const paging = pagingOf(report.paging);
   summaryPaging = { currentPage: paging?.currentPage ?? 1, pageSize: paging?.pageSize ?? summaryPaging.pageSize };
-  renderMetadata(report.metadata);
+  renderOverview(report.metadata);
   renderTable(document.getElementById('summary'), SUMMARY_COLUMNS, report.items, openDetails, {
     sort: {
       item: filters.sortItem,
