@@ -16,7 +16,8 @@ const DAY_MS = 24 * HOUR_MS;
 
 // The device kind of a CID from its platforms ("Client Android, Client").
 function timelineKind(deviceType) {
-  const kinds = new Set(String(deviceType ?? '').split(',').map(platformKind).filter(Boolean));
+  const kinds = new Set(String(deviceType ?? '').split(',').map(platformKind).filter(Boolean)
+    .map(kind => kind === 'android' || kind === 'ios' ? 'mobile' : kind));
   if (kinds.size === 0) return 'unknown';
   return kinds.size === 1 ? [...kinds][0] : 'mixed';
 }
