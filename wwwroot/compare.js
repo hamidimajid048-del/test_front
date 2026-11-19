@@ -379,29 +379,16 @@ function renderTabs() {
   document.getElementById('tabs').replaceChildren(...[{ key: OVERVIEW_TAB, title: 'Overview' }, ...TABS].map(tab => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.dataset.tab = tab.key;
     button.append(icon(TAB_ICONS[tab.key]), tab.title);
+    button.classList.toggle('active', tab.key === activeTab);
     button.addEventListener('click', () => selectTab(tab.key));
     return button;
   }));
-  markActiveTab();
 }
-
-function markActiveTab() {
-  for (const button of document.getElementById('tabs').children) button.classList.toggle('active', button.dataset.tab === activeTab);
-}
-
-// While a tab's content is replaced (and loads), the tab area keeps its height, so the page does not shrink and
-// pull the view up; it is released once the new content is drawn.
-const tabsSection = document.getElementById('tabs-section');
-const holdTabHeight = () => { tabsSection.style.minHeight = `${tabsSection.offsetHeight}px`; };
-const releaseTabHeight = () => { tabsSection.style.minHeight = ''; };
 
 function selectTab(key) {
-  if (key === activeTab) return;
-  holdTabHeight();
   activeTab = key;
-  markActiveTab();
+  renderTabs();
   showPanel();
   writeState();
 }
@@ -475,7 +462,6 @@ function showChart(tab) {
       chart.replaceChildren();
       return;
     }
-    releaseTabHeight();
     const shown = chartState.sharedOnly ? rows.filter(row => row.uses[0] && row.uses[1]) : rows;
     renderUsageTimeline(chart, shown, {
       kind: chartState.kind,
@@ -497,7 +483,6 @@ function showChart(tab) {
       chartState.rows[kind] = rows;
       if (activeTab === tab.key && chartState.kind === kind) draw();
     });
-    if (activeTab === tab.key) releaseTabHeight();
   };
 
   for (const [kind, text] of [['cid', 'CID'], ['ip', 'IP']]) {
@@ -528,7 +513,6 @@ function showPanel() {
   document.getElementById('overview-section').hidden = tab !== undefined;
   document.getElementById('tab-panel').hidden = tab === undefined;
   if (!tab) {
-    releaseTabHeight();
     writeState();
     return;
   }
@@ -623,7 +607,6 @@ async function load(tab, state, toolbar, tabMessage, parts) {
     state.pageSize = paging?.pageSize ?? state.pageSize;
     if (activeTab === tab.key) render(tab, state, toolbar, tabMessage, parts);
   });
-  if (activeTab === tab.key) releaseTabHeight();
 }
 
 // Header-click sorting of a tab: the report's sort item and direction live in the tab's toolbar controls. A tab
@@ -659,7 +642,6 @@ function tabFilter(tab, state, toolbar, tabMessage, parts) {
 }
 
 function render(tab, state, toolbar, tabMessage, parts) {
-  releaseTabHeight();
   const report = state.report;
   const paging = pagingOf(report.paging);
 

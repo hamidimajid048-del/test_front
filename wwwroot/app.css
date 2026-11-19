@@ -1732,6 +1732,7 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .compare-page #tabs button { display: inline-flex; align-items: center; gap: var(--space-8); }
 .compare-page #tabs .icon svg, .compare-page .ad-card .section-head button .icon svg { width: 16px; height: 16px; }
 .cmp-overview { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-16); align-items: start; }
+.cmp-overview[hidden] { display: none; }
 .cmp-overview .signals { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .cmp-overview .signal { display: flex; align-items: center; gap: var(--space-10); padding: var(--space-10) var(--space-12); text-align: start; }
 .cmp-overview .signal .icon svg { width: 22px; height: 22px; }
