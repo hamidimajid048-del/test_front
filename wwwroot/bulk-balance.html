@@ -13,12 +13,13 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <form class="filters" id="file-form" autocomplete="off">
+      <h2 class="filters-title" data-icon="upload">Upload a CSV file</h2>
       <label class="file-picker">CSV file
         <input name="file" type="file" accept=".csv,text/csv">
         <span class="file-box" title="Choose a CSV file, or drop it here"><span class="file-button">Choose file</span><span class="file-name">No file chosen</span></span>
       </label>
-      <button type="submit">Check file</button>
-      <button type="button" id="sample">Download a sample</button>
+      <button type="submit" data-icon="check">Check file</button>
+      <button type="button" id="sample" data-icon="download">Download a sample</button>
     </form>
     <p class="message" id="message"></p>
     <div class="summary" id="summary"></div>
@@ -27,7 +28,7 @@
       <button type="button" id="start-over">Choose another file</button>
     </div>
     <section id="rows-section" hidden>
-      <h3 id="rows-title">Rows</h3>
+      <h3 class="ad-card-title" data-icon="list"><span id="rows-title">Rows</span></h3>
       <div id="rows"></div>
     </section>
 

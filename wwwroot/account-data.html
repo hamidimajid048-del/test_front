@@ -12,13 +12,6 @@
 <body>
   <nav class="menu" id="menu"></nav>
   <main class="account-data">
-    <header class="page-header with-subtitle">
-      <div>
-        <h1 class="page-title">Account data</h1>
-        <p class="page-subtitle">Account settings, limits, balance and activity overview.</p>
-      </div>
-    </header>
-
     <div class="ad-top">
       <form class="filters ad-search" id="filters">
         <label><span class="field-name">Account</span> <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
@@ -29,7 +22,7 @@
     <p class="message" id="message"></p>
     <div class="summary ad-identity" id="identity"></div>
 
-    <div class="tabs pills" id="tabs">
+    <div class="tabs" id="tabs">
       <button type="button" data-tab="overview" data-icon="grid">Overview</button>
       <button type="button" data-tab="open" data-icon="target">Open positions &amp; orders</button>
       <button type="button" data-tab="transfers" data-icon="download">Deposits &amp; withdrawals</button>
@@ -78,10 +71,10 @@
       </div>
     </section>
     <section data-panel="open" hidden>
-      <h3 id="open-positions-title">Open positions</h3>
+      <h3 class="ad-card-title" data-icon="target"><span id="open-positions-title">Open positions</span></h3>
       <div id="open-positions"></div>
       <div id="open-positions-pager"></div>
-      <h3 id="open-orders-title">Active orders</h3>
+      <h3 class="ad-card-title section-gap" data-icon="list"><span id="open-orders-title">Active orders</span></h3>
       <div id="open-orders"></div>
       <div id="open-orders-pager"></div>
     </section>
@@ -96,7 +89,7 @@
           </label>
           <label>Amount <input name="amount" type="text" inputmode="decimal" autocomplete="off" required></label>
           <label>Comment <input name="comment" maxlength="32" autocomplete="off" required placeholder="Required"></label>
-          <button type="submit">Apply</button>
+          <button type="submit" data-icon="check">Apply</button>
         </form>
       </div>
       <div class="summary" id="transfer-totals"></div>

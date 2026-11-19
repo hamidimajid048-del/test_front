@@ -60,7 +60,8 @@ const SESSION_COLUMNS = [
 // Shows every location field and flag of a session's geo record in `container`.
 function renderGeoDetails(container, session) {
   const title = document.createElement('h3');
-  title.textContent = `Location details — login at ${formatUtc(session.loginAt)} from ${session.ip}`;
+  title.className = 'ad-card-title section-gap';
+  title.append(icon('mapPin'), `Location details — login at ${formatUtc(session.loginAt)} from ${session.ip}`);
 
   if (!session.geo) {
     const empty = document.createElement('p');

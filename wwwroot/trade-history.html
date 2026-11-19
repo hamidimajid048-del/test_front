@@ -13,21 +13,24 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <form class="filters" id="filters">
-      <label>Report
+      <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
+      <label class="icon-field">Report
         <select name="kind">
           <option value="positions">Positions</option>
           <option value="orders">Orders</option>
           <option value="deals">Deals</option>
         </select>
+        <span class="field-icon" data-icon="layers"></span>
       </label>
-      <label>Date range
+      <label class="icon-field">Date range
         <select name="range">
           <option value="day">Last day</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="calendar"></span>
       </label>
-      <label>From (UTC) <input name="fromUtc" type="datetime-local" step="0.001" required></label>
-      <label>To (UTC) <input name="toUtc" type="datetime-local" step="0.001" required></label>
+      <label class="date-field">From (UTC) <input name="fromUtc" type="datetime-local" step="0.001" required><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To (UTC) <input name="toUtc" type="datetime-local" step="0.001" required><span class="field-icon" data-icon="calendar"></span></label>
       <div class="device-type-field" id="symbols-field">
         <span>Symbols</span>
         <input type="hidden" name="symbols">
@@ -38,25 +41,25 @@
         <input type="hidden" name="groups">
         <button type="button" class="device-type-button">All</button>
       </div>
-      <label>Volume from (lots) <input name="volumeFrom" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" step="0.01"></label>
-      <label>Volume to (lots) <input name="volumeTo" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" step="0.01"></label>
-      <button type="submit">Search</button>
+      <label class="icon-field">Volume from (lots) <input name="volumeFrom" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" step="0.01"><span class="field-icon" data-icon="scale"></span></label>
+      <label class="icon-field">Volume to (lots) <input name="volumeTo" type="text" inputmode="decimal" data-numeric="decimal" autocomplete="off" min="0" step="0.01"><span class="field-icon" data-icon="scale"></span></label>
+      <button type="submit" data-icon="search">Search</button>
     </form>
     <p class="message" id="message"></p>
     <div class="summary" id="metadata"></div>
 
     <section data-panel="positions" hidden>
-      <h3 id="positions-title">Positions</h3>
+      <h3 class="ad-card-title" data-icon="bars"><span id="positions-title">Positions</span></h3>
       <div id="positions"></div>
       <div id="positions-pager"></div>
     </section>
     <section data-panel="orders" hidden>
-      <h3 id="orders-title">Orders</h3>
+      <h3 class="ad-card-title" data-icon="list"><span id="orders-title">Orders</span></h3>
       <div id="orders"></div>
       <div id="orders-pager"></div>
     </section>
     <section data-panel="deals" hidden>
-      <h3 id="deals-title">Deals</h3>
+      <h3 class="ad-card-title" data-icon="swap"><span id="deals-title">Deals</span></h3>
       <div id="deals"></div>
       <div id="deals-pager"></div>
     </section>

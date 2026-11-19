@@ -142,6 +142,7 @@ async function loadSummary() {
     return withLoading(form, message, loadSummary);
   });
   summaryLoaded = true;
+  document.querySelector('main.value-search').classList.add('loaded');
   writeState();
 }
 

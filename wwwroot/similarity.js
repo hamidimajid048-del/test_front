@@ -191,12 +191,12 @@ async function loadSummary() {
   writeState();
 }
 
-function makeTab(label, { onSelect, onClose }) {
+function makeTab(label, iconName, { onSelect, onClose }) {
   const tab = document.createElement('span');
   tab.className = 'tab';
   const select = document.createElement('button');
   select.type = 'button';
-  select.textContent = label;
+  select.append(icon(iconName), label);
   select.addEventListener('click', onSelect);
   tab.append(select);
   if (onClose) {
@@ -212,7 +212,7 @@ function makeTab(label, { onSelect, onClose }) {
   return tab;
 }
 
-const summaryTab = makeTab('Summary', { onSelect: () => activateTab(SUMMARY_TAB) });
+const summaryTab = makeTab('Summary', 'grid', { onSelect: () => activateTab(SUMMARY_TAB) });
 summaryTab.classList.add('active');
 tabsBar.append(summaryTab);
 
@@ -310,7 +310,7 @@ function addDetailsTab(relatedLogin, type) {
       part('export-message'));
   }));
 
-  const tab = makeTab(`${relatedLogin} · ${TYPE_LABELS[type] ?? type}`, {
+  const tab = makeTab(`${relatedLogin} · ${TYPE_LABELS[type] ?? type}`, 'list', {
     onSelect: () => activateTab(key),
     onClose: () => closeDetails(key),
   });

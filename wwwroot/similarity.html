@@ -12,17 +12,17 @@
 <body>
   <nav class="menu" id="menu"></nav>
   <main class="similarity">
-    <form class="filters sim-filters" id="filters">
-      <span class="sim-filter-badge" data-icon="filter">Filter</span>
-      <div class="sim-fields">
-      <label>Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <label>Type
+    <form class="filters" id="filters">
+      <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
+      <label class="icon-field">Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required><span class="field-icon" data-icon="user"></span></label>
+      <label class="icon-field">Type
         <select name="type">
           <option value="Ip">IP</option>
           <option value="Cid">CID</option>
         </select>
+        <span class="field-icon" data-icon="fingerprint"></span>
       </label>
-      <label>Date range
+      <label class="icon-field">Date range
         <select name="range">
           <option value="">All time</option>
           <option value="week">Last week</option>
@@ -32,6 +32,7 @@
           <option value="year">Last year</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="calendar"></span>
       </label>
       <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
       <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
@@ -40,9 +41,9 @@
         <input type="hidden" name="deviceType">
         <button type="button" class="device-type-button">Any</button>
       </div>
-      <label>CID <input name="cid" maxlength="200"></label>
-      <label>Related login <input name="relatedLogin" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"></label>
-      <label>Sort by
+      <label class="icon-field">CID <input name="cid" maxlength="200"><span class="field-icon" data-icon="monitor"></span></label>
+      <label class="icon-field">Related login <input name="relatedLogin" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1"><span class="field-icon" data-icon="users"></span></label>
+      <label class="icon-field">Sort by
         <select name="sortItem">
           <option value="RelatedLoginCount">Shared sign-ins</option>
           <option value="RelatedLogin">Related login</option>
@@ -51,19 +52,20 @@
           <option value="Email">Email</option>
           <option value="Balance">Balance</option>
         </select>
+        <span class="field-icon" data-icon="swap"></span>
       </label>
-      <label>Direction
+      <label class="icon-field">Direction
         <select name="sortDirection">
           <option value="Desc">Descending</option>
           <option value="Asc">Ascending</option>
         </select>
+        <span class="field-icon" data-icon="sort"></span>
       </label>
-      </div>
       <button type="submit" data-icon="search">Search</button>
     </form>
     <p class="hint sim-range" id="account-range"></p>
     <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
+    <div class="related-pages related-card" id="related-pages"></div>
 
     <div class="tabs" id="tabs" hidden></div>
 
@@ -116,7 +118,7 @@
             <option value="Asc">Ascending</option>
           </select>
         </label>
-        <button type="submit">Apply</button>
+        <button type="submit" data-icon="check">Apply</button>
       </form>
       <p class="message details-message"></p>
       <div class="details-table"></div>

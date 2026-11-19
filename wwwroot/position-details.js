@@ -147,6 +147,8 @@ function writeState(login, position) {
 
 async function search({ login, position }) {
   const current = ++request;
+  const main = document.querySelector('main.position-details');
+  main.classList.remove('loaded');
   document.getElementById('summary').replaceChildren();
   for (const grid of Object.values(grids)) grid.clear();
   message.textContent = 'Loading...';
@@ -169,6 +171,7 @@ async function search({ login, position }) {
   if (detail.status === 'rejected' && tracker.status === 'rejected') throw detail.reason;
   if (detail.status === 'fulfilled') renderPosition(login, detail.value);
   if (tracker.status === 'fulfilled') grids.transactions.setRows(transactionRows(tracker.value));
+  main.classList.add('loaded');
   const failure = [detail, tracker].find(result => result.status === 'rejected');
   const back = document.getElementById('back');
   back.href = `/account-data.html?login=${encodeURIComponent(login)}&tab=positions`;

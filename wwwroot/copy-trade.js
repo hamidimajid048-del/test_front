@@ -276,7 +276,7 @@ function showPositionsSection() {
     item.textContent = text;
     return item;
   }));
-  document.getElementById('positions-tab').replaceChildren('Positions', ` · ${relatedLogin}`);
+  document.getElementById('positions-tab').replaceChildren(icon('trend'), 'Positions', ` · ${relatedLogin}`);
   showView('positions');
 }
 

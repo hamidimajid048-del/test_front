@@ -11,21 +11,23 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters pd-search" id="filters">
-      <label>Account <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <label>Position <input name="position" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <button type="submit" data-icon="search">Search</button>
-      <a class="action-link pd-back" id="back" href="/account-data.html" data-icon="arrowLeft" hidden>Back to the account</a>
-    </form>
+  <main class="position-details">
+    <div class="ad-top">
+      <form class="filters ad-search" id="filters">
+        <label><span class="field-name">Account</span> <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+        <label><span class="field-name">Position</span> <input name="position" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
+        <button type="submit" data-icon="search">Search</button>
+        <a class="action-link pd-back" id="back" href="/account-data.html" data-icon="arrowLeft" hidden>Back to the account</a>
+      </form>
+      <div class="related-pages" id="related-pages"></div>
+    </div>
     <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
     <section class="ad-card pd-info">
       <h3 class="ad-card-title" data-icon="layers">Position info</h3>
       <div class="summary ad-figures pd-summary" id="summary"></div>
     </section>
 
-    <div class="tabs pills" id="tabs">
+    <div class="tabs" id="tabs">
       <button type="button" data-tab="deals" data-icon="layers">Deals</button>
       <button type="button" data-tab="transactions" data-icon="activity">Transaction tracker</button>
     </div>

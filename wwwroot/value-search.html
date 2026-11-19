@@ -13,19 +13,20 @@
   <nav class="menu" id="menu"></nav>
   <main class="value-search">
     <form class="filters vs-filters" id="filters">
-      <h2 class="vs-filter-title" data-icon="filter">Search filter</h2>
+      <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
       <div class="vs-fields">
       <div class="vs-group">
-      <label>Search by
+      <label class="icon-field">Search by
         <select name="type" required>
           <option value="Cid">CID</option>
           <option value="Ip">IP</option>
         </select>
+        <span class="field-icon" data-icon="fingerprint"></span>
       </label>
-      <label class="vs-value">Value <input name="value" required maxlength="200"></label>
+      <label class="icon-field vs-value">Value <input name="value" required maxlength="200"><span class="field-icon" data-icon="search"></span></label>
       </div>
       <div class="vs-group">
-      <label>Date range
+      <label class="icon-field">Date range
         <select name="range">
           <option value="">All time</option>
           <option value="day">Last day</option>
@@ -36,12 +37,13 @@
           <option value="year">Last year</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="calendar"></span>
       </label>
       <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
       <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
       </div>
       <div class="vs-group">
-      <label>Sort by
+      <label class="icon-field">Sort by
         <select name="sortItem">
           <option value="LoginCount">Logins</option>
           <option value="Login">Login</option>
@@ -52,12 +54,14 @@
           <option value="Email">Email</option>
           <option value="Balance">Balance</option>
         </select>
+        <span class="field-icon" data-icon="swap"></span>
       </label>
-      <label>Direction
+      <label class="icon-field">Direction
         <select name="sortDirection">
           <option value="Desc">Descending</option>
           <option value="Asc">Ascending</option>
         </select>
+        <span class="field-icon" data-icon="sort"></span>
       </label>
       </div>
       <button type="submit" data-icon="search">Search</button>
@@ -65,9 +69,9 @@
     </form>
     <p class="message" id="message"></p>
 
-    <div class="tabs pills" id="tabs">
-      <button type="button" data-tab="summary" class="active">Summary</button>
-      <button type="button" data-tab="details">Details</button>
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="summary" class="active" data-icon="grid">Summary</button>
+      <button type="button" data-tab="details" data-icon="list">Details</button>
     </div>
 
     <section class="ad-card" data-panel="summary">

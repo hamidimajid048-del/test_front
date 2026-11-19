@@ -425,6 +425,9 @@ function showChart(tab) {
   const head = document.createElement('div');
   head.className = 'section-head';
   const title = document.createElement('h2');
+  title.className = 'ad-card-title';
+  const titleText = document.createElement('span');
+  title.append(icon(TAB_ICONS[tab.key]), titleText);
   const toggle = document.createElement('div');
   toggle.className = 'toggle';
   head.append(title, toggle);
@@ -448,7 +451,7 @@ function showChart(tab) {
 
   const draw = () => {
     const label = chartState.kind === 'cid' ? 'CID' : 'IP';
-    title.textContent = `${label} usage chart`;
+    titleText.textContent = `${label} usage chart`;
     for (const button of toggle.children) button.setAttribute('aria-pressed', String(button.dataset.kind === chartState.kind));
     const rows = chartState.rows[chartState.kind];
     if (!rows) {
@@ -574,7 +577,8 @@ function showPanel() {
   const head = document.createElement('div');
   head.className = 'section-head';
   const title = document.createElement('h2');
-  title.textContent = tab.title;
+  title.className = 'ad-card-title';
+  title.append(icon(TAB_ICONS[tab.key]), tab.title);
   head.append(title, exports);
 
   parts.table.dataset.viewKey = `tab-${activeTab}`;

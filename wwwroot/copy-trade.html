@@ -13,7 +13,7 @@
   <nav class="menu" id="menu"></nav>
   <main class="copy-trade">
     <form class="filters ct-filters" id="filters">
-      <h2 class="vs-filter-title" data-icon="filter">Search &amp; Filters</h2>
+      <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
       <label class="icon-field">Report type
         <select name="kind">
           <option value="copy-trade">Copy trade</option>
@@ -60,12 +60,12 @@
       <button type="submit" data-icon="search">Search</button>
     </form>
     <p class="message" id="message"></p>
-    <div class="related-pages ct-related" id="related-pages"></div>
+    <div class="related-pages related-card" id="related-pages"></div>
 
     <div class="tabs" id="page-tabs" hidden>
-      <button type="button" data-view="list">List</button>
+      <button type="button" data-view="list" data-icon="users">List</button>
       <span class="tab">
-        <button type="button" data-view="positions" id="positions-tab">Positions</button>
+        <button type="button" data-view="positions" id="positions-tab" data-icon="trend">Positions</button>
         <button type="button" class="tab-close" id="positions-close" title="Close" aria-label="Close">×</button>
       </span>
     </div>
@@ -109,7 +109,7 @@
         <div class="stat-grid" id="positions-stats"></div>
       </div>
 
-      <div class="tabs pills" id="positions-tabs">
+      <div class="tabs" id="positions-tabs">
         <button type="button" data-tab="tree" class="active" data-icon="list">Position tree</button>
         <button type="button" data-tab="symbols" data-icon="bars">By symbol</button>
         <button type="button" data-tab="timeline" data-icon="timer">Timeline</button>
@@ -163,7 +163,7 @@
         <div id="positions-pager"></div>
       </div>
       <div id="tab-symbols" hidden>
-        <div class="actions tree-actions"><button type="button" data-export="stats" data-dataset="BySymbol" data-format="csv">Export CSV</button></div>
+        <div class="actions tree-actions"><button type="button" data-export="stats" data-dataset="BySymbol" data-format="csv" data-icon="download">Export CSV</button></div>
         <div id="symbols-table"></div>
       </div>
       <div id="tab-timeline" hidden>
