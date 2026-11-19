@@ -6,7 +6,6 @@ const form = document.getElementById('filters');
 const message = document.getElementById('message');
 const rangeControls = initRangeControls(form);
 const compare = initGroupCompare({ form, message, sideTitle: 'Side', exportName: 'compare-logins' });
-const PER_LOGIN_PARALLELISM = 4;
 const SIGNAL_COUNT = 6;
 
 let request = 0;
@@ -62,8 +61,6 @@ function perLoginRow(otherLogin, overview, account, mainEmail) {
   return row;
 }
 
-const countCell = tone => value => (value === undefined ? '—' : value > 0 ? badge(String(value), tone) : '0');
-
 function signalsCell(signals, row) {
   if (row.failed) return badge('Failed', 'muted');
   return badge(`${signals} of ${SIGNAL_COUNT}`, signals >= 3 ? 'danger' : signals > 0 ? 'warn' : 'ok');
@@ -88,31 +85,6 @@ function perLoginColumns(subject) {
     seenColumn('firstLoginAt', 'lastLoginAt', 'First / last login'),
     loginActionsColumn('login', undefined, { subject, emailOf: row => row.email }),
   ];
-}
-
-// Compares every compared login with the main one, a few at a time, telling the progress; a failed login gets an empty row.
-async function comparePerLogin(params, otherLogins, isStale) {
-  const progress = document.getElementById('per-login-message');
-  const results = new Map();
-  const queue = [...otherLogins];
-  let done = 0;
-  const worker = async () => {
-    while (queue.length) {
-      const otherLogin = queue.shift();
-      try {
-        results.set(otherLogin, await apiGet('compare-reports/get-overview', { ...params, otherLogin }));
-      } catch {
-        results.set(otherLogin, null);
-      }
-      done++;
-      if (!isStale()) progress.textContent = `Comparing each login: ${done} of ${otherLogins.length}`;
-    }
-  };
-  progress.className = 'message';
-  progress.textContent = `Comparing each login: 0 of ${otherLogins.length}`;
-  await Promise.all(Array.from({ length: Math.min(PER_LOGIN_PARALLELISM, otherLogins.length) }, worker));
-  if (!isStale()) progress.textContent = '';
-  return results;
 }
 
 // ---- cards and findings ----
@@ -142,18 +114,6 @@ function renderSides(login, mainAccount, mainOverviewAccount, otherLogins, rows)
     ],
   });
   document.getElementById('accounts').replaceChildren(main, compareVersus(), group);
-}
-
-const selectTab = tab => document.querySelector(`#tabs [data-tab="${tab}"]`)?.click();
-
-function renderGroupSignals(shared) {
-  renderSignalTiles(document.getElementById('signals'), [
-    { count: shared.ipCount, text: 'Shared IPs', tab: 'ips', icon: 'mapPin' },
-    { count: shared.anonymizedIpCount, text: 'VPN / proxy IPs', tab: 'ips', icon: 'shield' },
-    { count: shared.cidCount, text: 'Shared CIDs', tab: 'cids', icon: 'fingerprint' },
-    { count: shared.invalidCidCount, text: 'Invalid CIDs', tab: 'cids', icon: 'alert' },
-    { count: shared.linkedLoginPairCount, text: 'Linked pairs', tab: 'pairs', icon: 'link' },
-  ], selectTab);
 }
 
 function renderPerLoginFindings(rows) {
@@ -198,10 +158,9 @@ async function search(values) {
   document.getElementById('results').hidden = false;
   document.getElementById('per-login-title').textContent = `Each compared login (${otherLogins.length})`;
 
-  const perLogin = comparePerLogin(
-    { login, fromUtc, toUtc, windowSeconds: Number(values.windowPreset ?? 300), matchLevel: values.match ?? 'Ip' },
-    otherLogins, isStale);
-  const overview = await compare.run({
+  const proximity = { login, fromUtc, toUtc, windowSeconds: Number(values.windowPreset ?? 300), matchLevel: values.match ?? 'Ip' };
+  const perLogin = compareEachLogin(otherLogins, otherLogin => apiGet('compare-reports/get-overview', { ...proximity, otherLogin }), isStale);
+  await compare.run({
     sideNames: { main: String(login), other: otherLogins.length === 1 ? String(otherLogins[0]) : `${otherLogins.length} logins` },
     accounts,
     logins: [login],
@@ -209,7 +168,6 @@ async function search(values) {
     fromUtc,
     toUtc,
   }, isStale);
-  if (overview) renderGroupSignals(overview.shared);
 
   const results = await perLogin;
   if (isStale()) return;

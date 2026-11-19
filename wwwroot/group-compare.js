@@ -225,6 +225,18 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
     ];
     renderTable(document.getElementById('sides'), sideColumns(), rows, undefined, { tools: false });
 
+    const signals = document.getElementById('signals');
+    if (signals) renderSignalTiles(signals, [
+      { count: shared.ipCount, text: 'Shared IPs', tab: 'ips', icon: 'mapPin' },
+      { count: shared.anonymizedIpCount, text: 'VPN / proxy IPs', tab: 'ips', icon: 'shield' },
+      { count: shared.cidCount, text: 'Shared CIDs', tab: 'cids', icon: 'fingerprint' },
+      { count: shared.invalidCidCount, text: 'Invalid CIDs', tab: 'cids', icon: 'alert' },
+      { count: shared.linkedLoginPairCount, text: 'Linked pairs', tab: 'pairs', icon: 'link' },
+    ], tab => {
+      showTab(tab);
+      if (location.search) writeState(Object.fromEntries(new URLSearchParams(location.search)));
+    });
+
     renderSummary(document.getElementById('shared-facts'), [
       ['Shared IPs', shared.ipCount],
       ['of them VPN/proxy/Tor/datacenter', shared.anonymizedIpCount],
@@ -240,8 +252,8 @@ function initGroupCompare({ form, message, sideTitle, exportName }) {
   function clearResults() {
     resetCounts();
     for (const grid of Object.values(grids)) grid.clear();
-    for (const id of ['verdict', 'sides', 'shared-facts', 'accounts-main', 'accounts-other', 'geo-details'])
-      document.getElementById(id).replaceChildren();
+    for (const id of ['verdict', 'sides', 'shared-facts', 'accounts-main', 'accounts-other', 'geo-details', 'signals'])
+      document.getElementById(id)?.replaceChildren();
     document.getElementById('verdict-reason').textContent = '';
   }
 

@@ -80,6 +80,9 @@ function renderSignalTiles(container, signals, onSelect) {
   }));
 }
 
+// A table cell of a shared count: marked with the tone when above zero.
+const countCell = tone => value => (value === undefined ? '—' : value > 0 ? badge(String(value), tone) : '0');
+
 // A check when nothing is shared, a warning sign when something is.
 const toneOf = (count, shared = 'danger') => (count > 0 ? shared : 'ok');
 
@@ -89,6 +92,33 @@ function resultBadge(text, tone) {
   const element = badge(text, tone);
   element.prepend(icon(tone === 'ok' ? 'check' : 'alert'));
   return element;
+}
+
+// Runs compare(login) for every login, a few at a time, telling the progress in #per-login-message; a failed login maps
+// to null. Returns a Map login -> result.
+async function compareEachLogin(logins, compare, isStale) {
+  const progress = document.getElementById('per-login-message');
+  const results = new Map();
+  const queue = [...logins];
+  let done = 0;
+  const show = () => { progress.textContent = `Comparing each login: ${done} of ${logins.length}`; };
+  const worker = async () => {
+    while (queue.length) {
+      const login = queue.shift();
+      try {
+        results.set(login, await compare(login));
+      } catch {
+        results.set(login, null);
+      }
+      done++;
+      if (!isStale()) show();
+    }
+  };
+  progress.className = 'message';
+  show();
+  await Promise.all(Array.from({ length: Math.min(4, logins.length) }, worker));
+  if (!isStale()) progress.textContent = '';
+  return results;
 }
 
 // The Key findings list: [{ tone, text }].
