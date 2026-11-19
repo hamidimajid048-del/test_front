@@ -619,6 +619,7 @@ section {
   box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow);
 }
 section[hidden] { display: none; }
+#page-tabs[hidden] { display: none; }
 [data-permission][hidden], [data-export][hidden] { display: none !important; }
 section form.filters { padding: 0; border: 0; box-shadow: none; background: none; }
 

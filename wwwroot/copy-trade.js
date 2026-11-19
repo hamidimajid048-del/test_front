@@ -36,6 +36,9 @@ let relatedLogin = null;
 let positionsValues = {};
 let positionsPaging = { currentPage: 1, pageSize: TREE_PAGE_SIZE };
 let activeTab = 'tree';
+// The list and the position comparison of one related login are page tabs, so the comparison never opens far below the list.
+let view = 'list';
+const pageTabs = document.getElementById('page-tabs');
 // Open nodes and open pair comparisons survive page changes, sorting and filtering.
 const treeState = { expanded: new Set(), opened: new Set(), window: { before: 0, after: 0 } };
 
@@ -99,7 +102,7 @@ function writeState() {
     ...search, ...columnFilterState(listColumnFilters), currentPage: listPaging.currentPage, pageSize: listPaging.pageSize,
   };
   if (relatedLogin) {
-    const prefixed = { ...positionsValues, relatedLogin, ...positionsPaging, tab: activeTab };
+    const prefixed = { ...positionsValues, relatedLogin, ...positionsPaging, tab: activeTab, view };
     for (const [key, value] of Object.entries(prefixed)) state[POSITIONS_QUERY_PREFIX + key] = value;
   }
   writeQuery(state);
@@ -192,7 +195,7 @@ async function loadList() {
     listPaging = { currentPage: page, pageSize };
     return withLoading(form, message, loadList);
   });
-  document.getElementById('list-section').hidden = false;
+  showView(view);
   writeState();
   sameEmail.load(report.items.map(item => item.relatedLogin));
 }
@@ -251,6 +254,14 @@ function showTab(tab) {
     button.classList.toggle('active', button.dataset.tab === activeTab));
 }
 
+function showView(next) {
+  view = relatedLogin && next === 'positions' ? 'positions' : 'list';
+  document.getElementById('list-section').hidden = view !== 'list';
+  document.getElementById('positions-section').hidden = view !== 'positions';
+  pageTabs.hidden = !relatedLogin;
+  pageTabs.querySelectorAll('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === view));
+}
+
 function showPositionsSection() {
   document.getElementById('positions-title').textContent =
     `Position comparison (${kind().title}): ${search.login} and ${relatedLogin}`;
@@ -261,9 +272,8 @@ function showPositionsSection() {
     item.textContent = text;
     return item;
   }));
-  const section = document.getElementById('positions-section');
-  section.hidden = false;
-  return section;
+  document.getElementById('positions-tab').replaceChildren('Positions', ` · ${relatedLogin}`);
+  showView('positions');
 }
 
 function resetPositionsView() {
@@ -286,14 +296,23 @@ function openPositions(login) {
   positionsPaging = { currentPage: 1, pageSize: TREE_PAGE_SIZE };
   resetPositionsView();
   showTab('tree');
-  showPositionsSection().scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showPositionsSection();
+  pageTabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
   withLoading(positionsForm, positionsMessage, loadPositions);
 }
 
 function hidePositions() {
   relatedLogin = null;
-  document.getElementById('positions-section').hidden = true;
+  showView('list');
 }
+
+pageTabs.addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.id === 'positions-close') hidePositions();
+  else showView(button.dataset.view);
+  writeState();
+});
 
 // The volume tolerance only belongs to hedge; a hidden field must not leak into a copy trade request.
 function readSearch() {
@@ -388,6 +407,7 @@ async function restoreFromQuery() {
   };
   showTab(query.get(`${POSITIONS_QUERY_PREFIX}tab`));
   showPositionsSection();
+  showView(query.get(`${POSITIONS_QUERY_PREFIX}view`) ?? 'positions');
   await withLoading(positionsForm, positionsMessage, loadPositions);
 }
 
