@@ -26,7 +26,8 @@ const TRANSACTIONS_HELP = 'Transactions the account made from this value in the 
   + 'the computer (CID) is the one of the login session that covers the transaction time and, when possible, its IP.';
 const DETAIL_SIGNINS_HELP ='How many times the related account signed in from this value. Compare it with Logins, the sign-ins of the searched account.';
 const SHARED_VALUES_HELP = 'The IPs or CIDs both accounts used, the most used first, each with how many times the related account signed in from it. '
-  + 'An IP shows the flag of its country. Shared values opens all of them with their dates.';
+  + 'An IP shows the flag of its country, and the icons are the devices the related account used it from (Android, iPhone, desktop, web). '
+  + 'Shared values opens all of them with their dates.';
 const SHARED_VALUES_SHOWN = 5;
 
 // Filters of the last summary search; the details and exports reuse them so they always match the table shown.
@@ -141,17 +142,38 @@ function renderDifferentEmail(metadata) {
     : `The email of login ${metadata.login} is unknown, so rows cannot be compared.`;
 }
 
-// The shared IPs or CIDs of a summary row, one per line and copyable, each with the related account's sign-ins from it;
-// the rest of a long list opens in the row's details tab.
+// One icon for each kind of device the related account used the value from; the platform names are its tooltip.
+function sharedValueDevices(platforms) {
+  const kinds = new Map();
+  for (const platform of platforms ?? []) {
+    const kind = platformKind(platform);
+    if (kind) kinds.set(kind, [...(kinds.get(kind) ?? []), platform]);
+  }
+  const devices = document.createElement('span');
+  devices.className = 'shared-devices';
+  for (const [kind, names] of kinds) {
+    const holder = document.createElement('span');
+    holder.title = names.join(', ');
+    holder.append(platformIcon(kind));
+    devices.append(holder);
+  }
+  return devices;
+}
+
+// The shared IPs or CIDs of a summary row, one per line and copyable, each with the related account's sign-ins from it
+// and its devices; the rest of a long list opens in the row's details tab.
 function sharedValueList(values, row) {
   if (!values?.length) return '—';
   const list = document.createElement('div');
-  list.className = 'cid-list';
-  for (const { value, loginCount } of values.slice(0, SHARED_VALUES_SHOWN)) {
+  list.className = 'cid-list shared-values';
+  for (const { value, loginCount, platforms } of values.slice(0, SHARED_VALUES_SHOWN)) {
     const line = document.createElement('div');
+    line.className = 'shared-value';
     const count = document.createElement('small');
     count.textContent = ` (${loginCount.toLocaleString('en-US')})`;
-    line.append(copyableText(value), count);
+    const text = copyableText(value);
+    text.dir = 'ltr';
+    line.append(text, count, sharedValueDevices(platforms));
     list.append(line);
   }
   const rest = values.length - SHARED_VALUES_SHOWN;

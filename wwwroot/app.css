@@ -1522,6 +1522,12 @@ html.i18n-loading body { visibility: hidden; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .cid-list { display: flex; flex-direction: column; gap: 2px; align-items: center; font-variant-numeric: tabular-nums; }
 .cid-list small { color: var(--text-muted); }
+.cid-list.shared-values { display: inline-flex; align-items: flex-start; text-align: start; }
+.shared-value { display: inline-flex; align-items: center; gap: var(--space-4); }
+.shared-devices .platform-icon { width: 17px; height: 17px; }
+.shared-devices { display: inline-flex; gap: var(--space-4); margin-inline-start: var(--space-4); }
+.shared-devices:empty { display: none; }
+.shared-devices > span { display: inline-flex; }
 #cid-overview:not(:empty) { margin-bottom: var(--space-16); }
 #cid-overview h3 { margin: 0 0 var(--space-8); }
 .cid-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: var(--space-4) var(--space-16); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
