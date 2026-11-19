@@ -11,11 +11,13 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
-      <label>Main login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <label>Compared login <input name="other" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
-      <label>Date range
+  <main class="compare-page">
+    <form class="filters cmp-setup" id="filters">
+      <h2 class="vs-filter-title" data-icon="filter">Comparison Setup</h2>
+      <label class="icon-field">Main login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required><span class="field-icon" data-icon="user"></span></label>
+      <button type="button" class="cmp-swap" id="swap-logins" title="Swap accounts" aria-label="Swap accounts" data-icon="swap"></button>
+      <label class="icon-field">Compared login <input name="other" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required><span class="field-icon" data-icon="user"></span></label>
+      <label class="icon-field">Date range
         <select name="range">
           <option value="">All time</option>
           <option value="week">Last week</option>
@@ -25,10 +27,11 @@
           <option value="year">Last year</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="calendar"></span>
       </label>
-      <label>From day (UTC) <input name="fromUtc" type="date"></label>
-      <label>To day (UTC) <input name="toUtc" type="date"></label>
-      <label>Proximity window
+      <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="icon-field">Proximity window
         <select name="windowPreset">
           <option value="60">1 minute</option>
           <option value="300" selected>5 minutes</option>
@@ -38,31 +41,36 @@
           <option value="86400">24 hours</option>
           <option value="custom">Custom</option>
         </select>
+        <span class="field-icon" data-icon="timer"></span>
       </label>
-      <label id="window-custom" hidden>Window (seconds) <input name="windowSeconds" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" max="604800" step="1"></label>
-      <label>Proximity match
+      <label class="icon-field" id="window-custom" hidden>Window (seconds) <input name="windowSeconds" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" max="604800" step="1"><span class="field-icon" data-icon="timer"></span></label>
+      <label class="icon-field">Proximity match
         <select name="match">
           <option value="Ip">Same IP</option>
           <option value="Subnet">Same network (/24, /64)</option>
           <option value="Asn">Same ASN</option>
         </select>
+        <span class="field-icon" data-icon="layers"></span>
       </label>
-      <button type="submit">Compare</button>
+      <button type="submit" data-icon="search">Compare</button>
     </form>
     <p class="message" id="message"></p>
-    <div class="related-pages" id="related-pages"></div>
 
     <section id="tabs-section" hidden>
-      <div class="tabs" id="tabs"></div>
-      <div id="overview-section" hidden>
-        <div class="section-head">
-          <h2>Overview</h2>
-          <div class="actions" id="overview-actions"></div>
+      <div class="cmp-accounts" id="accounts"></div>
+      <div class="tabs pills" id="tabs"></div>
+      <div class="cmp-overview" id="overview-section" hidden>
+        <div class="ad-card">
+          <h2 class="ad-card-title" data-icon="layers">Overview — Key Findings</h2>
+          <div class="signals" id="signals"></div>
+          <div id="overview"></div>
         </div>
-        <div class="signals" id="signals"></div>
-        <div id="overview"></div>
+        <div class="ad-card cmp-findings">
+          <h2 class="ad-card-title" data-icon="target">Key Findings</h2>
+          <ul id="findings"></ul>
+        </div>
       </div>
-      <div id="tab-panel"></div>
+      <div class="ad-card" id="tab-panel"></div>
     </section>
   </main>
   <script src="/errors.js"></script>

@@ -1633,10 +1633,10 @@ form.filters.vs-filters { display: block; padding: var(--space-14) var(--space-2
 }
 
 /* Copy trade & hedge */
-form.filters.ct-filters { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--space-12) var(--space-14); padding: var(--space-14) var(--space-20) var(--space-16); }
-.ct-filters > .vs-filter-title { grid-column: 1 / -1; margin: 0; }
-.ct-filters > button[type="submit"] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); height: var(--control-md); }
-.ct-filters > button[type="submit"] .icon svg, .ct-tree-filters > button[type="submit"] .icon svg { stroke: currentColor; }
+form.filters:is(.ct-filters, .cmp-setup) { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--space-12) var(--space-14); padding: var(--space-14) var(--space-20) var(--space-16); }
+:is(.ct-filters, .cmp-setup) > .vs-filter-title { grid-column: 1 / -1; margin: 0; }
+:is(.ct-filters, .cmp-setup) > button[type="submit"] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); height: var(--control-md); }
+:is(.ct-filters, .cmp-setup) > button[type="submit"] .icon svg, .ct-tree-filters > button[type="submit"] .icon svg { stroke: currentColor; }
 .ct-related:not(:empty) { flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--space-8) var(--space-16); padding: var(--space-10) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow); }
 .copy-trade .ad-card { margin-bottom: var(--space-16); }
 .copy-trade .ad-card .section-head button, .ct-head .actions :is(button, .action-link), .tree-actions button { display: inline-flex; align-items: center; gap: var(--space-6); }
@@ -1701,4 +1701,59 @@ form.filters.ct-tree-filters > label { flex-direction: row; align-items: center;
 @media (max-width: 760px) {
   .pt-lane { grid-template-columns: 80px minmax(0, 1fr); }
   .pt-offsets { grid-column: 2; }
+}
+
+/* Compare accounts */
+form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; }
+.cmp-setup > .vs-filter-title { flex: 1 0 100%; }
+.cmp-setup > label { flex: 1 1 125px; }
+.compare-page #tabs-section { padding: 0; background: none; border: 0; box-shadow: none; }
+.cmp-setup > button[type="submit"] { min-width: 140px; }
+.cmp-swap { display: grid; flex: none; place-items: center; width: 42px; height: var(--control-md); padding: 0; }
+.cmp-swap .icon svg { width: 18px; height: 18px; }
+.cmp-accounts { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-14); margin-bottom: var(--space-16); }
+.cmp-account { padding: var(--space-14) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow); }
+.cmp-account.compared { background: var(--panel-bg) padding-box, var(--edge) border-box; }
+.cmp-account-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12); padding-bottom: var(--space-12); margin-bottom: var(--space-12); border-bottom: 1px solid var(--border); }
+.cmp-avatar { display: grid; place-items: center; width: 44px; height: 44px; background: var(--side-active-bg) padding-box, var(--sidebar-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
+.cmp-avatar svg { width: 24px; height: 24px; }
+.cmp-account-head small { display: block; color: var(--primary); font-size: var(--font-size-sm); font-weight: 600; }
+.cmp-account.compared .cmp-account-head small { color: var(--entry-out); }
+.cmp-account-head strong { font-size: var(--font-size-xl, 20px); font-variant-numeric: tabular-nums; }
+.cmp-email { display: inline-flex; align-items: center; gap: var(--space-6); min-width: 0; margin-inline-start: var(--space-8); padding-inline-start: var(--space-14); color: var(--text-muted); border-inline-start: 1px solid var(--border); overflow-wrap: anywhere; }
+.cmp-account-head .row-menu { margin-inline-start: auto; }
+.cmp-account-figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-10); }
+.cmp-account-figures > div { display: flex; align-items: center; gap: var(--space-8); min-width: 0; }
+.cmp-account-figures .icon svg { width: 22px; height: 22px; }
+.cmp-account-figures small { display: block; color: var(--text-muted); font-size: var(--font-size-xs); }
+.cmp-account-figures strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cmp-vs { display: grid; place-items: center; width: 46px; height: 46px; color: var(--primary-text, #fff); background: var(--primary-gradient); border-radius: 50%; font-weight: 800; box-shadow: 0 0 18px var(--glow-soft); }
+.compare-page #tabs { display: inline-flex; margin-bottom: var(--space-16); }
+.compare-page #tabs button { display: inline-flex; align-items: center; gap: var(--space-8); }
+.compare-page #tabs .icon svg, .compare-page .ad-card .section-head button .icon svg { width: 16px; height: 16px; }
+.cmp-overview { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-16); align-items: start; }
+.cmp-overview .signals { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.cmp-overview .signal { display: flex; align-items: center; gap: var(--space-10); padding: var(--space-10) var(--space-12); text-align: start; }
+.cmp-overview .signal .icon svg { width: 22px; height: 22px; }
+.signal-text { display: flex; flex-direction: column; line-height: 1.25; }
+.cmp-overview .signal.hot .icon svg { stroke: var(--danger); }
+.cmp-overview td .icon svg { width: 16px; height: 16px; }
+.cmp-overview #overview td:first-child { text-align: start; }
+.cmp-overview .badge { display: inline-flex; align-items: center; gap: var(--space-4); }
+.cmp-overview .badge .icon svg { width: 13px; height: 13px; stroke: currentColor; }
+.cmp-findings ul { display: flex; flex-direction: column; gap: var(--space-10); margin: 0; padding: 0; list-style: none; }
+.cmp-findings li { display: flex; align-items: center; gap: var(--space-10); font-size: var(--font-size-sm); }
+.cmp-findings li .icon { display: grid; flex: none; place-items: center; width: 24px; height: 24px; border-radius: 50%; }
+.cmp-findings li .icon svg { width: 14px; height: 14px; stroke: #fff; }
+.cmp-findings li.ok .icon { background: var(--success); }
+.cmp-findings li.warn .icon { background: var(--warning); }
+.cmp-findings li.danger .icon { background: var(--danger); }
+.compare-page #tab-panel { margin-top: 0; }
+@media (max-width: 1200px) {
+  .cmp-overview { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .cmp-accounts { grid-template-columns: 1fr; justify-items: stretch; }
+  .cmp-vs { justify-self: center; }
+  .cmp-account-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

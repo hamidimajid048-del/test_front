@@ -84,6 +84,7 @@ const ICON_PATHS = {
   sort: '<path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/>',
   plusBox: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/>',
   minusBox: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12h7"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
   crown: '<path d="m3.5 8 4.5 4 4-6 4 6 4.5-4-2 11h-13z"/>',
   sheet: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9.5h16M4 15h16M10 4v16"/>',
   arrowUp: '<path d="M12 19V5M6 11l6-6 6 6"/>',

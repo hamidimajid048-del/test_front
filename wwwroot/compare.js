@@ -369,20 +369,39 @@ function controlElement(tab, control, state, onChange) {
   return label;
 }
 
+const TAB_ICONS = {
+  [OVERVIEW_TAB]: 'grid', 'shared-ips': 'mapPin', 'shared-cids': 'fingerprint', 'near-logins': 'users',
+  'overlapping-sessions': 'layers', timeline: 'list', 'shared-transactions': 'swap', 'usage-chart': 'bars',
+  'sessions-main': 'monitor', 'sessions-compared': 'monitor',
+};
+
 function renderTabs() {
   document.getElementById('tabs').replaceChildren(...[{ key: OVERVIEW_TAB, title: 'Overview' }, ...TABS].map(tab => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = tab.title;
-    button.classList.toggle('active', tab.key === activeTab);
+    button.dataset.tab = tab.key;
+    button.append(icon(TAB_ICONS[tab.key]), tab.title);
     button.addEventListener('click', () => selectTab(tab.key));
     return button;
   }));
+  markActiveTab();
 }
 
+function markActiveTab() {
+  for (const button of document.getElementById('tabs').children) button.classList.toggle('active', button.dataset.tab === activeTab);
+}
+
+// While a tab's content is replaced (and loads), the tab area keeps its height, so the page does not shrink and
+// pull the view up; it is released once the new content is drawn.
+const tabsSection = document.getElementById('tabs-section');
+const holdTabHeight = () => { tabsSection.style.minHeight = `${tabsSection.offsetHeight}px`; };
+const releaseTabHeight = () => { tabsSection.style.minHeight = ''; };
+
 function selectTab(key) {
+  if (key === activeTab) return;
+  holdTabHeight();
   activeTab = key;
-  renderTabs();
+  markActiveTab();
   showPanel();
   writeState();
 }
@@ -456,6 +475,7 @@ function showChart(tab) {
       chart.replaceChildren();
       return;
     }
+    releaseTabHeight();
     const shown = chartState.sharedOnly ? rows.filter(row => row.uses[0] && row.uses[1]) : rows;
     renderUsageTimeline(chart, shown, {
       kind: chartState.kind,
@@ -477,6 +497,7 @@ function showChart(tab) {
       chartState.rows[kind] = rows;
       if (activeTab === tab.key && chartState.kind === kind) draw();
     });
+    if (activeTab === tab.key) releaseTabHeight();
   };
 
   for (const [kind, text] of [['cid', 'CID'], ['ip', 'IP']]) {
@@ -507,6 +528,7 @@ function showPanel() {
   document.getElementById('overview-section').hidden = tab !== undefined;
   document.getElementById('tab-panel').hidden = tab === undefined;
   if (!tab) {
+    releaseTabHeight();
     writeState();
     return;
   }
@@ -601,6 +623,7 @@ async function load(tab, state, toolbar, tabMessage, parts) {
     state.pageSize = paging?.pageSize ?? state.pageSize;
     if (activeTab === tab.key) render(tab, state, toolbar, tabMessage, parts);
   });
+  if (activeTab === tab.key) releaseTabHeight();
 }
 
 // Header-click sorting of a tab: the report's sort item and direction live in the tab's toolbar controls. A tab
@@ -636,6 +659,7 @@ function tabFilter(tab, state, toolbar, tabMessage, parts) {
 }
 
 function render(tab, state, toolbar, tabMessage, parts) {
+  releaseTabHeight();
   const report = state.report;
   const paging = pagingOf(report.paging);
 
@@ -669,8 +693,6 @@ function render(tab, state, toolbar, tabMessage, parts) {
 
 // ---- overview ----
 
-const profileLink = login => actionLink('Profile', `/logins.html?login=${encodeURIComponent(login)}`);
-
 function tradeLink(kind, label) {
   const query = new URLSearchParams({
     kind, login: context.login, secondsBefore: '5', secondsAfter: '5', minCountShare: '1',
@@ -687,78 +709,141 @@ function tradeLink(kind, label) {
   return actionLink(label, `/copy-trade.html?${query}`);
 }
 
-function swapLink() {
-  const query = new URLSearchParams(location.search);
-  query.set('login', context.other);
-  query.set('other', context.login);
-  query.set('tab', activeTab);
-  query.delete('currentPage');
-  query.delete('pageSize');
-  return actionLink('Swap accounts', `/compare.html?${query}`, false);
-}
-
 function renderSignals(shared) {
   const signals = [
-    [shared.ipCount, 'shared IPs', 'shared-ips'],
-    [shared.cidCount, 'shared CIDs', 'shared-cids'],
-    [shared.coOccurrenceDays, 'shared active days', 'timeline'],
-    [shared.nearLoginPairCount, 'near logins', 'near-logins'],
-    [shared.overlappingSessionCount, 'overlapping sessions', 'overlapping-sessions'],
+    [shared.ipCount, 'Shared IPs', 'shared-ips', 'mapPin'],
+    [shared.cidCount, 'Shared CIDs', 'shared-cids', 'fingerprint'],
+    [shared.coOccurrenceDays, 'Shared active days', 'timeline', 'calendar'],
+    [shared.nearLoginPairCount, 'Near logins', 'near-logins', 'users'],
+    [shared.overlappingSessionCount, 'Overlapping sessions', 'overlapping-sessions', 'layers'],
   ];
-  document.getElementById('signals').replaceChildren(...signals.map(([count, text, tab]) => {
+  document.getElementById('signals').replaceChildren(...signals.map(([count, text, tab, iconName]) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = count > 0 ? 'signal hot' : 'signal';
     const number = document.createElement('strong');
     number.textContent = count;
-    button.append(number, ` ${text}`);
+    const caption = document.createElement('span');
+    caption.textContent = text;
+    const words = document.createElement('span');
+    words.className = 'signal-text';
+    words.append(number, caption);
+    button.append(icon(iconName), words);
     button.addEventListener('click', () => selectTab(tab));
     return button;
   }));
 }
 
+// One side of the comparison: its login and email, its "⋯" menu of the pages that take it, and its main figures.
+function accountCard(account, side, other) {
+  const card = document.createElement('div');
+  card.className = `cmp-account ${side}`;
+  const head = document.createElement('div');
+  head.className = 'cmp-account-head';
+  const avatar = icon('user', 'icon cmp-avatar');
+  const name = document.createElement('div');
+  const caption = document.createElement('small');
+  caption.textContent = side === 'main' ? 'Main Account' : 'Compared Account';
+  const login = document.createElement('strong');
+  login.textContent = account.login;
+  name.append(caption, login);
+  const email = document.createElement('span');
+  email.className = 'cmp-email';
+  email.append(icon('mail'), account.email || '—');
+  const pairLinks = side === 'main'
+    ? [tradeLink('copy-trade', 'Copy trade of this pair'), tradeLink('hedge', 'Hedge of this pair')]
+    : [];
+  const menu = relatedLoginActions(account.login, pairLinks, {
+    subject: () => ({ login: other.login, email: other.email, fromUtc: context.fromDay, toUtc: context.toDay }),
+    emailOf: () => account.email,
+  });
+  head.append(avatar, name, email, menu);
+
+  const figures = document.createElement('div');
+  figures.className = 'cmp-account-figures';
+  for (const [label, value, iconName] of [
+    ['Sessions', account.sessionCount, 'layers'],
+    ['Active days', account.activeDays, 'calendar'],
+    ['Platforms', account.platforms?.length ?? 0, 'monitor'],
+    ['Countries', topList(account.countries, 1), 'globe'],
+  ]) {
+    const figure = document.createElement('div');
+    const text = document.createElement('div');
+    const small = document.createElement('small');
+    small.textContent = label;
+    const strong = document.createElement('strong');
+    strong.textContent = value ?? '—';
+    text.append(small, strong);
+    figure.append(icon(iconName), text);
+    figures.append(figure);
+  }
+  card.append(head, figures);
+  return card;
+}
+
+function renderAccounts(main, other) {
+  const versus = document.createElement('span');
+  versus.className = 'cmp-vs';
+  versus.textContent = 'VS';
+  document.getElementById('accounts').replaceChildren(accountCard(main, 'main', other), versus, accountCard(other, 'compared', main));
+}
+
+// A result with its verdict: a check when nothing is shared, a warning sign when something is.
+function resultBadge(text, tone) {
+  if (!text) return '—';
+  if (!tone) return text;
+  const element = badge(text, tone);
+  element.prepend(icon(tone === 'ok' ? 'check' : 'alert'));
+  return element;
+}
+
+const toneOf = (count, shared = 'danger') => (count > 0 ? shared : 'ok');
+
 function renderOverview(report) {
   const [main, other] = report.accounts;
   const { shared } = report;
 
-  const actions = document.getElementById('overview-actions');
-  actions.replaceChildren(
-    inline(`Main ${main.login}`, profileLink(main.login)),
-    inline(`Compared ${other.login}`, profileLink(other.login)),
-    tradeLink('copy-trade', 'Copy trade'),
-    tradeLink('hedge', 'Hedge'),
-    swapLink());
-
+  renderAccounts(main, other);
   renderSignals(shared);
 
+  const sameEmail = main.email && other.email && main.email.toLowerCase() === other.email.toLowerCase();
   const both = shared.activityOverlapStartUtc
     ? `Both active ${formatUtc(shared.activityOverlapStartUtc)} to ${formatUtc(shared.activityOverlapEndUtc)}`
     : 'The accounts were never active in the same period';
   const rows = [
-    { metric: 'Email', main: main.email || '—', other: other.email || '—', shared: main.email && other.email ? (main.email.toLowerCase() === other.email.toLowerCase() ? 'Same email' : 'Different emails') : '' },
-    { metric: 'Sessions', main: main.sessionCount, other: other.sessionCount, shared: '' },
-    { metric: 'First login (UTC)', main: formatUtc(main.firstLoginAt) || '—', other: formatUtc(other.firstLoginAt) || '—', shared: both },
-    { metric: 'Last login (UTC)', main: formatUtc(main.lastLoginAt) || '—', other: formatUtc(other.lastLoginAt) || '—', shared: '' },
-    { metric: 'Active days', main: main.activeDays, other: other.activeDays, shared: `${shared.coOccurrenceDays} days with both active` },
-    { metric: 'Distinct IPs', main: main.distinctIpCount, other: other.distinctIpCount, shared: `${shared.ipCount} shared` },
-    { metric: 'Distinct CIDs', main: main.distinctCidCount, other: other.distinctCidCount, shared: `${shared.cidCount} shared` },
-    { metric: 'Platforms', main: topList(main.platforms), other: topList(other.platforms), shared: shared.platforms.join(', ') || '—' },
-    { metric: 'Countries', main: topList(main.countries), other: topList(other.countries), shared: shared.countries.join(', ') || '—' },
-    { metric: 'Sessions without logout', main: main.sessionsWithoutLogout, other: other.sessionsWithoutLogout, shared: '' },
+    { icon: 'mail', metric: 'Email', main: main.email || '—', other: other.email || '—', shared: main.email && other.email ? (sameEmail ? 'Same email' : 'Different emails') : '', tone: main.email && other.email ? (sameEmail ? 'danger' : 'ok') : null },
+    { icon: 'layers', metric: 'Sessions', main: main.sessionCount, other: other.sessionCount, shared: '' },
+    { icon: 'calendar', metric: 'First login (UTC)', main: formatUtc(main.firstLoginAt) || '—', other: formatUtc(other.firstLoginAt) || '—', shared: both, tone: shared.activityOverlapStartUtc ? 'warn' : 'ok' },
+    { icon: 'calendar', metric: 'Last login (UTC)', main: formatUtc(main.lastLoginAt) || '—', other: formatUtc(other.lastLoginAt) || '—', shared: '' },
+    { icon: 'activity', metric: 'Active days', main: main.activeDays, other: other.activeDays, shared: `${shared.coOccurrenceDays} days with both active`, tone: toneOf(shared.coOccurrenceDays, 'warn') },
+    { icon: 'mapPin', metric: 'Distinct IPs', main: main.distinctIpCount, other: other.distinctIpCount, shared: `${shared.ipCount} shared`, finding: `${shared.ipCount} shared IPs`, tone: toneOf(shared.ipCount) },
+    { icon: 'fingerprint', metric: 'Distinct CIDs', main: main.distinctCidCount, other: other.distinctCidCount, shared: `${shared.cidCount} shared`, finding: `${shared.cidCount} shared CIDs`, tone: toneOf(shared.cidCount) },
+    { icon: 'monitor', metric: 'Platforms', main: topList(main.platforms), other: topList(other.platforms), shared: shared.platforms.join(', ') || '—' },
+    { icon: 'globe', metric: 'Countries', main: topList(main.countries), other: topList(other.countries), shared: shared.countries.join(', ') || '—' },
+    { icon: 'logout', metric: 'Sessions without logout', main: main.sessionsWithoutLogout, other: other.sessionsWithoutLogout, shared: '' },
     {
+      icon: 'users',
       metric: 'Near logins',
       main: '',
       other: '',
       shared: `${shared.nearLoginPairCount} pairs within ${formatSpan(report.metadata.windowSeconds, true)} (${MATCH_PHRASES[report.metadata.matchLevel]})`,
+      tone: toneOf(shared.nearLoginPairCount),
     },
-    { metric: 'Overlapping sessions', main: '', other: '', shared: String(shared.overlappingSessionCount) },
+    { icon: 'history', metric: 'Overlapping sessions', main: '', other: '', shared: `${shared.overlappingSessionCount} overlapping`, finding: `${shared.overlappingSessionCount} overlapping sessions`, tone: toneOf(shared.overlappingSessionCount, 'warn') },
   ];
   renderTable(document.getElementById('overview'), [
-    { key: 'metric', title: 'Metric' },
+    { key: 'metric', title: 'Metric', format: (metric, row) => inline(icon(row.icon), metric) },
     { key: 'main', title: `Main · ${main.login}` },
     { key: 'other', title: `Compared · ${other.login}` },
-    { key: 'shared', title: 'Shared' },
+    { key: 'shared', title: 'Result', format: (text, row) => resultBadge(text, row.tone) },
   ], rows, undefined, { tools: false });
+
+  document.getElementById('findings').replaceChildren(...rows.filter(row => row.tone).map(row => {
+    const item = document.createElement('li');
+    item.className = row.tone;
+    item.append(icon(row.tone === 'ok' ? 'check' : 'alert'), row.finding ?? row.shared);
+    return item;
+  }));
 }
 
 // ---- form ----
@@ -825,7 +910,6 @@ async function run(page, pageSize) {
       matchLevel: context.match,
     });
     renderOverview(overview);
-    showRelatedPages({ login: context.login }, { login: context.other });
     document.getElementById('tabs-section').hidden = false;
     renderTabs();
     showPanel();
@@ -833,6 +917,11 @@ async function run(page, pageSize) {
 }
 
 form.elements.windowPreset.addEventListener('change', syncWindowField);
+document.getElementById('swap-logins').addEventListener('click', () => {
+  const { login, other } = form.elements;
+  [login.value, other.value] = [other.value, login.value];
+  if (login.value && other.value) form.requestSubmit();
+});
 form.addEventListener('submit', event => {
   event.preventDefault();
   run(1, DEFAULT_PAGE_SIZE);
