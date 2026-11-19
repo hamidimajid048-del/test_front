@@ -1,11 +1,20 @@
-// Icons for the device type of a session: web (a globe), mobile (a phone: Android or iOS) and system (a desktop client),
-// and expert (a robot) for trades an expert advisor made.
+// Icons for the device type of a session: web (a globe), Android (the Android head), iOS (an apple), mobile (a phone,
+// when the operating system is not known), system (a desktop client), and expert (a robot) for trades an expert
+// advisor made.
 // The icon is drawn beside the text and carries no text of its own, so sorting, filtering and exports use the text only.
 
 const PLATFORM_KINDS = {
   web: {
     label: 'Web',
     paths: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z"/>',
+  },
+  android: {
+    label: 'Android',
+    paths: '<path d="M4.5 18v-2.5a7.5 7.5 0 0 1 15 0V18z"/><path d="M7.5 9.5 5.5 6.5M16.5 9.5l2-3"/><path d="M9.2 14h.01M14.8 14h.01"/>',
+  },
+  ios: {
+    label: 'iOS',
+    paths: '<path d="M12 7.6c-1.2-.9-2.4-1.3-3.6-1.1C6.1 6.9 4.6 9 4.8 12.2c.3 4.2 2.9 8.6 5.1 8.3.9-.1 1.4-.6 2.1-.6s1.2.5 2.1.6c1.6.2 3.4-2.1 4.5-5-1.6-.7-2.6-2.1-2.6-3.8 0-1.6.9-2.9 2.2-3.6-.9-1.1-2.1-1.7-3.5-1.7-1.1 0-1.9.5-2.7 1.2z"/><path d="M12 7.6c-.2-1.9.8-3.7 2.7-4.4"/>',
   },
   mobile: {
     label: 'Mobile',
@@ -24,7 +33,9 @@ const PLATFORM_KINDS = {
 function platformKind(platform) {
   const text = String(platform ?? '').toLowerCase();
   if (!text.trim() || text.trim() === 'unknown') return null;
-  if (/android|\bios\b|iphone|ipad|mobile/.test(text)) return 'mobile';
+  if (/android/.test(text)) return 'android';
+  if (/\bios\b|iphone|ipad/.test(text)) return 'ios';
+  if (/mobile/.test(text)) return 'mobile';
   if (/web/.test(text)) return 'web';
   return 'system';
 }

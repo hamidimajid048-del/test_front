@@ -68,6 +68,8 @@
   --brand-accent: #7c5cff;
   --platform-web: #2f7de1;
   --platform-mobile: #1f9d6b;
+  --platform-android: #2e9e5b;
+  --platform-ios: #3a4766;
   --platform-system: #7a5af8;
   --platform-expert: #d9770b;
   --entry-in: #0d9488;
@@ -144,6 +146,8 @@
   --brand-accent: #9b86ff;
   --platform-web: #6aa8f7;
   --platform-mobile: #3ccf8e;
+  --platform-android: #3ddc84;
+  --platform-ios: #d7deee;
   --platform-system: #a592ff;
   --platform-expert: #f5a547;
   --entry-in: #2dd4bf;
@@ -1400,6 +1404,8 @@ img.ip-flag { width: 18px; height: 13.5px; margin-inline-end: var(--space-6); ve
 .platform-icon { flex: none; color: var(--text-muted); }
 .platform-icon.web { color: var(--platform-web); }
 .platform-icon.mobile { color: var(--platform-mobile); }
+.platform-icon.android { color: var(--platform-android); }
+.platform-icon.ios { color: var(--platform-ios); }
 .platform-icon.system { color: var(--platform-system); }
 .platform-icon.expert { color: var(--platform-expert); }
 .side-cell { display: inline-flex; align-items: center; gap: var(--space-4); white-space: nowrap; }
