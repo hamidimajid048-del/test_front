@@ -11,15 +11,20 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
+  <main class="value-search">
+    <form class="filters vs-filters" id="filters">
+      <h2 class="vs-filter-title" data-icon="filter">Search filter</h2>
+      <div class="vs-fields">
+      <div class="vs-group">
       <label>Search by
         <select name="type" required>
           <option value="Cid">CID</option>
           <option value="Ip">IP</option>
         </select>
       </label>
-      <label>Value <input name="value" required maxlength="200"></label>
+      <label class="vs-value">Value <input name="value" required maxlength="200"></label>
+      </div>
+      <div class="vs-group">
       <label>Date range
         <select name="range">
           <option value="">All time</option>
@@ -32,8 +37,10 @@
           <option value="custom">Custom</option>
         </select>
       </label>
-      <label>From day (UTC) <input name="fromUtc" type="date"></label>
-      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      </div>
+      <div class="vs-group">
       <label>Sort by
         <select name="sortItem">
           <option value="LoginCount">Logins</option>
@@ -52,20 +59,22 @@
           <option value="Asc">Ascending</option>
         </select>
       </label>
-      <button type="submit">Search</button>
+      </div>
+      <button type="submit" data-icon="search">Search</button>
+      </div>
     </form>
     <p class="message" id="message"></p>
 
-    <div class="tabs" id="tabs">
+    <div class="tabs pills" id="tabs">
       <button type="button" data-tab="summary" class="active">Summary</button>
       <button type="button" data-tab="details">Details</button>
     </div>
 
-    <section data-panel="summary">
+    <section class="ad-card" data-panel="summary">
       <div class="section-head">
-        <h2>Summary</h2>
-        <button type="button" data-export="summary" data-format="Csv">CSV</button>
-        <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
+        <h2 class="ad-card-title" data-icon="users">Summary</h2>
+        <button type="button" data-export="summary" data-format="Csv" data-icon="download">CSV</button>
+        <button type="button" data-export="summary" data-format="Xlsx" data-icon="sheet">Excel</button>
       </div>
       <p class="message" id="summary-export-message"></p>
       <div class="summary" id="summary-metadata"></div>
@@ -78,12 +87,12 @@
       </ul>
     </section>
 
-    <section data-panel="details" hidden>
+    <section class="ad-card" data-panel="details" hidden>
       <div class="section-head">
-        <h2 id="details-title">Sessions</h2>
-        <button type="button" id="view-all-sessions">All sessions</button>
-        <button type="button" data-export="details" data-format="Csv">CSV</button>
-        <button type="button" data-export="details" data-format="Xlsx">Excel</button>
+        <h2 class="ad-card-title" data-icon="layers"><span id="details-title">Sessions</span></h2>
+        <button type="button" id="view-all-sessions" data-icon="filter">All sessions</button>
+        <button type="button" data-export="details" data-format="Csv" data-icon="download">CSV</button>
+        <button type="button" data-export="details" data-format="Xlsx" data-icon="sheet">Excel</button>
       </div>
       <p class="message" id="details-export-message"></p>
       <p class="message" id="details-message"></p>

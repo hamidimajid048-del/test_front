@@ -1588,6 +1588,8 @@ form.filters.sim-filters { display: flex; align-items: center; gap: var(--space-
 .sim-filters > button[type="submit"] .icon svg { stroke: currentColor; }
 form.filters label.date-field { position: relative; }
 .date-field input { padding-inline-start: 40px; }
+.date-field input::-webkit-calendar-picker-indicator { display: none; }
+.date-field input:not(:disabled) { cursor: pointer; }
 .date-field .field-icon { position: absolute; inset-inline-start: 12px; bottom: calc(var(--control-md) / 2 - 9px); display: flex; pointer-events: none; }
 .date-field .field-icon svg { width: 18px; height: 18px; }
 .sim-range { margin: 0 0 var(--space-14); padding: var(--space-10) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); }
@@ -1603,4 +1605,33 @@ form.filters label.date-field { position: relative; }
 @media (max-width: 860px) {
   form.filters.sim-filters { flex-direction: column; align-items: stretch; }
   .sim-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border: 0; }
+}
+
+/* Columns and Views menus of every table carry their icons. */
+.column-picker > summary { display: inline-flex; align-items: center; gap: var(--space-6); }
+.column-picker > summary::before { content: ""; width: 16px; height: 16px; background: var(--primary); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='4' width='6.5' height='6.5' rx='1'/%3E%3Crect x='13.5' y='4' width='6.5' height='6.5' rx='1'/%3E%3Crect x='4' y='13.5' width='6.5' height='6.5' rx='1'/%3E%3Crect x='13.5' y='13.5' width='6.5' height='6.5' rx='1'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='4' width='6.5' height='6.5' rx='1'/%3E%3Crect x='13.5' y='4' width='6.5' height='6.5' rx='1'/%3E%3Crect x='4' y='13.5' width='6.5' height='6.5' rx='1'/%3E%3Crect x='13.5' y='13.5' width='6.5' height='6.5' rx='1'/%3E%3C/svg%3E") center / contain no-repeat; }
+.column-picker.views-picker > summary::before { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat; }
+
+/* CID / IP search */
+form.filters.vs-filters { display: block; padding: var(--space-14) var(--space-20) var(--space-16); }
+.vs-filter-title { display: flex; align-items: center; gap: var(--space-10); margin: 0 0 var(--space-10); font-size: var(--font-size-lg); font-weight: 700; color: var(--text); }
+.vs-filter-title .icon svg { width: 24px; height: 24px; }
+.vs-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-14); }
+.vs-group { display: flex; flex: 2 1 300px; align-items: flex-end; gap: var(--space-12); }
+.vs-group:nth-child(2) { flex: 3 1 380px; }
+.vs-group:nth-child(3) { flex: 2 1 240px; }
+.vs-group + .vs-group { padding-inline-start: var(--space-14); border-inline-start: 1px solid var(--border); }
+.vs-group > label { flex: 1 1 0; min-width: 115px; }
+.vs-group > label:first-child { min-width: 90px; }
+.vs-group > label.date-field { min-width: 120px; }
+.vs-group > label.vs-value { flex-grow: 1.6; min-width: 170px; }
+.vs-fields > button[type="submit"] { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: var(--space-8); min-width: 120px; height: var(--control-md); }
+.vs-fields > button[type="submit"] .icon svg { stroke: currentColor; }
+.value-search .ad-card .section-head button { display: inline-flex; align-items: center; gap: var(--space-8); }
+.value-search .ad-card .section-head button .icon svg { width: 16px; height: 16px; }
+.value-search .tabs.pills { display: inline-flex; border-bottom: 0; }
+@media (max-width: 860px) {
+  .vs-group, .vs-group:nth-child(n) { flex: 1 1 100%; flex-wrap: wrap; }
+  .vs-group + .vs-group { padding: 0; border: 0; }
+  .vs-group > label { flex-basis: 140px; }
 }
