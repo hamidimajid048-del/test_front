@@ -11,8 +11,10 @@
 </head>
 <body>
   <nav class="menu" id="menu"></nav>
-  <main>
-    <form class="filters" id="filters">
+  <main class="similarity">
+    <form class="filters sim-filters" id="filters">
+      <span class="sim-filter-badge" data-icon="filter">Filter</span>
+      <div class="sim-fields">
       <label>Login <input name="login" type="text" inputmode="numeric" data-numeric="integer" autocomplete="off" min="1" step="1" required></label>
       <label>Type
         <select name="type">
@@ -31,8 +33,8 @@
           <option value="custom">Custom</option>
         </select>
       </label>
-      <label>From day (UTC) <input name="fromUtc" type="date"></label>
-      <label>To day (UTC) <input name="toUtc" type="date"></label>
+      <label class="date-field">From day (UTC) <input name="fromUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To day (UTC) <input name="toUtc" type="date"><span class="field-icon" data-icon="calendar"></span></label>
       <div class="device-type-field">
         <span>Device type</span>
         <input type="hidden" name="deviceType">
@@ -44,7 +46,6 @@
         <select name="sortItem">
           <option value="RelatedLoginCount">Shared sign-ins</option>
           <option value="RelatedLogin">Related login</option>
-          <option value="Type">Type</option>
           <option value="Name">Name</option>
           <option value="Group">Group</option>
           <option value="Email">Email</option>
@@ -57,20 +58,21 @@
           <option value="Asc">Ascending</option>
         </select>
       </label>
-      <button type="submit">Search</button>
+      </div>
+      <button type="submit" data-icon="search">Search</button>
     </form>
-    <p class="hint" id="account-range"></p>
+    <p class="hint sim-range" id="account-range"></p>
     <p class="message" id="message"></p>
     <div class="related-pages" id="related-pages"></div>
 
     <div class="tabs" id="tabs" hidden></div>
 
-    <section id="summary-section" hidden>
+    <section class="ad-card" id="summary-section" hidden>
       <div class="section-head">
-        <h2>Summary</h2>
-        <button type="button" id="different-email" aria-pressed="true" disabled>Different email only</button>
-        <button type="button" data-export="summary" data-format="Csv">CSV</button>
-        <button type="button" data-export="summary" data-format="Xlsx">Excel</button>
+        <h2 class="ad-card-title" data-icon="layers">Summary</h2>
+        <button type="button" id="different-email" aria-pressed="true" disabled data-icon="filter">Different email only</button>
+        <button type="button" data-export="summary" data-format="Csv" data-icon="download">CSV</button>
+        <button type="button" data-export="summary" data-format="Xlsx" data-icon="sheet">Excel</button>
       </div>
       <p class="message" id="summary-export-message"></p>
       <div class="summary" id="summary-metadata"></div>
@@ -86,11 +88,11 @@
     </section>
 
   <template id="details-template">
-    <section class="details-tab" hidden>
+    <section class="details-tab ad-card" hidden>
       <div class="section-head">
-        <h2 class="details-title">Details</h2>
-        <button type="button" data-export="details" data-format="Csv">CSV</button>
-        <button type="button" data-export="details" data-format="Xlsx">Excel</button>
+        <h2 class="ad-card-title" data-icon="list"><span class="details-title">Details</span></h2>
+        <button type="button" data-export="details" data-format="Csv" data-icon="download">CSV</button>
+        <button type="button" data-export="details" data-format="Xlsx" data-icon="sheet">Excel</button>
       </div>
       <p class="message details-export-message"></p>
       <form class="filters details-filters">

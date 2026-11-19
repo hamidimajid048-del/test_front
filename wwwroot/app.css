@@ -1571,3 +1571,36 @@ html.i18n-loading body { visibility: hidden; }
 #cid-overview h3 { margin: 0 0 var(--space-8); }
 .cid-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: var(--space-4) var(--space-16); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .cid-overview > div { unicode-bidi: plaintext; }
+
+/* A sortable header with a "?" keeps the mark on the title's line. */
+th.sortable:has(> .col-help) { padding-inline-end: var(--space-8); }
+th.sortable:has(> .col-help) .sort-button { display: inline-flex; width: auto; vertical-align: middle; }
+th.sortable:has(> .col-help) .col-help { margin-inline-start: 0; }
+
+/* IP/CID similarity */
+form.filters.sim-filters { display: flex; align-items: center; gap: var(--space-20); padding: var(--space-16) var(--space-20); }
+.sim-filter-badge { display: flex; align-items: center; gap: var(--space-10); flex: none; color: var(--text); font-weight: 600; }
+.sim-filter-badge .icon { display: grid; place-items: center; width: 40px; height: 40px; background: var(--side-active-bg) padding-box, var(--sidebar-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
+.sim-filter-badge .icon svg { width: 22px; height: 22px; }
+.sim-fields { display: grid; flex: 1; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-12) var(--space-16); align-items: end; padding-inline-end: var(--space-20); border-inline-end: 1px solid var(--border); }
+.sim-fields .device-type-button { width: 100%; max-width: none; }
+.sim-filters > button[type="submit"] { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: var(--space-8); min-width: 170px; height: var(--control-lg); }
+.sim-filters > button[type="submit"] .icon svg { stroke: currentColor; }
+form.filters label.date-field { position: relative; }
+.date-field input { padding-inline-start: 40px; }
+.date-field .field-icon { position: absolute; inset-inline-start: 12px; bottom: calc(var(--control-md) / 2 - 9px); display: flex; pointer-events: none; }
+.date-field .field-icon svg { width: 18px; height: 18px; }
+.sim-range { margin: 0 0 var(--space-14); padding: var(--space-10) var(--space-16); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-xl); }
+.sim-range .icon svg { width: 18px; height: 18px; }
+.sim-range button { display: inline-flex; align-items: center; gap: var(--space-6); margin-inline-start: var(--space-12); }
+.similarity .ad-card .section-head button { display: inline-flex; align-items: center; gap: var(--space-8); }
+.similarity .ad-card .section-head button .icon svg { width: 16px; height: 16px; }
+.similarity .summary > span { display: inline-flex; align-items: center; gap: var(--space-6); }
+.similarity .summary .icon svg { width: 16px; height: 16px; }
+@media (max-width: 1280px) {
+  .sim-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  form.filters.sim-filters { flex-direction: column; align-items: stretch; }
+  .sim-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border: 0; }
+}

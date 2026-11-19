@@ -59,7 +59,7 @@ async function showAccountRange() {
     if (login !== accountRangeLogin) return;
     const useRange = document.createElement('button');
     useRange.type = 'button';
-    useRange.textContent = 'Use this range';
+    useRange.append(icon('calendar'), 'Use this range');
     useRange.addEventListener('click', () => {
       form.elements.range.value = 'custom';
       rangeControls.sync();
@@ -67,7 +67,7 @@ async function showAccountRange() {
     });
     const range = document.createElement('span');
     range.textContent = `${toDayValue(new Date(metadata.firstDataTime))} — ${toDayValue(new Date(metadata.lastDataTime))}`;
-    hint.replaceChildren(`Data range of account ${login} (UTC): `, range, useRange);
+    hint.replaceChildren(icon('calendar'), `Data range of account ${login} (UTC): `, range, useRange);
   } catch (error) {
     if (login !== accountRangeLogin) return;
     hint.textContent = `Account data range: ${error.message || UNAVAILABLE_MESSAGE}`;
@@ -111,7 +111,9 @@ function renderMetadata(metadata) {
   const range = metadata.fromUtc
     ? `${toDayValue(new Date(metadata.fromUtc))} — ${toDayValue(new Date(metadata.toUtc))}`
     : 'All time';
-  renderSummary(document.getElementById('summary-metadata'), [['Login', metadata.login], ['Range (UTC)', range]]);
+  const container = document.getElementById('summary-metadata');
+  renderSummary(container, [['Login', metadata.login], ['Range (UTC)', range]]);
+  container.lastElementChild.prepend(icon('calendar'));
 }
 
 // The searched login with its email and day range: the row menus pass it to the compare pages as the main side.
@@ -138,7 +140,6 @@ function renderDifferentEmail(metadata) {
 
 const SUMMARY_COLUMNS = [
   { key: 'relatedLogin', title: 'Related login', sortKey: 'RelatedLogin' },
-  { key: 'type', title: 'Type', format: type => TYPE_LABELS[type] ?? type, sortKey: 'Type' },
   { key: 'relatedLoginCount', title: 'Shared sign-ins', sortKey: 'RelatedLoginCount', help: SHARED_SIGNINS_HELP },
   ...accountColumns(['name', 'group', 'balance']),
   loginActionsColumn('relatedLogin', row => [menuAction('Shared values', () => openDetails(row))], { subject, emailOf: row => row.email }),
@@ -251,6 +252,7 @@ function closeAllDetails() {
 function addDetailsTab(relatedLogin, type) {
   const key = `${type}:${relatedLogin}`;
   const section = detailsTemplate.content.firstElementChild.cloneNode(true);
+  applyIcons(section);
   const part = name => section.querySelector(`.details-${name}`);
   const detailsForm = part('filters');
   const detailsMessage = part('message');
