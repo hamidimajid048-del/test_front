@@ -671,13 +671,25 @@ function saveClosedSidebarGroups(keys) {
   }
 }
 
+function sidebarLabel(text) {
+  const label = document.createElement('span');
+  label.className = 'side-label';
+  label.textContent = text;
+  return label;
+}
+
+function isSidebarCollapsed() {
+  return !NARROW_SCREEN.matches && document.body.classList.contains('sidebar-collapsed');
+}
+
 // The pages are in a sidebar of folding groups (the folded ones are remembered on this device); the top bar keeps the
-// service status, theme, language and the account menu. The menu button hides or shows the sidebar (remembered on this
-// device); on a narrow screen the sidebar is hidden and slides in over the page from the menu button.
+// service status, theme, language and the account menu. The menu button collapses the sidebar to its icons (remembered
+// on this device), where a group icon opens its pages beside it; on a narrow screen the sidebar is hidden and slides in
+// over the page from the menu button.
 function renderMenu() {
   const nav = document.getElementById('menu');
   document.body.classList.add('has-sidebar');
-  document.body.classList.toggle('sidebar-hidden', readStorage(SIDEBAR_HIDDEN_KEY) === '1');
+  document.body.classList.toggle('sidebar-collapsed', readStorage(SIDEBAR_HIDDEN_KEY) === '1');
 
   const brand = document.createElement('a');
   brand.className = 'brand';
@@ -686,7 +698,15 @@ function renderMenu() {
   mark.className = 'brand-mark';
   ensureIconGradient();
   mark.innerHTML = BRAND_ICON;
-  brand.append(mark, 'Violation Panel');
+  brand.append(mark, sidebarLabel('Violation Panel'));
+
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'sidebar';
+  sidebar.id = 'sidebar';
+  const closeFlyouts = () => sidebar.querySelectorAll('.side-group.flyout').forEach(group => group.classList.remove('flyout'));
+  document.addEventListener('pointerdown', event => {
+    if (!event.target.closest?.('.side-group.flyout')) closeFlyouts();
+  });
 
   const closed = closedSidebarGroups();
   const groups = MENU_GROUPS.map(group => {
@@ -701,9 +721,12 @@ function renderMenu() {
     button.type = 'button';
     button.className = 'side-group-button';
     button.setAttribute('aria-expanded', String(element.classList.contains('open')));
-    button.append(icon(group.icon), group.title);
+    button.append(icon(group.icon), sidebarLabel(group.title));
     const list = document.createElement('div');
     list.className = 'side-items';
+    const flyoutTitle = document.createElement('span');
+    flyoutTitle.className = 'side-flyout-title';
+    flyoutTitle.textContent = group.title;
     const links = items.map(item => {
       const link = document.createElement('a');
       link.className = 'side-item';
@@ -717,8 +740,27 @@ function renderMenu() {
       }
       return link;
     });
-    list.append(...links);
+    list.append(flyoutTitle, ...links);
+    const placeFlyout = () => {
+      if (!isSidebarCollapsed()) return;
+      const rect = button.getBoundingClientRect();
+      const edge = sidebar.getBoundingClientRect();
+      const start = document.dir === 'rtl' ? window.innerWidth - edge.left : edge.right;
+      list.style.setProperty('--flyout-start', `${start}px`);
+      list.style.setProperty('--flyout-top', `${rect.top}px`);
+      const overflow = list.getBoundingClientRect().bottom - (window.innerHeight - 8);
+      if (overflow > 0) list.style.setProperty('--flyout-top', `${Math.max(8, rect.top - overflow)}px`);
+    };
+    element.addEventListener('pointerenter', placeFlyout);
+    element.addEventListener('focusin', placeFlyout);
     button.addEventListener('click', () => {
+      if (isSidebarCollapsed()) {
+        const show = !element.classList.contains('flyout');
+        closeFlyouts();
+        element.classList.toggle('flyout', show);
+        placeFlyout();
+        return;
+      }
       const open = element.classList.toggle('open');
       button.setAttribute('aria-expanded', String(open));
       if (open) closed.delete(group.key);
@@ -732,9 +774,6 @@ function renderMenu() {
   const pages = document.createElement('div');
   pages.className = 'side-pages';
   pages.append(...groups.map(group => group.element));
-  const sidebar = document.createElement('aside');
-  sidebar.className = 'sidebar';
-  sidebar.id = 'sidebar';
   sidebar.append(brand, pages);
   const shade = document.createElement('div');
   shade.className = 'sidebar-shade';
@@ -796,7 +835,7 @@ function renderMenu() {
   toggle.innerHTML = NAV_TOGGLE_ICON;
   const showExpanded = () => toggle.setAttribute('aria-expanded', String(NARROW_SCREEN.matches
     ? document.body.classList.contains('sidebar-open')
-    : !document.body.classList.contains('sidebar-hidden')));
+    : !document.body.classList.contains('sidebar-collapsed')));
   const setSidebarOpen = open => {
     document.body.classList.toggle('sidebar-open', open);
     showExpanded();
@@ -806,11 +845,12 @@ function renderMenu() {
       setSidebarOpen(!document.body.classList.contains('sidebar-open'));
       return;
     }
-    const hidden = document.body.classList.toggle('sidebar-hidden');
+    closeFlyouts();
+    const collapsed = document.body.classList.toggle('sidebar-collapsed');
     try {
-      localStorage.setItem(SIDEBAR_HIDDEN_KEY, hidden ? '1' : '0');
+      localStorage.setItem(SIDEBAR_HIDDEN_KEY, collapsed ? '1' : '0');
     } catch {
-      // Storage may be unavailable (private mode); the sidebar still hides for this page.
+      // Storage may be unavailable (private mode); the sidebar still collapses for this page.
     }
     showExpanded();
   });
@@ -819,7 +859,11 @@ function renderMenu() {
   shade.addEventListener('click', () => setSidebarOpen(false));
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
-    if (account.classList.contains('open')) {
+    const flyout = sidebar.querySelector('.side-group.flyout, .side-group:focus-within');
+    if (isSidebarCollapsed() && flyout) {
+      flyout.classList.remove('flyout');
+      if (flyout.contains(document.activeElement)) document.activeElement.blur();
+    } else if (account.classList.contains('open')) {
       setAccountOpen(false);
       accountButton.focus();
     } else if (document.body.classList.contains('sidebar-open')) {
@@ -865,7 +909,8 @@ function renderMenu() {
       const users = document.createElement('a');
       users.className = 'side-link';
       users.href = USERS_PAGE.href;
-      users.append(icon(USERS_PAGE.icon), USERS_PAGE.title);
+      users.title = USERS_PAGE.title;
+      users.append(icon(USERS_PAGE.icon), sidebarLabel(USERS_PAGE.title));
       if (location.pathname === USERS_PAGE.href) {
         users.classList.add('active');
         users.setAttribute('aria-current', 'page');
