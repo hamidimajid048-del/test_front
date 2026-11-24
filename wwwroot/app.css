@@ -1211,7 +1211,7 @@ button.ut-row { cursor: pointer; }
 
 .access-host { grid-column: 1 / -1; }
 .access-host:empty { display: none; }
-dialog.panel-dialog.access-dialog { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; }
+dialog.panel-dialog.access-dialog { width: min(920px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; }
 .access-editor { display: flex; flex-direction: column; gap: var(--space-12); }
 .access-editor .access-preset { display: flex; flex-direction: row; align-items: center; gap: var(--space-10); margin: 0; max-width: 360px; }
 .access-editor .access-preset select { flex: 1; }
@@ -1877,7 +1877,20 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .role-member { padding: 1px var(--space-8); border: 1px solid var(--edge-soft); border-radius: var(--radius-pill); font-size: var(--font-size-sm); }
 .role-member.locked { color: var(--warning); border-color: var(--warning-soft); }
 .role-member.disabled { color: var(--text-muted); text-decoration: line-through; }
-.role-permissions { display: flex; flex-direction: column; gap: var(--space-4); max-width: 520px; }
+.role-permissions { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; max-width: 360px; }
+.link-button { padding: 0; border: 0; background: none; cursor: pointer; }
+.link-button:hover .badge { text-decoration: underline; }
+
+/* Access editor and permission view: one section per dashboard */
+.access-dashboards { display: flex; flex-direction: column; gap: var(--space-14); }
+.access-dashboard { padding: var(--space-12) var(--space-14); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2, transparent); }
+.access-dashboard-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-10); margin-bottom: var(--space-10); }
+.access-dashboard-head .actions { margin-inline-start: auto; }
+.access-dashboard-title { display: inline-flex; align-items: center; gap: var(--space-8); margin: 0; font-size: var(--font-size-md, 15px); }
+.access-dashboard-status { display: inline-flex; flex-wrap: wrap; gap: var(--space-4); }
+.role-view-item { display: flex; align-items: center; gap: var(--space-8); margin: var(--space-4) 0; font-size: var(--font-size-sm); }
+.role-view-item.denied { color: var(--text-muted); }
+.create-account { display: flex; flex-direction: column; gap: var(--space-14); }
 
 /* Access matrix cells */
 .matrix-cell { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); font-weight: 700; }

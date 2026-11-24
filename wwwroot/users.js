@@ -1,4 +1,4 @@
-// Users page: add, change and remove panel accounts, choose what each account may do, and read the sign-in audit log.
+// Users page: list, add, change and remove panel accounts, choose what each account may do per dashboard, and read the roles.
 // Which of these an account sees depends on its permissions; the server enforces the same rules.
 
 const message = document.getElementById('message');
@@ -27,7 +27,7 @@ function showMessage(text, kind = 'success') {
 }
 
 function showTab(tab) {
-  const current = tab === 'roles' ? tab : 'accounts';
+  const current = tab === 'roles' || (tab === 'create' && can(me, 'users.create')) ? tab : 'accounts';
   for (const button of document.querySelectorAll('#tabs button'))
     button.classList.toggle('active', button.dataset.tab === current);
   for (const panel of document.querySelectorAll('[data-panel]'))
@@ -71,8 +71,71 @@ async function runAction(confirmText, action, doneText) {
   }
 }
 
-// A preset picker and the permissions as grouped checkboxes. Permissions the signed-in account does not have itself are
-// shown but locked, because nobody can hand out more than they hold. Choosing a permission also chooses what it needs.
+// The dashboards permissions belong to, in the order of the switcher; "general" holds what every dashboard uses.
+const GENERAL_DASHBOARD = { key: 'general', title: 'Every dashboard', icon: 'user' };
+
+function permissionDashboards() {
+  return [...DASHBOARDS, GENERAL_DASHBOARD].filter(dashboard => catalog.permissions.some(permission => permission.dashboard === dashboard.key));
+}
+
+function dashboardHeading(dashboard) {
+  const title = document.createElement('h4');
+  title.className = 'access-dashboard-title';
+  title.append(icon(dashboard.icon), dashboard.key === GENERAL_DASHBOARD.key ? dashboard.title : `${dashboard.title} dashboard`);
+  return title;
+}
+
+// Whether an account holding these permissions sees the dashboard in the switcher, and how many of its permissions it holds.
+function dashboardBadges(dashboard, keys) {
+  const own = catalog.permissions.filter(permission => permission.dashboard === dashboard.key);
+  const held = own.filter(permission => keys.includes(permission.key)).length;
+  const badges = [badge(`${held} of ${own.length}`, held ? 'ok' : 'muted')];
+  if (dashboard.key !== GENERAL_DASHBOARD.key) {
+    const opens = dashboardPermissions(dashboard).some(key => keys.includes(key));
+    badges.push(badge(opens ? 'Dashboard shown' : 'Dashboard hidden', opens ? 'main' : 'warn'));
+  }
+  return badges;
+}
+
+function permissionMark(granted) {
+  const mark = document.createElement('span');
+  mark.className = `matrix-cell ${granted ? 'granted' : 'denied'}`;
+  mark.setAttribute('aria-label', granted ? 'Allowed' : 'Not allowed');
+  mark.textContent = granted ? '✓' : '·';
+  return mark;
+}
+
+// One section per dashboard, one box per permission group; fill(permission) builds the line of each permission.
+function dashboardSections(fill, withTools) {
+  return permissionDashboards().map(dashboard => {
+    const own = catalog.permissions.filter(permission => permission.dashboard === dashboard.key);
+    const section = document.createElement('section');
+    section.className = 'access-dashboard';
+    const head = document.createElement('div');
+    head.className = 'access-dashboard-head';
+    const status = document.createElement('span');
+    status.className = 'access-dashboard-status';
+    head.append(dashboardHeading(dashboard), status);
+    if (withTools) head.append(withTools(own));
+
+    const groups = document.createElement('div');
+    groups.className = 'access-groups';
+    for (const groupName of [...new Set(own.map(permission => permission.group))]) {
+      const group = document.createElement('fieldset');
+      group.className = 'access-group';
+      const legend = document.createElement('legend');
+      legend.textContent = groupName;
+      group.append(legend, ...own.filter(item => item.group === groupName).map(fill));
+      groups.append(group);
+    }
+    section.append(head, groups);
+    return { dashboard, status, section };
+  });
+}
+
+// A preset picker and the permissions as checkboxes, per dashboard. Permissions the signed-in account does not have
+// itself are shown but locked, because nobody can hand out more than they hold. Choosing a permission also chooses what
+// it needs, and each dashboard says whether the account will see it in the switcher.
 function createAccessEditor(host, withPresets = true) {
   const boxes = new Map();
   const root = document.createElement('div');
@@ -85,38 +148,37 @@ function createAccessEditor(host, withPresets = true) {
   presetSelect.append(new Option('Custom', ''));
   for (const preset of catalog.presets) presetSelect.append(new Option(`${preset.title} — ${preset.description}`, preset.key));
 
-  const groups = document.createElement('div');
-  groups.className = 'access-groups';
-  for (const groupName of [...new Set(catalog.permissions.map(permission => permission.group))]) {
-    const group = document.createElement('fieldset');
-    group.className = 'access-group';
-    const legend = document.createElement('legend');
-    legend.textContent = groupName;
-    group.append(legend);
-    for (const permission of catalog.permissions.filter(item => item.group === groupName)) {
-      const label = document.createElement('label');
-      label.className = 'access-item';
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.disabled = !can(me, permission.key);
-      label.classList.toggle('locked', box.disabled);
-      box.addEventListener('change', () => { settle(permission.key); showPreset(); });
-      const note = document.createElement('span');
-      note.className = 'access-note';
-      note.textContent = permission.description;
-      label.append(box, permission.title, note);
-      group.append(label);
-      boxes.set(permission.key, box);
-    }
-    groups.append(group);
-  }
+  const sections = dashboardSections(permission => {
+    const label = document.createElement('label');
+    label.className = 'access-item';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.disabled = !can(me, permission.key);
+    label.classList.toggle('locked', box.disabled);
+    box.addEventListener('change', () => { check(permission.key, box.checked); changed(); });
+    const note = document.createElement('span');
+    note.className = 'access-note';
+    note.textContent = permission.description;
+    label.append(box, permission.title, note);
+    boxes.set(permission.key, box);
+    return label;
+  }, own => {
+    const tools = document.createElement('div');
+    tools.className = 'actions';
+    tools.append(
+      actionButton('All', () => { for (const permission of own) check(permission.key, true); changed(); }),
+      actionButton('None', () => { for (const permission of own) check(permission.key, false); changed(); }));
+    return tools;
+  });
 
-  function settle(changedKey) {
-    const changed = boxes.get(changedKey);
+  function check(key, value) {
+    const box = boxes.get(key);
+    if (box.disabled) return;
+    box.checked = value;
     for (const permission of catalog.permissions) {
-      if (changed.checked && permission.key === changedKey && permission.requires && !boxes.get(permission.requires).disabled)
+      if (value && permission.key === key && permission.requires && !boxes.get(permission.requires).disabled)
         boxes.get(permission.requires).checked = true;
-      if (!changed.checked && permission.requires === changedKey && !boxes.get(permission.key).disabled)
+      if (!value && permission.requires === key && !boxes.get(permission.key).disabled)
         boxes.get(permission.key).checked = false;
     }
   }
@@ -125,9 +187,10 @@ function createAccessEditor(host, withPresets = true) {
     return catalog.permissions.filter(permission => boxes.get(permission.key).checked).map(permission => permission.key);
   }
 
-  function showPreset() {
-    const current = selected().join();
-    presetSelect.value = catalog.presets.find(preset => preset.permissions.join() === current)?.key ?? '';
+  function changed() {
+    const keys = selected();
+    presetSelect.value = catalog.presets.find(preset => preset.permissions.join() === keys.join())?.key ?? '';
+    for (const { dashboard, status } of sections) status.replaceChildren(...dashboardBadges(dashboard, keys));
   }
 
   function apply(keys) {
@@ -135,7 +198,7 @@ function createAccessEditor(host, withPresets = true) {
     for (const permission of catalog.permissions)
       if (boxes.get(permission.key).checked && permission.requires && !boxes.get(permission.requires).disabled)
         boxes.get(permission.requires).checked = true;
-    showPreset();
+    changed();
   }
 
   presetSelect.addEventListener('change', () => {
@@ -143,17 +206,42 @@ function createAccessEditor(host, withPresets = true) {
     if (preset) apply(preset.permissions);
   });
 
+  const list = document.createElement('div');
+  list.className = 'access-dashboards';
+  list.append(...sections.map(entry => entry.section));
   if (withPresets) root.append(presetLabel);
-  root.append(groups);
+  root.append(list);
   host.replaceChildren(root);
+  changed();
   return {
     get: selected,
     set(keys) {
       for (const [key, box] of boxes) box.checked = keys.includes(key);
-      showPreset();
+      changed();
     },
     apply,
   };
+}
+
+const roleViewDialog = document.getElementById('role-view-dialog');
+
+// A read-only view of a set of permissions: every dashboard with what is allowed and what is not.
+function openPermissionsView(title, text, keys) {
+  document.getElementById('role-view-title').textContent = title;
+  document.getElementById('role-view-text').textContent = text;
+  const sections = dashboardSections(permission => {
+    const granted = keys.includes(permission.key);
+    const line = document.createElement('div');
+    line.className = `role-view-item ${granted ? 'granted' : 'denied'}`;
+    const name = document.createElement('span');
+    name.textContent = permission.title;
+    name.title = permission.description;
+    line.append(permissionMark(granted), name);
+    return line;
+  });
+  for (const { dashboard, status } of sections) status.append(...dashboardBadges(dashboard, keys));
+  document.getElementById('role-view-body').replaceChildren(...sections.map(entry => entry.section));
+  roleViewDialog.showModal();
 }
 
 function userActions(user) {
@@ -222,11 +310,14 @@ function userActions(user) {
 
 function accessBadge(user) {
   if (user.role === 'superadmin') return badge('Every permission', 'main');
-  const names = catalog.permissions.filter(permission => user.permissions.includes(permission.key)).map(permission => permission.title);
   const preset = catalog.presets.find(item => item.permissions.join() === user.permissions.join());
-  const element = badge(preset ? preset.title : `${user.permissions.length} of ${catalog.permissions.length}`, user.permissions.length ? 'ok' : 'warn');
-  element.title = names.length ? names.join('\n') : 'No permissions';
-  return element;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'link-button';
+  button.append(badge(preset ? preset.title : `${user.permissions.length} of ${catalog.permissions.length}`, user.permissions.length ? 'ok' : 'warn'));
+  button.title = 'Show permissions';
+  button.addEventListener('click', () => openPermissionsView(`Access of ${user.username}`, preset ? preset.title : 'Custom', user.permissions));
+  return button;
 }
 
 function openAccessDialog(user) {
@@ -329,14 +420,12 @@ function permissionsCell(role) {
   const cell = document.createElement('div');
   cell.className = 'role-permissions';
   cell.append(badge(`${role.permissions.length} of ${catalog.permissions.length}`, role.permissions.length ? 'ok' : 'warn'));
-  const groups = [...new Set(catalog.permissions.map(permission => permission.group))];
-  for (const groupName of groups) {
-    const granted = catalog.permissions.filter(permission => permission.group === groupName && role.permissions.includes(permission.key));
-    if (!granted.length) continue;
-    const line = document.createElement('div');
-    line.className = 'muted';
-    line.textContent = `${groupName}: ${granted.map(permission => permission.title).join(', ')}`;
-    cell.append(line);
+  for (const dashboard of DASHBOARDS) {
+    const own = catalog.permissions.filter(permission => permission.dashboard === dashboard.key);
+    if (!own.length) continue;
+    const held = own.filter(permission => role.permissions.includes(permission.key)).length;
+    const opens = dashboardPermissions(dashboard).some(key => role.permissions.includes(key));
+    cell.append(badge(`${dashboard.title}: ${held}/${own.length}`, opens ? 'main' : 'muted'));
   }
   return cell;
 }
@@ -349,18 +438,18 @@ function renderRoles() {
     { key: 'permissions', title: 'Permissions', sortable: false, filterable: false, format: (_, role) => permissionsCell(role) },
     { key: 'key', title: 'Accounts', sortable: false, filterable: false, format: (_, role) => membersCell(role) },
   ];
-  if (isSuperAdmin)
-    columns.push({
-      key: 'key', title: 'Actions', sortable: false, filterable: false, noExport: true, format: (_, role) => {
-        const actions = document.createElement('div');
-        actions.className = 'actions';
-        actions.append(actionButton('Edit', () => openRoleDialog(role)));
-        if (!role.isBuiltIn)
-          actions.append(actionButton('Delete', () => runRoleAction(
-            `Delete the role ${role.title}?`, () => panelRequest('DELETE', `roles/${role.key}`), `${role.title} is deleted.`), true));
-        return actions;
-      },
-    });
+  columns.push({
+    key: 'key', title: 'Actions', sortable: false, filterable: false, noExport: true, format: (_, role) => {
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.append(actionButton('Show permissions', () => openPermissionsView(`Permissions of ${role.title}`, role.description, role.permissions)));
+      if (isSuperAdmin) actions.append(actionButton('Edit', () => openRoleDialog(role)));
+      if (isSuperAdmin && !role.isBuiltIn)
+        actions.append(actionButton('Delete', () => runRoleAction(
+          `Delete the role ${role.title}?`, () => panelRequest('DELETE', `roles/${role.key}`), `${role.title} is deleted.`), true));
+      return actions;
+    },
+  });
   renderTable(document.getElementById('roles'), columns, catalog.presets, undefined, { export: { name: 'panel-roles' } });
 }
 
@@ -445,8 +534,9 @@ createForm.addEventListener('submit', async event => {
     createAccess.apply(catalog.presets[0].permissions);
     document.getElementById('create-access').hidden = false;
     showMessage(`Account ${result.username} created. Set up its authenticator now.`, 'success');
-    showTwoFactorSetup(result.username, result.twoFactor);
     await loadUsers();
+    showTab('accounts');
+    showTwoFactorSetup(result.username, result.twoFactor);
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   } finally {

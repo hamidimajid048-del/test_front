@@ -34,44 +34,51 @@ public static class PanelPermissions
     public const string UsersDelete = "users.delete";
     public const string AuditView = "audit.view";
 
+    private const string ViolationDashboard = "violation";
+    private const string SymbolsDashboard = "symbols";
+    private const string AdminDashboard = "admin";
+    private const string EveryDashboard = "general";
+
     private const string ReportsGroup = "Reports";
     private const string OperationsGroup = "Operations";
+    private const string TickMonitorGroup = "Tick monitoring";
     private const string MyAccountGroup = "My account";
-    private const string AdministrationGroup = "Administration";
+    private const string PanelAccountsGroup = "Panel accounts";
+    private const string SecurityGroup = "Security & activity";
 
     public static readonly IReadOnlyList<PanelPermission> All =
     [
-        new(AccountDataView, ReportsGroup, "Account data", "One account's status, balance, trades and histories."),
-        new(TradeHistoryView, ReportsGroup, "Trade history", "Positions, orders or deals of every account in a date range."),
-        new(LoginsView, ReportsGroup, "Login history", "Sessions of a login with IP, CID and location."),
-        new(EmailLoginsView, ReportsGroup, "Email logins", "Every login of an email with its IPs, CIDs and sessions."),
-        new(SimilarityView, ReportsGroup, "IP/CID similarity", "Logins that share an IP or CID."),
-        new(ValueSearchView, ReportsGroup, "CID / IP search", "Logins that used a given IP or CID."),
-        new(CopyTradeView, ReportsGroup, "Copy trade & hedge", "Accounts that opened the same or opposite trades."),
-        new(CompareView, ReportsGroup, "Compare accounts", "Two logins side by side, or one login against several."),
-        new(CompareEmailsView, ReportsGroup, "Compare emails", "All logins of one email against the logins of one or more emails."),
-        new(AccountChangesView, ReportsGroup, "Account change log", "Every change made to a trading account from the panel.", AccountDataView),
-        new(ReportsExport, ReportsGroup, "Export to Excel / CSV", "Download report data as files."),
-        new(SwitchAccount, OperationsGroup, "Enable / disable account", "Turn a trading account on or off.", AccountDataView),
-        new(SwitchTrading, OperationsGroup, "Enable / disable trading", "Allow or block trading on an account.", AccountDataView),
-        new(SwitchStopOut, OperationsGroup, "Enable / disable stop-out plugin", "Turn the stop-out plugin on or off for an account.", AccountDataView),
-        new(AccountPasswords, OperationsGroup, "Check / change trading passwords", "Check, generate and set the main and investor password of a trading account.", AccountDataView),
-        new(AccountBalance, OperationsGroup, "Deposit / withdraw", "Add money to or take money from a trading account balance, with a required comment.", AccountDataView),
-        new(ClosePosition, OperationsGroup, "Close positions", "Close an open position at the market price or a chosen price, also when the market is closed.", AccountDataView),
-        new(DeleteOrder, OperationsGroup, "Delete orders", "Delete an active order of a trading account.", AccountDataView),
-        new(AccountBalanceBulk, OperationsGroup, "Bulk deposit / withdraw", "Deposit to or withdraw from many accounts at once from a CSV file, with a downloadable result."),
-        new(TickMonitorView, OperationsGroup, "Tick monitoring", "Live state of the monitored symbols, their alarm profiles and the gap history."),
-        new(TickMonitorEdit, OperationsGroup, "Edit tick monitoring profiles", "Add, change, snooze and remove the symbols and their alarm stages.", TickMonitorView),
-        new(TickMonitorChannels, OperationsGroup, "Manage alert channels", "Add, change, test and remove the Telegram channels alarms go to.", TickMonitorView),
-        new(TickMonitorSettings, OperationsGroup, "Tick monitoring settings", "Turn tick monitoring on or off, set the bot token and the limits.", TickMonitorView),
-        new(AccountChangePassword, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),
-        new(UsersView, AdministrationGroup, "See accounts", "Open the Users page and list the panel accounts."),
-        new(UsersCreate, AdministrationGroup, "Add accounts", "Create panel accounts.", UsersView),
-        new(UsersEditPermissions, AdministrationGroup, "Edit access", "Change what other accounts may do.", UsersView),
-        new(UsersResetCredentials, AdministrationGroup, "Reset passwords and 2FA", "Set a new password or authenticator key for another account.", UsersView),
-        new(UsersManageState, AdministrationGroup, "Disable, enable, unlock, sign out", "Block or allow an account, clear its lockout and end its sessions.", UsersView),
-        new(UsersDelete, AdministrationGroup, "Delete accounts", "Delete panel accounts.", UsersView),
-        new(AuditView, AdministrationGroup, "Audit log", "Read sign-ins and account changes.", UsersView)
+        new(AccountDataView, ViolationDashboard, ReportsGroup, "Account data", "One account's status, balance, trades and histories."),
+        new(TradeHistoryView, ViolationDashboard, ReportsGroup, "Trade history", "Positions, orders or deals of every account in a date range."),
+        new(LoginsView, ViolationDashboard, ReportsGroup, "Login history", "Sessions of a login with IP, CID and location."),
+        new(EmailLoginsView, ViolationDashboard, ReportsGroup, "Email logins", "Every login of an email with its IPs, CIDs and sessions."),
+        new(SimilarityView, ViolationDashboard, ReportsGroup, "IP/CID similarity", "Logins that share an IP or CID."),
+        new(ValueSearchView, ViolationDashboard, ReportsGroup, "CID / IP search", "Logins that used a given IP or CID."),
+        new(CopyTradeView, ViolationDashboard, ReportsGroup, "Copy trade & hedge", "Accounts that opened the same or opposite trades."),
+        new(CompareView, ViolationDashboard, ReportsGroup, "Compare accounts", "Two logins side by side, or one login against several."),
+        new(CompareEmailsView, ViolationDashboard, ReportsGroup, "Compare emails", "All logins of one email against the logins of one or more emails."),
+        new(AccountChangesView, ViolationDashboard, ReportsGroup, "Account change log", "Every change made to a trading account from the panel.", AccountDataView),
+        new(ReportsExport, ViolationDashboard, ReportsGroup, "Export to Excel / CSV", "Download report data as files."),
+        new(SwitchAccount, ViolationDashboard, OperationsGroup, "Enable / disable account", "Turn a trading account on or off.", AccountDataView),
+        new(SwitchTrading, ViolationDashboard, OperationsGroup, "Enable / disable trading", "Allow or block trading on an account.", AccountDataView),
+        new(SwitchStopOut, ViolationDashboard, OperationsGroup, "Enable / disable stop-out plugin", "Turn the stop-out plugin on or off for an account.", AccountDataView),
+        new(AccountPasswords, ViolationDashboard, OperationsGroup, "Check / change trading passwords", "Check, generate and set the main and investor password of a trading account.", AccountDataView),
+        new(AccountBalance, ViolationDashboard, OperationsGroup, "Deposit / withdraw", "Add money to or take money from a trading account balance, with a required comment.", AccountDataView),
+        new(ClosePosition, ViolationDashboard, OperationsGroup, "Close positions", "Close an open position at the market price or a chosen price, also when the market is closed.", AccountDataView),
+        new(DeleteOrder, ViolationDashboard, OperationsGroup, "Delete orders", "Delete an active order of a trading account.", AccountDataView),
+        new(AccountBalanceBulk, ViolationDashboard, OperationsGroup, "Bulk deposit / withdraw", "Deposit to or withdraw from many accounts at once from a CSV file, with a downloadable result."),
+        new(TickMonitorView, SymbolsDashboard, TickMonitorGroup, "Tick monitoring", "Opens the Symbols dashboard: live state of the monitored symbols, their alarm profiles and the gap history."),
+        new(TickMonitorEdit, SymbolsDashboard, TickMonitorGroup, "Edit tick monitoring profiles", "Add, change, snooze and remove the symbols and their alarm stages.", TickMonitorView),
+        new(TickMonitorChannels, SymbolsDashboard, TickMonitorGroup, "Manage alert channels", "Add, change, test and remove the Telegram channels alarms go to.", TickMonitorView),
+        new(TickMonitorSettings, SymbolsDashboard, TickMonitorGroup, "Tick monitoring settings", "Turn tick monitoring on or off, set the bot token and the limits.", TickMonitorView),
+        new(AccountChangePassword, EveryDashboard, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),
+        new(UsersView, AdminDashboard, PanelAccountsGroup, "See accounts", "Opens the Administration dashboard: the panel accounts, roles, access matrix and sessions."),
+        new(UsersCreate, AdminDashboard, PanelAccountsGroup, "Add accounts", "Create panel accounts.", UsersView),
+        new(UsersEditPermissions, AdminDashboard, PanelAccountsGroup, "Edit access", "Change what other accounts may do.", UsersView),
+        new(UsersResetCredentials, AdminDashboard, PanelAccountsGroup, "Reset passwords and 2FA", "Set a new password or authenticator key for another account.", UsersView),
+        new(UsersManageState, AdminDashboard, PanelAccountsGroup, "Disable, enable, unlock, sign out", "Block or allow an account, clear its lockout and end its sessions.", UsersView),
+        new(UsersDelete, AdminDashboard, PanelAccountsGroup, "Delete accounts", "Delete panel accounts.", UsersView),
+        new(AuditView, AdminDashboard, SecurityGroup, "Audit log", "Read sign-in activity and the audit log of account changes.", UsersView)
     ];
 
     public static readonly string[] AllReportViews =
@@ -80,7 +87,7 @@ public static class PanelPermissions
     public static readonly IReadOnlyList<string> AllKeys = [.. All.Select(permission => permission.Key)];
 
     public static readonly IReadOnlyList<string> ForExistingAdmins =
-        [.. All.Where(permission => permission.Group != AdministrationGroup).Select(permission => permission.Key)];
+        [.. All.Where(permission => permission.Dashboard != AdminDashboard).Select(permission => permission.Key)];
 
     public const string DefaultPresetKey = "viewer";
 

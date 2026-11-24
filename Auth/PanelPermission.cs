@@ -1,3 +1,3 @@
 namespace Sgb.Trading.Violation.Panel.Auth;
 
-public sealed record PanelPermission(string Key, string Group, string Title, string Description, string? Requires = null);
+public sealed record PanelPermission(string Key, string Dashboard, string Group, string Title, string Description, string? Requires = null);

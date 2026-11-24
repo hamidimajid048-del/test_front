@@ -5,6 +5,8 @@ const message = document.getElementById('message');
 let catalog = { permissions: [], presets: [] };
 let users = [];
 
+const dashboardTitle = key => DASHBOARDS.find(dashboard => dashboard.key === key)?.title ?? 'Every dashboard';
+
 function tick(granted) {
   const span = document.createElement('span');
   span.className = `matrix-cell ${granted ? 'granted' : 'denied'}`;
@@ -33,6 +35,7 @@ function render() {
   }));
 
   const columns = [
+    { key: 'dashboard', title: 'Dashboard', format: value => dashboardTitle(value) },
     { key: 'group', title: 'Group' },
     { key: 'title', title: 'Permission', format: (value, permission) => {
       const cell = document.createElement('div');
@@ -71,7 +74,10 @@ currentAccount().then(async me => {
   try {
     [catalog, users] = await Promise.all([panelRequest('GET', 'permissions'), panelRequest('GET', 'users')]);
     const groups = document.getElementById('matrix-group');
-    for (const group of [...new Set(catalog.permissions.map(permission => permission.group))]) groups.append(new Option(group, group));
+    for (const group of [...new Set(catalog.permissions.map(permission => permission.group))]) {
+      const dashboard = catalog.permissions.find(permission => permission.group === group).dashboard;
+      groups.append(new Option(`${dashboardTitle(dashboard)} — ${group}`, group));
+    }
     render();
   } catch (error) {
     if (error.message) toast(error.message, 'error');
