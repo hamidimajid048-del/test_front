@@ -5,17 +5,8 @@
 const STATUS_REFRESH_MS = 5000;
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const DAY_SHORT = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
-const SNOOZE_MINUTES = [15, 30, 60, 180];
 const COVERAGE_CELLS = 96;
 
-const STATE_BADGES = {
-  Watching: ['Watching', 'ok'],
-  GapOpen: ['Gap open', 'danger'],
-  Closed: ['Closed', 'muted'],
-  Uncovered: ['Uncovered', 'warn'],
-  Snoozed: ['Snoozed', 'warn'],
-  Disabled: ['Disabled', 'muted'],
-};
 
 const message = document.getElementById('message');
 const profileDialog = document.getElementById('profile-dialog');
@@ -54,7 +45,7 @@ function actionButton(text, onClick, { danger = false, iconName = null, permissi
 // Each part of the page has its own menu entry (/tick-monitor.html?view=profiles); the page shows only that part.
 // Three menu entries, each a view of this page; related parts of a view are tabs. The monitoring view keeps the live
 // summary above its tabs. Older links (?view=profiles, ?tab=channels) open the view that now holds that part.
-const VIEWS = { monitor: ['status', 'profiles'], history: ['history'], settings: ['settings', 'channels'] };
+const VIEWS = { monitor: ['profiles'], history: ['history'], settings: ['settings', 'channels'] };
 const VIEW_OF_TAB = { status: 'monitor', profiles: 'monitor', history: 'history', settings: 'settings', channels: 'settings' };
 
 function currentView() {
@@ -102,15 +93,6 @@ function showTab(tab) {
 
 // ---- status ----
 
-function ago(value, now) {
-  if (!value || !now) return '';
-  const diff = Math.round((new Date(now) - new Date(value)) / 1000);
-  if (diff < 0) return '';
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ${diff % 60}s ago`;
-  return `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m ago`;
-}
-
 function statusSummary(status) {
   const items = [];
   const engine = !status.enabled ? ['Monitoring', 'Off', 'danger'] : status.active ? ['Monitoring', 'Active', 'ok'] : ['Monitoring', 'Standby', 'warn'];
@@ -119,6 +101,8 @@ function statusSummary(status) {
   if (status.serverTime) items.push(['Server time', serverTime(status.serverTime), 'muted']);
   if (status.lastEvaluationAt) items.push(['Last check', formatUtcSeconds(status.lastEvaluationAt) + ' UTC', 'muted']);
   if (status.reason) items.push(['Note', status.reason, 'warn']);
+  const gaps = status.symbols.filter(symbol => symbol.state === 'GapOpen').map(symbol => symbol.symbol);
+  items.push(['Open gaps', gaps.length ? `${gaps.length}: ${gaps.join(', ')}` : '0', gaps.length ? 'danger' : 'ok']);
   const host = document.getElementById('status-summary');
   host.replaceChildren(...items.map(([label, value, kind]) => {
     const span = document.createElement('span');
@@ -129,55 +113,10 @@ function statusSummary(status) {
   }));
 }
 
-function snoozeMenu(row) {
-  const host = document.createElement('span');
-  host.className = 'actions';
-  if (!can(me, 'tick-monitor.edit')) return host;
-  if (row.snoozedUntil)
-    host.append(actionButton('Unsnooze', () => snooze(row.symbol, 0), { iconName: 'close' }));
-  else
-    for (const minutes of SNOOZE_MINUTES)
-      host.append(actionButton(`${minutes}m`, () => snooze(row.symbol, minutes)));
-  return host;
-}
-
-async function snooze(symbol, minutes) {
-  try {
-    await panelRequest('POST', `tick-monitor/symbols/${encodeURIComponent(symbol)}/snooze`, { minutes });
-    showMessage(minutes ? `${symbol} snoozed for ${minutes} minutes.` : `${symbol} is monitored again.`);
-    await loadStatus();
-  } catch (error) {
-    if (error.message) showMessage(error.message, 'error');
-  }
-}
-
 async function loadStatus() {
   try {
     const status = await panelRequest('GET', 'tick-monitor/status');
     statusSummary(status);
-    const now = status.serverTime;
-    const columns = [
-      column('symbol', 'Symbol'),
-      column('profile', 'Profile'),
-      column('state', 'State', (value, row) => {
-        const wrapper = document.createElement('span');
-        wrapper.className = 'inline';
-        wrapper.append(badge(...(STATE_BADGES[value] ?? [value, 'muted'])));
-        if (!row.enabled) wrapper.append(badge('Profile off', 'muted'));
-        return wrapper;
-      }),
-      column('reason', 'Reason', value => value || '—'),
-      column('lastTickAt', 'Last tick (server time)', (value, row) => (value ? `${serverTime(value)} · ${ago(value, now)}` : '—')),
-      column('lastPrice', 'Last price', value => (value === null || value === undefined ? '—' : String(value))),
-      column('activeSchedule', 'Window', value => value || '—'),
-      column('nextStage', 'Next stage', (value, row) => (value ? `${value} in ${row.nextStageInSeconds ?? 0}s` : '—')),
-      column('gapStart', 'Gap since', (value, row) => (value ? `${serverTime(value)} · ${ago(value, now)}` : '—')),
-      column('stagesFired', 'Stages fired'),
-      column('snoozedUntil', 'Snoozed until', value => (value ? serverTime(value) : '—')),
-      { key: 'symbol', title: 'Snooze', format: (value, row) => snoozeMenu(row), sortable: false, filterable: false },
-    ];
-    renderTable(document.getElementById('status-table'), columns, status.symbols, null, { viewKey: 'tick-monitor-status' });
-    if (!status.symbols.length) document.getElementById('status-table').replaceChildren(emptyNote('No symbol is monitored yet. Add a profile.'));
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }
@@ -912,15 +851,15 @@ document.getElementById('history-form').addEventListener('submit', event => {
 
 // Each limit: its field, unit, allowed range, default and what it does, so the form explains itself.
 const LIMITS = [
-  { key: 'maxRepeatCount', title: 'Most messages per stage', unit: 'messages', min: 1, max: 500, fallback: 20,
+  { key: 'maxRepeatCount', icon: 'mail', title: 'Most messages per stage', unit: 'messages', min: 1, max: 500, fallback: 20,
     help: 'The largest "Messages" a stage may have. A wake-up stage with 5 messages every 5 seconds needs at least 5.' },
-  { key: 'minRepeatIntervalSeconds', title: 'Shortest interval between repeats', unit: 'seconds', min: 1, max: 3600, fallback: 5,
+  { key: 'minRepeatIntervalSeconds', icon: 'swap', title: 'Shortest interval between repeats', unit: 'seconds', min: 1, max: 3600, fallback: 5,
     help: 'The smallest "Every (seconds)" a stage may use. Telegram allows about 20 messages a minute per chat; 5 seconds keeps a stage under that.' },
-  { key: 'minAfterSeconds', title: 'Shortest alarm delay', unit: 'seconds', min: 1, max: 3600, fallback: 5,
+  { key: 'minAfterSeconds', icon: 'alert', title: 'Shortest alarm delay', unit: 'seconds', min: 1, max: 3600, fallback: 5,
     help: 'The smallest "After (seconds)" a stage may use. The engine checks once a second, so a delay under 5 seconds adds noise without precision.' },
-  { key: 'openGraceSeconds', title: 'Grace after the market opens', unit: 'seconds', min: 0, max: 3600, fallback: 120,
+  { key: 'openGraceSeconds', icon: 'bars', title: 'Grace after the market opens', unit: 'seconds', min: 0, max: 3600, fallback: 120,
     help: 'No alarm during this time after a symbol\'s quote session opens, because the first tick after the open is often late. The gap still counts from the open.' },
-  { key: 'eventsRetentionDays', title: 'Keep the gap history for', unit: 'days', min: 1, max: 3650, fallback: 90,
+  { key: 'eventsRetentionDays', icon: 'calendar', title: 'Keep the gap history for', unit: 'days', min: 1, max: 3650, fallback: 90,
     help: 'Older gaps are deleted from the History tab once a day.' },
 ];
 
@@ -933,7 +872,7 @@ function limitField(limit) {
   field.className = 'tm-field tm-limit';
   const label = document.createElement('label');
   label.htmlFor = `settings-${limit.key}`;
-  label.append(limit.title, ' ', helpMark(limit.help, limit.title));
+  label.append(icon(limit.icon), limit.title, ' ', helpMark(limit.help, limit.title));
   const row = document.createElement('div');
   row.className = 'tm-inline';
   const input = document.createElement('input');
@@ -946,7 +885,13 @@ function limitField(limit) {
   const unit = document.createElement('span');
   unit.className = 'tm-unit';
   unit.textContent = limit.unit;
-  const reset = actionButton(`Use default (${limit.fallback})`, () => { input.value = String(limit.fallback); input.dispatchEvent(new Event('input', { bubbles: true })); });
+  const reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'tm-icon-button';
+  reset.title = t(`Use default (${limit.fallback})`);
+  reset.setAttribute('aria-label', reset.title);
+  reset.append(icon('history'));
+  reset.addEventListener('click', () => { input.value = String(limit.fallback); input.dispatchEvent(new Event('input', { bubbles: true })); });
   row.append(input, unit, reset);
   input.title = `Allowed: ${limit.min} to ${limit.max} ${limit.unit}.`;
   const error = document.createElement('p');
@@ -1014,7 +959,12 @@ function paintTokenState() {
   const entered = settingsForm.elements.telegramBotToken.value.trim();
   if (settingsForm.elements.clearTelegramBotToken.checked) state.textContent = 'The saved token will be removed when you save.';
   else if (entered) state.textContent = /^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(entered) ? 'New token entered; it replaces the saved one when you save.' : 'This does not look like a bot token (expected digits, a colon, then at least 30 characters).';
-  else state.textContent = settings?.telegramBotTokenSet ? `Saved token: ${settings.telegramBotTokenHint}` : 'No token is saved.';
+  else {
+    const label = document.createElement('span');
+    label.textContent = settings?.telegramBotTokenSet ? 'Saved token:' : 'No token is saved.';
+    state.replaceChildren(label);
+    if (settings?.telegramBotTokenSet) state.append(' ', Object.assign(document.createElement('strong'), { textContent: settings.telegramBotTokenHint, translate: false }));
+  }
 }
 
 function paintDirty() {
@@ -1033,15 +983,16 @@ async function paintEngine() {
   try {
     const status = await panelRequest('GET', 'tick-monitor/status');
     const host = document.getElementById('settings-engine');
-    const engine = !status.enabled ? ['Engine', 'Off', 'danger'] : status.active ? ['Engine', 'Active', 'ok'] : ['Engine', 'Standby', 'warn'];
-    const items = [engine, ['MetaTrader', status.connected ? 'Connected' : 'Disconnected', status.connected ? 'ok' : 'danger']];
-    if (status.reason) items.push(['Note', status.reason, 'warn']);
-    host.replaceChildren(...items.map(([label, value, kind]) => {
-      const span = document.createElement('span');
+    const engine = !status.enabled ? ['settings', 'Engine', 'Off', 'muted'] : status.active ? ['settings', 'Engine', 'Active', 'ok'] : ['settings', 'Engine', 'Standby', 'warn'];
+    const items = [engine, ['grid', 'MetaTrader', status.connected ? 'Connected' : 'Disconnected', status.connected ? 'ok' : 'danger']];
+    if (status.reason) items.push(['message', 'Note', status.reason, 'warn']);
+    host.replaceChildren(...items.map(([iconName, label, value, kind]) => {
+      const item = document.createElement('span');
+      item.className = 'tm-stat';
       const strong = document.createElement('strong');
       strong.textContent = label;
-      span.append(strong, ' ', badge(value, kind));
-      return span;
+      item.append(icon(iconName), strong, badge(value, kind));
+      return item;
     }));
   } catch {
     // The engine summary is informative only; the form works without it.

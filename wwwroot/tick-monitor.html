@@ -16,20 +16,11 @@
     <div class="summary" id="status-summary" hidden></div>
 
     <div class="tabs" id="tabs">
-      <button type="button" data-tab="status" data-icon="activity">Status</button>
       <button type="button" data-tab="profiles" data-icon="target">Profiles</button>
       <button type="button" data-tab="settings" data-icon="settings" data-permission="tick-monitor.settings">Settings</button>
       <button type="button" data-tab="channels" data-icon="message">Channels</button>
     </div>
 
-    <section data-panel="status">
-      <h3 class="ad-card-title" data-icon="activity">Monitored symbols</h3>
-      <div id="status-table"></div>
-      <ul class="help">
-        <li><strong>Watching</strong>: the market is open and ticks arrive. <strong>Gap open</strong>: no tick since the time shown; the stages of the active window fire as the gap grows. <strong>Closed</strong>: the symbol's quote session is closed, the server has a holiday, or trading is disabled; nothing is sent. <strong>Uncovered</strong>: no time window covers this moment. <strong>Snoozed</strong>: silenced from this page for a while.</li>
-        <li>All times are MetaTrader server time, the same clock as the symbol sessions and the holidays.</li>
-      </ul>
-    </section>
 
     <section data-panel="profiles" hidden>
       <div class="section-head">
@@ -77,51 +68,59 @@
     <section data-panel="settings" class="tm-plain" hidden>
       <form class="tm-settings" id="settings-form" autocomplete="off" novalidate>
         <div class="ad-card tm-card">
-          <div class="ad-card-head">
-            <h2 class="ad-card-title" data-icon="bolt">Monitoring</h2>
-            <span class="summary" id="settings-engine"></span>
-          </div>
-          <div class="control">
-            <span class="control-icon" data-icon="activity"></span>
-            <div class="control-text">
-              <strong>Tick monitoring <button type="button" class="col-help" data-help="When on, the engine watches every enabled profile and sends the Telegram alarms. It needs a saved bot token; without one it stays off.">?</button></strong>
+          <h2 class="ad-card-title" data-icon="bolt">Monitoring</h2>
+          <div class="tm-strip">
+            <div class="control tm-switch-tile">
+              <span class="control-icon" data-icon="activity"></span>
+              <div class="control-text">
+                <strong>Tick monitoring <button type="button" class="col-help" data-help="When on, the engine watches every enabled profile and sends the Telegram alarms. It needs a saved bot token; without one it stays off.">?</button></strong>
+              </div>
+              <div class="control-state" id="settings-enabled-state"></div>
+              <button type="button" class="switch unknown" id="settings-enabled" role="switch" aria-checked="false" aria-label="Tick monitoring"><span></span></button>
             </div>
-            <div class="control-state" id="settings-enabled-state"></div>
-            <button type="button" class="switch unknown" id="settings-enabled" role="switch" aria-checked="false" aria-label="Tick monitoring"><span></span></button>
+            <div class="tm-stats" id="settings-engine"></div>
           </div>
-          <p class="tm-field-note" id="settings-enabled-note"></p>
+          <p class="tm-field-note tm-card-note" id="settings-enabled-note"></p>
         </div>
 
         <div class="ad-card tm-card">
-          <h2 class="ad-card-title" data-icon="message">Telegram bot</h2>
-          <div class="tm-field">
-            <label for="settings-token">Bot token <button type="button" class="col-help" data-help="Create the bot with @BotFather in Telegram and paste the token it gives (it looks like 123456789:AAH…). The token is kept in the panel database and is never shown again; only its last characters are. Leave the field empty to keep the saved token.">?</button></label>
-            <div class="tm-inline">
-              <input id="settings-token" name="telegramBotToken" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a new token to replace the saved one">
-              <button type="button" id="settings-token-show">Show</button>
-            </div>
-            <p class="tm-field-note" id="settings-token-state"></p>
-            <label class="check tm-danger-check"><input name="clearTelegramBotToken" type="checkbox"> Remove the saved token when saving (monitoring stops until a new token is saved)</label>
-          </div>
-          <div class="tm-field">
-            <label for="settings-test-channel">Test the saved token <button type="button" class="col-help" data-help="Sends &quot;Tick monitor test message&quot; to the chosen channel with the saved token. If you pasted a new token, save first. The bot must be a member of the chat and allowed to post.">?</button></label>
-            <div class="tm-inline">
-              <select id="settings-test-channel"></select>
-              <button type="button" id="settings-test" data-icon="message">Send test message</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ad-card tm-card">
-          <h2 class="ad-card-title" data-icon="server">Operations channel</h2>
+          <h2 class="ad-card-title" data-icon="layers">Operations channel</h2>
           <div class="tm-field">
             <label for="settings-ops-channel">Channel for service notices <button type="button" class="col-help" data-help="Receives only the service notices: MetaTrader connection lost or restored, monitoring started or stopped, and a stalled engine. Without a channel they are written to the log only. Symbol alarms never go here; they go to the channels chosen in each profile&#39;s stages. Channels are managed on the Channels tab.">?</button></label>
-            <select name="opsChannelId" id="settings-ops-channel"></select>
+            <div class="icon-field tm-icon-select">
+              <select name="opsChannelId" id="settings-ops-channel"></select>
+              <span class="field-icon" data-icon="alert"></span>
+            </div>
           </div>
         </div>
 
-        <div class="ad-card tm-card">
-          <h2 class="ad-card-title" data-icon="scale">Limits and timing <button type="button" class="col-help" data-help="The three limits are checked when a profile is saved; lowering a limit does not change existing profiles until they are edited. The grace period and the history retention apply at once.">?</button></h2>
+        <div class="ad-card tm-card tm-wide">
+          <h2 class="ad-card-title" data-icon="message">Telegram bot</h2>
+          <div class="tm-strip">
+            <div class="tm-field tm-grow">
+              <label for="settings-token">Bot token <button type="button" class="col-help" data-help="Create the bot with @BotFather in Telegram and paste the token it gives (it looks like 123456789:AAH…). The token is kept in the panel database and is never shown again; only its last characters are. Leave the field empty to keep the saved token.">?</button></label>
+              <div class="tm-inline">
+                <input id="settings-token" name="telegramBotToken" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a new token to replace the saved one">
+                <button type="button" id="settings-token-show">Show</button>
+              </div>
+            </div>
+            <p class="tm-token-state" id="settings-token-state"></p>
+            <label class="check tm-danger-check"><input name="clearTelegramBotToken" type="checkbox"> Remove the saved token when saving <button type="button" class="col-help" data-help="Monitoring stops until a new token is saved.">?</button></label>
+            <div class="tm-field">
+              <label for="settings-test-channel">Test the saved token <button type="button" class="col-help" data-help="Sends &quot;Tick monitor test message&quot; to the chosen channel with the saved token. If you pasted a new token, save first. The bot must be a member of the chat and allowed to post.">?</button></label>
+              <div class="tm-inline">
+                <div class="icon-field tm-icon-select">
+                  <select id="settings-test-channel"></select>
+                  <span class="field-icon" data-icon="activity"></span>
+                </div>
+                <button type="button" id="settings-test" data-icon="message">Send test message</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ad-card tm-card tm-wide">
+          <h2 class="ad-card-title" data-icon="timer">Limits and timing <button type="button" class="col-help" data-help="The three limits are checked when a profile is saved; lowering a limit does not change existing profiles until they are edited. The grace period and the history retention apply at once.">?</button></h2>
           <div class="tm-limits" id="settings-limits"></div>
         </div>
 
