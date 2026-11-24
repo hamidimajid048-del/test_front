@@ -3,6 +3,8 @@ namespace Sgb.Trading.Violation.Panel.TickMonitor;
 public static class TickMonitorProfileValidator
 {
     public const int MaxSymbolLength = 32;
+    public const int MaxNameLength = 60;
+    public const int MaxSymbols = 500;
     public const int MaxScheduleNameLength = 40;
     public const int MaxSchedules = 12;
     public const int MaxStages = 10;
@@ -10,11 +12,27 @@ public static class TickMonitorProfileValidator
     public const int MaxAfterSeconds = 86_400;
     public const int MaxRepeatIntervalSeconds = 86_400;
 
-    public static string? Validate(TickMonitorProfileInput input, TickMonitorSettings settings, IReadOnlyCollection<TickMonitorChannel> channels)
+    public static string[] Symbols(TickMonitorProfileInput input) =>
+        [.. (input.Symbols ?? []).Select(symbol => symbol?.Trim() ?? string.Empty).Where(symbol => symbol.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase)];
+
+    public static string? Validate(
+        TickMonitorProfileInput input, TickMonitorSettings settings, IReadOnlyCollection<TickMonitorChannel> channels, IReadOnlyCollection<TickMonitorProfile> profiles)
     {
-        var symbol = input.Symbol?.Trim() ?? string.Empty;
-        if (symbol.Length is 0 or > MaxSymbolLength)
-            return $"A symbol has 1 to {MaxSymbolLength} characters.";
+        var name = input.Name?.Trim() ?? string.Empty;
+        if (name.Length is 0 or > MaxNameLength)
+            return $"A profile name has 1 to {MaxNameLength} characters.";
+        var symbols = Symbols(input);
+        if (symbols.Length is 0 or > MaxSymbols)
+            return $"A profile has 1 to {MaxSymbols} symbols.";
+        if (symbols.FirstOrDefault(symbol => symbol.Length > MaxSymbolLength) is { } tooLong)
+            return $"The symbol {tooLong} is longer than {MaxSymbolLength} characters.";
+        foreach (var other in profiles.Where(profile => profile.Id != input.Id))
+        {
+            var taken = symbols.Where(symbol => other.Symbols.Contains(symbol, StringComparer.OrdinalIgnoreCase)).ToList();
+            if (taken.Count > 0)
+                return $"{string.Join(", ", taken)} already in the profile \"{other.Name}\".";
+        }
         if (input.Config is not { } config)
             return "The profile has no configuration.";
         if (config.CloseLeadSeconds is < 0 or > MaxCloseLeadSeconds)

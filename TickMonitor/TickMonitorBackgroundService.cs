@@ -47,7 +47,7 @@ public sealed class TickMonitorBackgroundService(
 
     public bool Snooze(string symbol, int minutes)
     {
-        if (!_profiles.Any(profile => string.Equals(profile.Symbol, symbol, StringComparison.OrdinalIgnoreCase)))
+        if (!_profiles.Any(profile => profile.Symbols.Contains(symbol, StringComparer.OrdinalIgnoreCase)))
             return false;
         lock (_engineGate)
             _engine.Snooze(symbol, minutes <= 0 ? 0 : ServerNow() + minutes * 60_000L);
@@ -308,7 +308,7 @@ public sealed class TickMonitorBackgroundService(
 
     private void SyncSelectedSymbols()
     {
-        var wanted = _profiles.Select(profile => profile.Symbol).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var wanted = _profiles.SelectMany(profile => profile.Symbols).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var added = wanted.Where(symbol => !_selected.Contains(symbol)).ToList();
         var removed = _selected.Where(symbol => !wanted.Contains(symbol)).ToList();
         if (added.Count == 0 && removed.Count == 0)
@@ -419,11 +419,13 @@ public sealed class TickMonitorBackgroundService(
         lock (_engineGate)
         {
             foreach (var profile in _profiles)
+            foreach (var symbol in profile.Symbols)
             {
-                var state = _engine.States.GetValueOrDefault(profile.Symbol);
-                var tick = sink.Last(profile.Symbol);
+                var state = _engine.States.GetValueOrDefault(symbol);
+                var tick = sink.Last(symbol);
                 symbols.Add(new TickMonitorSymbolStatusDto(
-                    profile.Symbol,
+                    symbol,
+                    profile.Name,
                     profile.Enabled,
                     (state?.State ?? TickMonitorSymbolStateEnum.Disabled).ToString(),
                     state?.Reason,

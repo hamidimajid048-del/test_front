@@ -147,7 +147,8 @@ the on/off switch, the Telegram bot token, the operations channel and the limits
 (`violation_panel.tick_monitor_settings`) and are changed on the page's Settings tab (`tick-monitor.settings`). A change
 to any profile, channel or setting is picked up by the engine within a second; no restart is needed.
 
-- **Profiles** (`tick-monitor.edit`): one per symbol, with time windows in **MetaTrader server time** (days of the week,
+- **Profiles** (`tick-monitor.edit`): a named set of one or more symbols (picked from the server's symbol groups; a symbol
+  belongs to one profile only, and each symbol is watched on its own), with time windows in **MetaTrader server time** (days of the week,
   from, to; a window whose end is not after its start crosses midnight). Each window has ordered stages: after N seconds
   without a tick, send to a channel, M times every K seconds. Windows of a profile must not overlap; a moment outside every
   window is not monitored. Options: a "ticks resumed" notice after at least N stages fired, and a quiet period before the

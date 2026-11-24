@@ -2,6 +2,7 @@ namespace Sgb.Trading.Violation.Panel.TickMonitor;
 
 public sealed record TickMonitorSymbolStatusDto(
     string Symbol,
+    string Profile,
     bool Enabled,
     string State,
     string? Reason,

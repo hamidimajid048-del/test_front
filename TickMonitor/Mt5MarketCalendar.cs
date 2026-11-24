@@ -10,7 +10,7 @@ public sealed class Mt5MarketCalendar(Mt5ConnectionService mt5, TimeProvider tim
     private readonly object _gate = new();
     private readonly Dictionary<string, (Mt5SymbolCalendarModel? Model, DateTimeOffset ReadAt)> _symbols = new(StringComparer.OrdinalIgnoreCase);
     private (IReadOnlyList<Mt5HolidayModel> Holidays, DateTimeOffset ReadAt)? _holidays;
-    private (IReadOnlyList<string> Names, DateTimeOffset ReadAt)? _symbolNames;
+    private (IReadOnlyList<Mt5SymbolModel> Symbols, DateTimeOffset ReadAt)? _symbolList;
 
     public void Clear()
     {
@@ -18,7 +18,7 @@ public sealed class Mt5MarketCalendar(Mt5ConnectionService mt5, TimeProvider tim
         {
             _symbols.Clear();
             _holidays = null;
-            _symbolNames = null;
+            _symbolList = null;
         }
     }
 
@@ -47,28 +47,28 @@ public sealed class Mt5MarketCalendar(Mt5ConnectionService mt5, TimeProvider tim
         return Mt5MarketStatusModel.Opened(openedAt, closesAt, model.Point);
     }
 
-    public IReadOnlyList<string> SymbolNames()
+    public IReadOnlyList<Mt5SymbolModel> Symbols()
     {
         lock (_gate)
         {
-            if (_symbolNames is { } cached && timeProvider.GetUtcNow() - cached.ReadAt < CacheLifetime)
-                return cached.Names;
+            if (_symbolList is { } cached && timeProvider.GetUtcNow() - cached.ReadAt < CacheLifetime)
+                return cached.Symbols;
         }
 
-        var names = mt5.RunManager(api =>
+        var symbols = mt5.RunManager(api =>
         {
             using var symbol = api.SymbolCreate();
             var total = api.SymbolTotal();
-            var list = new List<string>((int)total);
+            var list = new List<Mt5SymbolModel>((int)total);
             for (uint position = 0; position < total; position++)
                 if (api.SymbolNext(position, symbol) == MTRetCode.MT_RET_OK)
-                    list.Add(symbol.Symbol());
-            return (IReadOnlyList<string>)list;
+                    list.Add(new Mt5SymbolModel(symbol.Symbol(), symbol.Path()));
+            return (IReadOnlyList<Mt5SymbolModel>)list;
         });
 
         lock (_gate)
-            _symbolNames = (names, timeProvider.GetUtcNow());
-        return names;
+            _symbolList = (symbols, timeProvider.GetUtcNow());
+        return symbols;
     }
 
     private Mt5SymbolCalendarModel? SymbolCalendar(string symbol)

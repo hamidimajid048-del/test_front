@@ -184,12 +184,26 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
 
             CREATE TABLE IF NOT EXISTS violation_panel.tick_monitor_profiles (
                 id uuid PRIMARY KEY,
-                symbol text NOT NULL,
+                name text NOT NULL,
+                symbols text[] NOT NULL,
                 enabled boolean NOT NULL DEFAULT true,
                 config jsonb NOT NULL,
                 updated_by text NULL,
                 updated_at timestamptz NOT NULL DEFAULT now());
-            CREATE UNIQUE INDEX IF NOT EXISTS ux_tick_monitor_profiles_symbol ON violation_panel.tick_monitor_profiles ((lower(symbol)));
+
+            -- Profiles held one symbol each until 2026-11-24; each becomes a profile named after its symbol.
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_schema = 'violation_panel' AND table_name = 'tick_monitor_profiles' AND column_name = 'symbol') THEN
+                    ALTER TABLE violation_panel.tick_monitor_profiles ADD COLUMN IF NOT EXISTS name text, ADD COLUMN IF NOT EXISTS symbols text[];
+                    UPDATE violation_panel.tick_monitor_profiles SET name = symbol, symbols = ARRAY[symbol] WHERE symbols IS NULL;
+                    DROP INDEX IF EXISTS violation_panel.ux_tick_monitor_profiles_symbol;
+                    ALTER TABLE violation_panel.tick_monitor_profiles DROP COLUMN symbol,
+                        ALTER COLUMN name SET NOT NULL, ALTER COLUMN symbols SET NOT NULL;
+                END IF;
+            END $$;
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_tick_monitor_profiles_name ON violation_panel.tick_monitor_profiles ((lower(name)));
 
             CREATE TABLE IF NOT EXISTS violation_panel.tick_monitor_settings (
                 id boolean PRIMARY KEY DEFAULT true CHECK (id),

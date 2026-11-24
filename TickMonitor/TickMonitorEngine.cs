@@ -37,18 +37,19 @@ public sealed class TickMonitorEngine
         _serverOffsetMs = serverOffsetMs;
         var result = new TickMonitorStepResult();
 
-        foreach (var symbol in _states.Keys.Where(symbol => profiles.All(profile => !string.Equals(profile.Symbol, symbol, StringComparison.OrdinalIgnoreCase))).ToList())
+        foreach (var symbol in _states.Keys.Where(symbol => !profiles.Any(profile => profile.Symbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))).ToList())
         {
             Transition(symbol, _states[symbol], result, TickMonitorSymbolStateEnum.Disabled, "Removed", now, "Disabled");
             _states.Remove(symbol);
         }
 
         foreach (var profile in profiles)
-        {
-            if (!_states.TryGetValue(profile.Symbol, out var state))
-                _states[profile.Symbol] = state = new TickMonitorSymbolState { TrackingSince = now };
-            Evaluate(now, profile, state, channels, settings, connected, market, lastTick, result);
-        }
+            foreach (var symbol in profile.Symbols)
+            {
+                if (!_states.TryGetValue(symbol, out var state))
+                    _states[symbol] = state = new TickMonitorSymbolState { TrackingSince = now };
+                Evaluate(now, profile, symbol, state, channels, settings, connected, market, lastTick, result);
+            }
 
         return result;
     }
@@ -56,6 +57,7 @@ public sealed class TickMonitorEngine
     private void Evaluate(
         long now,
         TickMonitorProfile profile,
+        string symbol,
         TickMonitorSymbolState state,
         IReadOnlyDictionary<Guid, TickMonitorChannel> channels,
         TickMonitorSettings settings,
@@ -64,7 +66,6 @@ public sealed class TickMonitorEngine
         Func<string, TickMonitorTickModel?> lastTick,
         TickMonitorStepResult result)
     {
-        var symbol = profile.Symbol;
         if (!profile.Enabled)
         {
             Transition(symbol, state, result, TickMonitorSymbolStateEnum.Disabled, "Profile disabled", now, "Disabled");

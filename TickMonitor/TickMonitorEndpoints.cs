@@ -3,7 +3,6 @@ namespace Sgb.Trading.Violation.Panel.TickMonitor;
 public static class TickMonitorEndpoints
 {
     private const int MaxChannelNameLength = 40;
-    private const int MaxSymbolSuggestions = 50;
     private const int MaxSnoozeMinutes = 1440;
     private const int DefaultEventLimit = 200;
 
@@ -44,7 +43,8 @@ public static class TickMonitorEndpoints
         var cancellationToken = context.RequestAborted;
         var settings = await store.GetSettingsAsync(cancellationToken);
         var channels = await store.ListChannelsAsync(cancellationToken);
-        if (TickMonitorProfileValidator.Validate(input, settings, channels) is { } error)
+        var profiles = await store.ListProfilesAsync(cancellationToken);
+        if (TickMonitorProfileValidator.Validate(input, settings, channels, profiles) is { } error)
             return Error(StatusCodes.Status400BadRequest, error);
 
         var config = input.Config! with
@@ -52,11 +52,13 @@ public static class TickMonitorEndpoints
             Schedules = [.. input.Config!.Schedules.Select(schedule => schedule with { Name = schedule.Name.Trim() })]
         };
         var profile = await store.SaveProfileAsync(
-            input.Id ?? Guid.CreateVersion7(), input.Symbol!.Trim(), input.Enabled ?? true, config, context.User.Identity?.Name, cancellationToken);
+            input.Id ?? Guid.CreateVersion7(), input.Name!.Trim(), TickMonitorProfileValidator.Symbols(input), input.Enabled ?? true, config,
+            context.User.Identity?.Name, cancellationToken);
         if (profile is null)
-            return Error(StatusCodes.Status409Conflict, "Another profile already monitors this symbol.");
+            return Error(StatusCodes.Status409Conflict, "Another profile already has this name.");
 
-        await AuditAsync(auth, context, "tick_monitor_profile_saved", $"{profile.Symbol}: {(profile.Enabled ? "enabled" : "disabled")}, {config.Schedules.Length} window(s)");
+        await AuditAsync(auth, context, "tick_monitor_profile_saved",
+            $"{profile.Name}: {string.Join(", ", profile.Symbols)}; {(profile.Enabled ? "enabled" : "disabled")}, {config.Schedules.Length} window(s)");
         return Results.Ok(profile);
     }
 
@@ -65,11 +67,11 @@ public static class TickMonitorEndpoints
         if (FromPanel(context) is { } refused)
             return refused;
 
-        var symbol = (await store.ListProfilesAsync(context.RequestAborted)).FirstOrDefault(profile => profile.Id == id)?.Symbol;
-        if (symbol is null || !await store.DeleteProfileAsync(id, context.RequestAborted))
+        var profile = (await store.ListProfilesAsync(context.RequestAborted)).FirstOrDefault(profile => profile.Id == id);
+        if (profile is null || !await store.DeleteProfileAsync(id, context.RequestAborted))
             return Error(StatusCodes.Status404NotFound, "The profile no longer exists.");
 
-        await AuditAsync(auth, context, "tick_monitor_profile_deleted", symbol);
+        await AuditAsync(auth, context, "tick_monitor_profile_deleted", $"{profile.Name}: {string.Join(", ", profile.Symbols)}");
         return Results.NoContent();
     }
 
@@ -87,17 +89,11 @@ public static class TickMonitorEndpoints
         return Results.NoContent();
     }
 
-    private static IResult Symbols(string? query, Mt5MarketCalendar calendar)
+    private static IResult Symbols(Mt5MarketCalendar calendar)
     {
-        var needle = query?.Trim() ?? string.Empty;
         try
         {
-            var names = calendar.SymbolNames()
-                .Where(name => needle.Length == 0 || name.Contains(needle, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(name => name.StartsWith(needle, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-                .ThenBy(name => name, StringComparer.OrdinalIgnoreCase)
-                .Take(MaxSymbolSuggestions);
-            return Results.Ok(names);
+            return Results.Ok(calendar.Symbols());
         }
         catch (Mt5UnavailableException exception)
         {

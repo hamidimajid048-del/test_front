@@ -34,7 +34,6 @@ let settings = null;
 let editingProfile = null;
 let editingChannel = null;
 let statusTimer = null;
-let symbolSuggestionsLoaded = false;
 
 const channelName = id => channels.find(channel => channel.id === id)?.name ?? 'Unknown channel';
 const showMessage = (text, kind = 'success') => toast(text, kind);
@@ -128,6 +127,7 @@ async function loadStatus() {
     const now = status.serverTime;
     const columns = [
       column('symbol', 'Symbol'),
+      column('profile', 'Profile'),
       column('state', 'State', (value, row) => {
         const wrapper = document.createElement('span');
         wrapper.className = 'inline';
@@ -175,6 +175,22 @@ function describeSchedule(schedule) {
   return `${schedule.name}: ${days} ${schedule.from}–${schedule.to}`;
 }
 
+const SYMBOLS_SHOWN = 8;
+
+function symbolsCell(symbols) {
+  const cell = document.createElement('div');
+  cell.className = 'tm-chips compact';
+  for (const symbol of symbols.slice(0, SYMBOLS_SHOWN))
+    cell.append(Object.assign(document.createElement('span'), { className: 'tm-chip', textContent: symbol, translate: false }));
+  if (symbols.length > SYMBOLS_SHOWN) {
+    cell.append(Object.assign(document.createElement('span'), { className: 'visually-hidden', textContent: symbols.slice(SYMBOLS_SHOWN).join(' ') }));
+    const more = badge(`+${symbols.length - SYMBOLS_SHOWN} more`, 'main');
+    more.title = symbols.slice(SYMBOLS_SHOWN).join(', ');
+    cell.append(more);
+  }
+  return cell;
+}
+
 function renderProfiles() {
   const host = document.getElementById('profiles');
   if (!profiles.length) {
@@ -182,7 +198,8 @@ function renderProfiles() {
     return;
   }
   const columns = [
-    column('symbol', 'Symbol'),
+    column('name', 'Profile'),
+    { ...column('symbols', 'Symbols', value => symbolsCell(value)), sortValue: row => row.symbols.length, filterValue: row => row.symbols.join(' ') },
     column('enabled', 'Enabled', value => badge(value ? 'Enabled' : 'Disabled', value ? 'ok' : 'muted')),
     column('config', 'Time windows (server time)', value => {
       const list = document.createElement('ul');
@@ -214,7 +231,7 @@ function renderProfiles() {
         actions.className = 'actions';
         actions.append(
           actionButton('Edit', () => openProfileDialog(row), { iconName: 'pencil', permission: 'tick-monitor.edit' }),
-          actionButton('Duplicate', () => openProfileDialog({ ...row, id: null, symbol: '' }), { iconName: 'copy', permission: 'tick-monitor.edit' }),
+          actionButton('Duplicate', () => openProfileDialog({ ...row, id: null, name: `${row.name} copy`, symbols: [] }), { iconName: 'copy', permission: 'tick-monitor.edit' }),
           actionButton(row.enabled ? 'Disable' : 'Enable', () => toggleProfile(row), { permission: 'tick-monitor.edit' }),
           actionButton('Delete', () => deleteProfile(row), { danger: true, iconName: 'close', permission: 'tick-monitor.edit' }));
         return actions;
@@ -234,23 +251,222 @@ async function saveProfile(profile, doneText) {
 
 async function toggleProfile(profile) {
   try {
-    await saveProfile({ ...profile, enabled: !profile.enabled }, profile.enabled ? `${profile.symbol} disabled.` : `${profile.symbol} enabled.`);
+    await saveProfile({ ...profile, enabled: !profile.enabled }, profile.enabled ? `${profile.name} disabled.` : `${profile.name} enabled.`);
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }
 }
 
 async function deleteProfile(profile) {
-  if (!await confirmAction({ title: `Delete the profile of ${profile.symbol}?`, message: 'Its alarms stop immediately. The history is kept.', confirmText: 'Delete', danger: true })) return;
+  if (!await confirmAction({ title: `Delete the profile ${profile.name}?`, message: `Alarms of its ${profile.symbols.length} symbol(s) stop immediately. The history is kept.`, confirmText: 'Delete', danger: true })) return;
   try {
     await panelRequest('DELETE', `tick-monitor/profiles/${profile.id}`);
-    showMessage(`${profile.symbol} removed.`);
+    showMessage(`${profile.name} removed.`);
     await loadProfiles();
     renderProfiles();
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }
 }
+
+// ---- symbol picker ----
+// The MetaTrader symbols as a tree of their groups (the symbol path on the server), with a checkbox per symbol and per
+// group. A symbol that another profile already watches is shown but cannot be chosen.
+
+const symbolSearch = document.getElementById('symbol-search');
+const symbolPicker = document.getElementById('symbol-picker');
+const symbolBrowse = document.getElementById('symbol-browse');
+let symbolCatalog = null;
+let chosenSymbols = new Set();
+let openFolders = new Set();
+
+const symbolKey = symbol => symbol.toLowerCase();
+
+async function loadSymbolCatalog() {
+  if (symbolCatalog) return;
+  try {
+    symbolCatalog = await panelRequest('GET', 'tick-monitor/symbols');
+  } catch {
+    symbolCatalog = [];
+  }
+  if (!profileDialog.open) return;
+  renderSymbolPicker();
+}
+
+// Which profile already watches each symbol, other than the one being edited.
+function symbolOwners() {
+  const owners = new Map();
+  for (const profile of profiles)
+    if (profile.id !== editingProfile?.id)
+      for (const symbol of profile.symbols) owners.set(symbolKey(symbol), profile.name);
+  return owners;
+}
+
+function symbolTree(items) {
+  const root = { path: '', folders: new Map(), symbols: [] };
+  for (const item of items) {
+    const parts = (item.path || item.name).split('\\').filter(Boolean);
+    parts.pop();
+    let node = root;
+    for (const part of parts) {
+      if (!node.folders.has(part)) node.folders.set(part, { path: node.path ? `${node.path}\\${part}` : part, folders: new Map(), symbols: [] });
+      node = node.folders.get(part);
+    }
+    node.symbols.push(item.name);
+  }
+  return root;
+}
+
+const treeSymbols = node => [...node.symbols, ...[...node.folders.values()].flatMap(treeSymbols)];
+
+function setChosen(symbols, value) {
+  for (const symbol of symbols) {
+    const existing = [...chosenSymbols].find(item => symbolKey(item) === symbolKey(symbol));
+    if (existing) chosenSymbols.delete(existing);
+    if (value) chosenSymbols.add(symbol);
+  }
+  renderSymbolPicker();
+}
+
+const isChosen = symbol => [...chosenSymbols].some(item => symbolKey(item) === symbolKey(symbol));
+
+function renderChosen() {
+  const known = new Set((symbolCatalog ?? []).map(item => symbolKey(item.name)));
+  const chips = [...chosenSymbols].sort((a, b) => a.localeCompare(b)).map(symbol => {
+    const chip = document.createElement('span');
+    const unknown = symbolCatalog?.length && !known.has(symbolKey(symbol));
+    chip.className = `tm-chip${unknown ? ' unknown' : ''}`;
+    chip.translate = false;
+    chip.title = unknown ? t('Not found on the MetaTrader server') : '';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.setAttribute('aria-label', t(`Remove ${symbol}`));
+    remove.textContent = '\u00d7';
+    remove.addEventListener('click', () => setChosen([symbol], false));
+    chip.append(symbol, remove);
+    return chip;
+  });
+  const host = document.getElementById('symbol-chips');
+  host.replaceChildren(...chips);
+  if (!chips.length) host.append(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'No symbol chosen yet.' }));
+  document.getElementById('symbol-count').textContent = `${chosenSymbols.size} selected`;
+}
+
+function folderRow(name, node, owners, searching, depth) {
+  const all = treeSymbols(node);
+  const free = all.filter(symbol => !owners.has(symbolKey(symbol)));
+  const chosen = all.filter(isChosen).length;
+  const open = searching || openFolders.has(node.path);
+
+  const folder = document.createElement('div');
+  folder.className = 'tm-folder';
+  const head = document.createElement('div');
+  head.className = 'tm-folder-head';
+  head.style.paddingInlineStart = `${depth * 18}px`;
+  const arrow = document.createElement('button');
+  arrow.type = 'button';
+  arrow.className = `tm-folder-arrow${open ? ' open' : ''}`;
+  arrow.setAttribute('aria-expanded', String(open));
+  arrow.setAttribute('aria-label', name);
+  arrow.textContent = '\u25b8';
+  arrow.disabled = searching;
+  arrow.addEventListener('click', () => {
+    if (openFolders.has(node.path)) openFolders.delete(node.path);
+    else openFolders.add(node.path);
+    renderSymbolPicker();
+  });
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.disabled = !free.length;
+  box.checked = free.length > 0 && free.every(isChosen);
+  box.indeterminate = !box.checked && chosen > 0;
+  box.setAttribute('aria-label', t(`All of ${name}`));
+  box.addEventListener('change', () => setChosen(free, box.checked));
+  const title = document.createElement('button');
+  title.type = 'button';
+  title.className = 'tm-folder-name';
+  title.textContent = name;
+  title.translate = false;
+  title.addEventListener('click', () => arrow.click());
+  const count = document.createElement('span');
+  count.className = `tm-folder-count${chosen ? ' chosen' : ''}`;
+  count.textContent = `${chosen}/${all.length}`;
+  head.append(arrow, box, title, count);
+  folder.append(head);
+  if (open) folder.append(...nodeRows(node, owners, searching, depth + 1));
+  return folder;
+}
+
+function nodeRows(node, owners, searching, depth) {
+  const rows = [...node.folders.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, child]) => folderRow(name, child, owners, searching, depth));
+  for (const symbol of [...node.symbols].sort((a, b) => a.localeCompare(b))) {
+    const owner = owners.get(symbolKey(symbol));
+    const label = document.createElement('label');
+    label.className = `tm-symbol${owner ? ' taken' : ''}`;
+    label.style.paddingInlineStart = `${depth * 18 + 26}px`;
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = isChosen(symbol);
+    box.disabled = Boolean(owner);
+    box.addEventListener('change', () => setChosen([symbol], box.checked));
+    const name = document.createElement('span');
+    name.textContent = symbol;
+    name.translate = false;
+    label.append(box, name);
+    if (owner) label.append(Object.assign(document.createElement('span'), { className: 'tm-symbol-owner', textContent: `in ${owner}` }));
+    rows.push(label);
+  }
+  return rows;
+}
+
+function renderSymbolPicker() {
+  renderChosen();
+  if (symbolPicker.hidden) return;
+  if (!symbolCatalog) {
+    symbolPicker.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: 'Loading the symbols…' }));
+    return;
+  }
+  if (!symbolCatalog.length) {
+    symbolPicker.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: 'The symbol list is not available; type a symbol and press Enter.' }));
+    return;
+  }
+  const needle = symbolSearch.value.trim().toLowerCase();
+  const items = needle ? symbolCatalog.filter(item => item.name.toLowerCase().includes(needle) || item.path.toLowerCase().includes(needle)) : symbolCatalog;
+  const scroll = symbolPicker.scrollTop;
+  const rows = nodeRows(symbolTree(items), symbolOwners(), Boolean(needle), 0);
+  symbolPicker.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('p'), { className: 'muted', textContent: 'No symbol matches; press Enter to add it as typed.' })]));
+  symbolPicker.scrollTop = scroll;
+}
+
+function showSymbolPicker(show) {
+  symbolPicker.hidden = !show;
+  symbolBrowse.setAttribute('aria-expanded', String(show));
+  symbolBrowse.classList.toggle('active', show);
+  renderSymbolPicker();
+}
+
+symbolBrowse.addEventListener('click', () => showSymbolPicker(symbolPicker.hidden));
+symbolSearch.addEventListener('input', () => {
+  if (symbolSearch.value.trim() && symbolPicker.hidden) showSymbolPicker(true);
+  else renderSymbolPicker();
+});
+symbolSearch.addEventListener('keydown', event => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  const typed = symbolSearch.value.trim();
+  if (!typed) return;
+  const known = symbolCatalog?.find(item => symbolKey(item.name) === symbolKey(typed));
+  const owner = symbolOwners().get(symbolKey(typed));
+  if (owner) {
+    profileError.textContent = `${typed} is already in the profile ${owner}.`;
+    return;
+  }
+  profileError.textContent = '';
+  symbolSearch.value = '';
+  setChosen([known?.name ?? typed], true);
+});
 
 // ---- profile dialog ----
 
@@ -450,17 +666,6 @@ function drawCoverage() {
   });
 }
 
-async function loadSymbolSuggestions() {
-  if (symbolSuggestionsLoaded) return;
-  try {
-    const names = await panelRequest('GET', 'tick-monitor/symbols');
-    document.getElementById('symbol-list').replaceChildren(...names.map(name => new Option(name)));
-    symbolSuggestionsLoaded = true;
-  } catch {
-    // Suggestions are a convenience; the symbol can be typed.
-  }
-}
-
 function openProfileDialog(profile) {
   if (!channels.length) {
     showMessage('Add a channel first; every stage needs one.', 'error');
@@ -472,8 +677,14 @@ function openProfileDialog(profile) {
     recoveryNotice: { enabled: true, minStagesFired: 2, channelId: null },
     schedules: [{ name: 'Day', days: DAYS.slice(0, 5), from: '04:00', to: '20:00', stages: [{ afterSeconds: 30, channelId: channels[0].id, repeatCount: 1, repeatIntervalSeconds: 0 }] }],
   };
-  document.getElementById('profile-dialog-title').textContent = profile?.id ? `Edit ${profile.symbol}` : 'New profile';
-  profileForm.elements.symbol.value = profile?.symbol ?? '';
+  document.getElementById('profile-dialog-title').textContent = profile?.id ? `Edit ${profile.name}` : 'New profile';
+  profileForm.elements.name.value = profile?.name ?? '';
+  chosenSymbols = new Set(profile?.symbols ?? []);
+  openFolders = new Set();
+  symbolSearch.value = '';
+  symbolPicker.hidden = true;
+  symbolBrowse.setAttribute('aria-expanded', 'false');
+  symbolBrowse.classList.remove('active');
   profileForm.elements.enabled.checked = profile?.enabled ?? true;
   profileForm.elements.closeLeadSeconds.value = String(config.closeLeadSeconds ?? 0);
   profileForm.elements.recoveryEnabled.checked = config.recoveryNotice?.enabled ?? true;
@@ -484,8 +695,9 @@ function openProfileDialog(profile) {
   schedulesHost.replaceChildren(...config.schedules.map(scheduleCard));
   drawCoverage();
   profileError.textContent = '';
-  loadSymbolSuggestions();
+  renderSymbolPicker();
   profileDialog.showModal();
+  loadSymbolCatalog();
 }
 
 profileForm.addEventListener('submit', async event => {
@@ -493,7 +705,8 @@ profileForm.addEventListener('submit', async event => {
   const schedules = [...schedulesHost.querySelectorAll('.tm-schedule')].map(readSchedule);
   const body = {
     id: editingProfile?.id ?? null,
-    symbol: profileForm.elements.symbol.value.trim(),
+    name: profileForm.elements.name.value.trim(),
+    symbols: [...chosenSymbols],
     enabled: profileForm.elements.enabled.checked,
     config: {
       closeLeadSeconds: Number(profileForm.elements.closeLeadSeconds.value),
@@ -505,12 +718,16 @@ profileForm.addEventListener('submit', async event => {
       schedules,
     },
   };
+  if (!body.symbols.length) {
+    profileError.textContent = 'Choose at least one symbol.';
+    return;
+  }
   if (!schedules.length) {
     profileError.textContent = 'Add at least one time window.';
     return;
   }
   try {
-    await saveProfile(body, `${body.symbol} saved.`);
+    await saveProfile(body, `${body.name} saved.`);
     profileDialog.close();
   } catch (error) {
     profileError.textContent = error.message || 'The profile could not be saved.';

@@ -75,9 +75,9 @@ public sealed class TickMonitorStore(NpgsqlDataSource dataSource)
     {
         await using var command = dataSource.CreateCommand(
             """
-            SELECT symbol FROM violation_panel.tick_monitor_profiles
+            SELECT name FROM violation_panel.tick_monitor_profiles
             WHERE config::text LIKE '%' || $1 || '%'
-            ORDER BY lower(symbol)
+            ORDER BY lower(name)
             """);
         command.Parameters.AddWithValue(channelId.ToString());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -100,7 +100,7 @@ public sealed class TickMonitorStore(NpgsqlDataSource dataSource)
     public async Task<IReadOnlyList<TickMonitorProfile>> ListProfilesAsync(CancellationToken cancellationToken)
     {
         await using var command = dataSource.CreateCommand(
-            "SELECT id, symbol, enabled, config::text, updated_by, updated_at FROM violation_panel.tick_monitor_profiles ORDER BY lower(symbol)");
+            "SELECT id, name, symbols, enabled, config::text, updated_by, updated_at FROM violation_panel.tick_monitor_profiles ORDER BY lower(name)");
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var profiles = new List<TickMonitorProfile>();
         while (await reader.ReadAsync(cancellationToken))
@@ -109,18 +109,19 @@ public sealed class TickMonitorStore(NpgsqlDataSource dataSource)
     }
 
     public async Task<TickMonitorProfile?> SaveProfileAsync(
-        Guid id, string symbol, bool enabled, TickMonitorProfileConfig config, string? updatedBy, CancellationToken cancellationToken)
+        Guid id, string name, string[] symbols, bool enabled, TickMonitorProfileConfig config, string? updatedBy, CancellationToken cancellationToken)
     {
         await using var command = dataSource.CreateCommand(
             """
-            INSERT INTO violation_panel.tick_monitor_profiles (id, symbol, enabled, config, updated_by)
-            VALUES ($1, $2, $3, $4::jsonb, $5)
-            ON CONFLICT (id) DO UPDATE SET symbol = EXCLUDED.symbol, enabled = EXCLUDED.enabled, config = EXCLUDED.config,
-                updated_by = EXCLUDED.updated_by, updated_at = now()
-            RETURNING id, symbol, enabled, config::text, updated_by, updated_at
+            INSERT INTO violation_panel.tick_monitor_profiles (id, name, symbols, enabled, config, updated_by)
+            VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+            ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, symbols = EXCLUDED.symbols, enabled = EXCLUDED.enabled,
+                config = EXCLUDED.config, updated_by = EXCLUDED.updated_by, updated_at = now()
+            RETURNING id, name, symbols, enabled, config::text, updated_by, updated_at
             """);
         command.Parameters.AddWithValue(id);
-        command.Parameters.AddWithValue(symbol);
+        command.Parameters.AddWithValue(name);
+        command.Parameters.AddWithValue(symbols);
         command.Parameters.AddWithValue(enabled);
         command.Parameters.AddWithValue(JsonSerializer.Serialize(config, Json));
         command.Parameters.AddWithValue((object?)updatedBy ?? DBNull.Value);
@@ -234,9 +235,10 @@ public sealed class TickMonitorStore(NpgsqlDataSource dataSource)
     private static TickMonitorProfile ReadProfile(NpgsqlDataReader reader) => new(
         reader.GetGuid(0),
         reader.GetString(1),
-        reader.GetBoolean(2),
-        JsonSerializer.Deserialize<TickMonitorProfileConfig>(reader.GetString(3), Json)
+        reader.GetFieldValue<string[]>(2),
+        reader.GetBoolean(3),
+        JsonSerializer.Deserialize<TickMonitorProfileConfig>(reader.GetString(4), Json)
             ?? new TickMonitorProfileConfig(0, TickMonitorRecoveryNotice.Default, []),
-        reader.IsDBNull(4) ? null : reader.GetString(4),
-        reader.GetFieldValue<DateTime>(5));
+        reader.IsDBNull(5) ? null : reader.GetString(5),
+        reader.GetFieldValue<DateTime>(6));
 }

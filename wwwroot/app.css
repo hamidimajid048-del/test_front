@@ -1926,3 +1926,31 @@ dialog.panel-dialog .tm-stage input, dialog.panel-dialog .tm-stage select { widt
 .matrix-cell { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); font-weight: 700; }
 .matrix-cell.granted { color: var(--success); background: var(--success-soft); }
 .matrix-cell.denied { color: var(--text-faint); }
+
+/* Symbol picker of the profile dialog: chosen symbols as chips, the server's symbol groups as a tree */
+.tm-picker-count { color: var(--text-muted); font-size: var(--font-size-sm); }
+.tm-chips { display: flex; flex-wrap: wrap; gap: var(--space-6); max-height: 132px; overflow: auto; margin-bottom: var(--space-10); }
+.tm-chips.compact { max-height: none; overflow: visible; margin: 0; max-width: 420px; }
+.tm-chip { display: inline-flex; align-items: center; gap: var(--space-4); padding: 2px var(--space-4) 2px var(--space-10); border: 1px solid var(--edge-soft); border-radius: var(--radius-pill); background: var(--surface-2); font-size: var(--font-size-sm); font-weight: 600; }
+.tm-chips.compact .tm-chip { padding: 1px var(--space-8); font-weight: 500; }
+.tm-chip.unknown { color: var(--warning); border-color: var(--warning-soft); }
+.tm-chip button { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); font-size: 15px; line-height: 1; cursor: pointer; }
+.tm-chip button:hover { color: var(--danger); background: var(--danger-soft, transparent); }
+.tm-picker-bar { display: flex; gap: var(--space-8); align-items: center; }
+dialog.panel-dialog .tm-picker-bar input { flex: 1; width: auto; }
+.tm-picker-bar button.active { color: var(--primary-text); background: var(--side-item-active); }
+.tm-picker { margin-top: var(--space-8); max-height: 340px; overflow: auto; padding: var(--space-6); border: 1px solid var(--edge-soft); border-radius: var(--radius-md); background: var(--surface-2); }
+.tm-picker > p { margin: var(--space-8); }
+.tm-folder-head { display: flex; align-items: center; gap: var(--space-6); min-height: 32px; border-radius: var(--radius-sm); }
+.tm-folder-head:hover, .tm-symbol:hover { background: var(--side-item-hover, rgba(127, 127, 127, .08)); }
+.tm-folder-arrow { display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: transform .12s ease; }
+.tm-folder-arrow.open { transform: rotate(90deg); }
+[dir="rtl"] .tm-folder-arrow:not(.open) { transform: scaleX(-1); }
+.tm-folder-arrow:disabled { cursor: default; opacity: .5; }
+dialog.panel-dialog .tm-folder-head input, dialog.panel-dialog .tm-symbol input { width: auto; height: auto; margin: 0; }
+.tm-folder-name { padding: 0; border: 0; background: transparent; color: var(--text); font-weight: 600; cursor: pointer; }
+.tm-folder-count { margin-inline-start: auto; padding: 0 var(--space-8); color: var(--text-muted); font-size: var(--font-size-xs); }
+.tm-folder-count.chosen { color: var(--primary-text); font-weight: 700; }
+dialog.panel-dialog label.tm-symbol { display: flex; flex-direction: row; align-items: center; gap: var(--space-8); min-height: 28px; margin: 0; border-radius: var(--radius-sm); color: var(--text); font-size: var(--font-size-sm); cursor: pointer; }
+dialog.panel-dialog label.tm-symbol.taken { color: var(--text-muted); cursor: not-allowed; }
+.tm-symbol-owner { margin-inline-start: auto; padding: 0 var(--space-8); color: var(--text-muted); font-size: var(--font-size-xs); }

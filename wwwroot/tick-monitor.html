@@ -36,7 +36,7 @@
         <h2 class="ad-card-title" data-icon="target">Profiles</h2>
         <button type="button" id="profile-add" data-icon="plusBox" data-permission="tick-monitor.edit">New profile</button>
       </div>
-      <p class="hint">A profile is one symbol with its time windows. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.</p>
+      <p class="hint">A profile is one or more symbols with the same time windows; each symbol is watched on its own. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.</p>
       <div id="profiles"></div>
     </section>
 
@@ -140,13 +140,12 @@
       <div class="tm-dialog-body">
         <div class="tm-dialog-grid">
           <section class="tm-panel">
-            <h4 class="tm-panel-title" data-icon="candles">Symbol</h4>
+            <h4 class="tm-panel-title" data-icon="settings">Profile</h4>
             <div class="tm-fields">
-              <label class="tm-grow"><span>Symbol <button type="button" class="col-help" data-help="The MetaTrader symbol exactly as on the server, for example XAUUSD.x. One profile per symbol.">?</button></span> <input name="symbol" list="symbol-list" maxlength="32" required autocomplete="off" placeholder="XAUUSD.x"></label>
-              <datalist id="symbol-list"></datalist>
+              <label class="tm-grow"><span>Name <button type="button" class="col-help" data-help="A name for this setup, for example Metals or Indices day. Shown in the panel only; Telegram messages name the symbol.">?</button></span> <input name="name" maxlength="60" required autocomplete="off" placeholder="Metals"></label>
               <label><span>Quiet before close <button type="button" class="col-help" data-help="No new alarm starts in the last seconds before the quote session closes, because ticks normally thin out there. 0 turns this off.">?</button></span> <span class="tm-with-unit"><input name="closeLeadSeconds" type="number" min="0" max="3600" value="0" required><span class="tm-unit">s</span></span></label>
             </div>
-            <label class="check tm-check"><input name="enabled" type="checkbox" checked> Monitor this symbol <button type="button" class="col-help" data-help="When off, the profile is kept but the symbol is not watched and nothing is sent.">?</button></label>
+            <label class="check tm-check"><input name="enabled" type="checkbox" checked> Monitor these symbols <button type="button" class="col-help" data-help="When off, the profile is kept but none of its symbols is watched and nothing is sent.">?</button></label>
           </section>
 
           <section class="tm-panel">
@@ -158,6 +157,19 @@
             </div>
           </section>
         </div>
+
+        <section class="tm-panel">
+          <div class="tm-panel-head">
+            <h4 class="tm-panel-title" data-icon="candles">Symbols <button type="button" class="col-help" data-help="Every symbol chosen here is watched on its own with the same windows and stages: a gap on one symbol alarms for that symbol only. A symbol can belong to one profile only.">?</button></h4>
+            <span class="tm-picker-count" id="symbol-count"></span>
+          </div>
+          <div class="tm-chips" id="symbol-chips"></div>
+          <div class="tm-picker-bar">
+            <input type="search" id="symbol-search" autocomplete="off" spellcheck="false" placeholder="Search, or type a symbol and press Enter">
+            <button type="button" id="symbol-browse" data-icon="list" aria-expanded="false">Browse by group</button>
+          </div>
+          <div class="tm-picker" id="symbol-picker" hidden></div>
+        </section>
 
         <section class="tm-panel">
           <div class="tm-panel-head">

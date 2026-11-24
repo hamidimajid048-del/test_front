@@ -1328,7 +1328,20 @@
     "Stage": "مرحله",
     "Days": "روزها",
     "Remove stage": "حذف مرحله",
-    "Coverage": "پوشش"
+    "Coverage": "پوشش",
+    "A name for this setup, for example Metals or Indices day. Shown in the panel only; Telegram messages name the symbol.": "نامی برای این ستاپ، مثلاً Metals یا Indices day. فقط در پنل نمایش داده می‌شود؛ پیام‌های تلگرام نام نماد را دارند.",
+    "Every symbol chosen here is watched on its own with the same windows and stages: a gap on one symbol alarms for that symbol only. A symbol can belong to one profile only.": "هر نمادی که این‌جا انتخاب شود جداگانه و با همین پنجره‌ها و مراحل بررسی می‌شود: قطعی یک نماد فقط برای همان نماد هشدار می‌دهد. هر نماد فقط می‌تواند در یک پروفایل باشد.",
+    "When off, the profile is kept but none of its symbols is watched and nothing is sent.": "اگر خاموش باشد پروفایل حفظ می‌شود ولی هیچ‌کدام از نمادهایش بررسی نمی‌شود و پیامی ارسال نمی‌شود.",
+    "Monitor these symbols": "بررسی این نمادها",
+    "Search, or type a symbol and press Enter": "جست‌وجو کنید، یا نام نماد را بنویسید و Enter بزنید",
+    "Browse by group": "مرور بر اساس گروه",
+    "No symbol chosen yet.": "هنوز نمادی انتخاب نشده است.",
+    "Loading the symbols…": "در حال بارگذاری نمادها…",
+    "The symbol list is not available; type a symbol and press Enter.": "فهرست نمادها در دسترس نیست؛ نام نماد را بنویسید و Enter بزنید.",
+    "No symbol matches; press Enter to add it as typed.": "نمادی پیدا نشد؛ برای افزودن همان متن Enter بزنید.",
+    "Not found on the MetaTrader server": "روی سرور متاتریدر پیدا نشد",
+    "Choose at least one symbol.": "دست‌کم یک نماد انتخاب کنید.",
+    "A profile is one or more symbols with the same time windows; each symbol is watched on its own. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.": "هر پروفایل یک یا چند نماد با پنجره‌های زمانی یکسان است و هر نماد جداگانه بررسی می‌شود. هر پنجره (به وقت سرور) مراحلی دارد: بعد از چند ثانیه بدون تیک به کدام کانال خبر داده شود، چند بار و با چه فاصله‌ای. پنجره‌های یک پروفایل نباید هم‌پوشانی داشته باشند؛ لحظه‌ای که بیرون از همه‌ی پنجره‌هاست بررسی نمی‌شود."
   },
   "templates": {
     "Saved token: {0}": "توکن ذخیره‌شده: {0}",
@@ -1495,7 +1508,15 @@
     "Permissions of {0}": "مجوزهای {0}",
     "{0}: {1}/{2}": "{0}: {1}/{2}",
     "{0} — {1}": "{0} — {1}",
-    "\"Ticks resumed\" message if {0}+ stages fired": "پیام «ticks resumed» اگر {0} مرحله یا بیشتر اجرا شده باشد"
+    "\"Ticks resumed\" message if {0}+ stages fired": "پیام «ticks resumed» اگر {0} مرحله یا بیشتر اجرا شده باشد",
+    "Remove {0}": "حذف {0}",
+    "{0} selected": "{0} انتخاب‌شده",
+    "All of {0}": "همه‌ی {0}",
+    "in {0}": "در {0}",
+    "{0} is already in the profile {1}.": "{0} از قبل در پروفایل {1} است.",
+    "{0} copy": "{0} (کپی)",
+    "Delete the profile {0}?": "پروفایل {0} حذف شود؟",
+    "Alarms of its {0} symbol(s) stop immediately. The history is kept.": "هشدارهای {0} نماد آن فوراً متوقف می‌شود. تاریخچه حفظ می‌شود."
   },
   "blocks": {
     "<strong>Check file</strong> changes nothing: it shows every line with the account found on MetaTrader and its balance, and marks lines that cannot be sent. Only the lines marked Ready are sent, after you confirm.": "<strong>بررسی فایل</strong> هیچ تغییری ایجاد نمی‌کند: هر خط را همراه با حساب یافت‌شده در MetaTrader و موجودی آن نمایش می‌دهد و خطوطی را که قابل ارسال نیستند علامت می‌زند. فقط خطوط «آماده» و پس از تأیید شما ارسال می‌شوند.",
