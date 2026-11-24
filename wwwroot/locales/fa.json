@@ -1365,7 +1365,11 @@
     "Remove the saved token when saving": "حذف توکن ذخیره‌شده هنگام ذخیره",
     "Saved token:": "توکن ذخیره‌شده:",
     "Open gaps": "قطعی‌های باز",
-    "The live state of monitoring (engine, MetaTrader, open gaps) above the alarm profiles: which symbols, the time windows in server time and the escalation stages.": "وضعیت لحظه‌ای مانیتورینگ (موتور، متاتریدر، قطعی‌های باز) بالای پروفایل‌های هشدار: کدام نمادها، پنجره‌های زمانی به وقت سرور و مراحل تشدید."
+    "The live state of monitoring (engine, MetaTrader, open gaps) above the alarm profiles: which symbols, the time windows in server time and the escalation stages.": "وضعیت لحظه‌ای مانیتورینگ (موتور، متاتریدر، قطعی‌های باز) بالای پروفایل‌های هشدار: کدام نمادها، پنجره‌های زمانی به وقت سرور و مراحل تشدید.",
+    "The largest \"Messages\" a stage may have, at most 10. A wake-up stage with 5 messages every 5 seconds needs at least 5.": "بیشترین «Messages» که یک مرحله می‌تواند داشته باشد، حداکثر ۱۰. مرحله‌ی بیدارباش با ۵ پیام هر ۵ ثانیه دست‌کم ۵ لازم دارد.",
+    "The smallest \"Every (seconds)\" a stage may use. The time between the messages of a stage is always between this and 20 seconds.": "کمترین «Every (seconds)» که یک مرحله می‌تواند داشته باشد. فاصله‌ی پیام‌های یک مرحله همیشه بین این عدد و ۲۰ ثانیه است.",
+    "Seconds between the messages of this stage, 1 to 20. Used only when Messages is more than 1. Every message stops as soon as ticks come back.": "فاصله‌ی بین پیام‌های این مرحله به ثانیه، از ۱ تا ۲۰. فقط وقتی Messages بیشتر از ۱ باشد استفاده می‌شود. با برگشت تیک‌ها همه‌ی پیام‌ها متوقف می‌شوند.",
+    "How many messages this stage sends, 1 to 10. More than 1 makes it a wake-up stage.": "این مرحله چند پیام می‌فرستد، از ۱ تا ۱۰. بیشتر از ۱ یعنی مرحله‌ی بیدارباش."
   },
   "templates": {
     "Saved token: {0}": "توکن ذخیره‌شده: {0}",

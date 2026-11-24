@@ -238,7 +238,7 @@ public sealed class TickMonitorStore(NpgsqlDataSource dataSource)
         reader.GetFieldValue<string[]>(2),
         reader.GetBoolean(3),
         JsonSerializer.Deserialize<TickMonitorProfileConfig>(reader.GetString(4), Json)
-            ?? new TickMonitorProfileConfig(0, TickMonitorRecoveryNotice.Default, []),
+            ?? new TickMonitorProfileConfig(0, []),
         reader.IsDBNull(5) ? null : reader.GetString(5),
         reader.GetFieldValue<DateTime>(6));
 }

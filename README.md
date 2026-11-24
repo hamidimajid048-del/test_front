@@ -145,7 +145,8 @@ and `DELETE sessions/{id}` (end one session; `users.manage-state`, never your ow
 (up to 2000 entries). The Roles tab lists, for each role, the accounts whose access is exactly that role. It needs the MetaTrader connection (`Mt5:Enabled`); nothing else is configured in `appsettings`:
 the on/off switch, the Telegram bot token, the operations channel and the limits live in the panel database
 (`violation_panel.tick_monitor_settings`) and are changed on the page's Settings tab (`tick-monitor.settings`). A change
-to any profile, channel or setting is picked up by the engine within a second; no restart is needed.
+to any profile, channel or setting is picked up by the engine within a second (within 30 seconds when it was saved on
+another panel instance); no restart is needed.
 
 - **Profiles** (`tick-monitor.edit`): a named set of one or more symbols (picked from the server's symbol groups; a symbol
   belongs to one profile only, and each symbol is watched on its own), with time windows in **MetaTrader server time** (days of the week,

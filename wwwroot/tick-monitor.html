@@ -154,14 +154,6 @@
             <label class="check tm-check"><input name="enabled" type="checkbox" checked> Monitor these symbols <button type="button" class="col-help" data-help="When off, the profile is kept but none of its symbols is watched and nothing is sent.">?</button></label>
           </section>
 
-          <section class="tm-panel">
-            <h4 class="tm-panel-title" data-icon="check">Ticks resumed message</h4>
-            <label class="check tm-check"><input name="recoveryEnabled" type="checkbox" checked> Send one message when ticks come back <button type="button" class="col-help" data-help="When ticks come back after a gap, one closing message is sent with the gap start and end, its duration and the price gap.">?</button></label>
-            <div class="tm-fields">
-              <label><span>Only after <button type="button" class="col-help" data-help="The closing message is sent only if the gap fired at least this many stages, so a short gap that got one alarm does not get a second message.">?</button></span> <span class="tm-with-unit"><input name="recoveryMinStages" type="number" min="1" max="10" value="2" required><span class="tm-unit">stages</span></span></label>
-              <label class="tm-grow"><span>To channel <button type="button" class="col-help" data-help="Where the closing message goes. “Channel of the first stage” uses the channel of stage 1 of the window that was active.">?</button></span> <select name="recoveryChannelId"></select></label>
-            </div>
-          </section>
         </div>
 
         <section class="tm-panel">

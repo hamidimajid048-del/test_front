@@ -10,7 +10,8 @@ public static class TickMonitorProfileValidator
     public const int MaxStages = 10;
     public const int MaxCloseLeadSeconds = 3600;
     public const int MaxAfterSeconds = 86_400;
-    public const int MaxRepeatIntervalSeconds = 86_400;
+    public const int MaxRepeatCount = 10;
+    public const int MaxRepeatIntervalSeconds = 20;
 
     public static string[] Symbols(TickMonitorProfileInput input) =>
         [.. (input.Symbols ?? []).Select(symbol => symbol?.Trim() ?? string.Empty).Where(symbol => symbol.Length > 0)
@@ -37,12 +38,6 @@ public static class TickMonitorProfileValidator
             return "The profile has no configuration.";
         if (config.CloseLeadSeconds is < 0 or > MaxCloseLeadSeconds)
             return $"Close lead must be between 0 and {MaxCloseLeadSeconds} seconds.";
-        if (config.RecoveryNotice is null)
-            return "The recovery notice is missing.";
-        if (config.RecoveryNotice.MinStagesFired is < 1 or > MaxStages)
-            return $"Recovery notice stages must be between 1 and {MaxStages}.";
-        if (config.RecoveryNotice.ChannelId is { } recoveryChannel && channels.All(channel => channel.Id != recoveryChannel))
-            return "The recovery notice channel does not exist.";
         if (config.Schedules is null || config.Schedules.Length is 0 or > MaxSchedules)
             return $"A profile has 1 to {MaxSchedules} time windows.";
 

@@ -202,10 +202,9 @@ function renderProfiles() {
     }), hiddenByDefault: true },
     { ...column('config', 'Options', value => {
       const parts = [];
-      parts.push(value.recoveryNotice.enabled ? `"Ticks resumed" message if ${value.recoveryNotice.minStagesFired}+ stages fired` : 'No "ticks resumed" message');
       if (value.closeLeadSeconds > 0) parts.push(`Quiet ${value.closeLeadSeconds}s before close`);
-      return parts.join(' · ');
-    }), help: 'When ticks come back after a gap, one closing message (symbol, gap start and end, duration, price gap) is sent, but only if the gap lasted long enough to fire at least this many alarm stages, so a short one-stage gap does not get a second message.', hiddenByDefault: true },
+      return parts.join(' · ') || '—';
+    }), hiddenByDefault: true },
     { ...column('updatedAt', 'Updated', (value, row) => `${formatUtcSeconds(value)} UTC${row.updatedBy ? ` · ${row.updatedBy}` : ''}`), hiddenByDefault: true },
     {
       key: 'id', title: 'Actions', sortable: false, filterable: false, noExport: true,
@@ -449,12 +448,11 @@ symbolSearch.addEventListener('keydown', event => {
 
 // ---- profile dialog ----
 
-function channelSelect(selected, allowEmpty = false) {
+function channelSelect(selected) {
   const select = document.createElement('select');
-  if (allowEmpty) select.append(new Option('Channel of the first stage', ''));
   for (const channel of channels) select.append(new Option(channel.enabled ? channel.name : `${channel.name} (disabled)`, channel.id));
   select.value = selected ?? '';
-  if (!allowEmpty && !select.value && channels.length) select.value = channels[0].id;
+  if (!select.value && channels.length) select.value = channels[0].id;
   return select;
 }
 
@@ -487,8 +485,8 @@ const PROFILE_HELP = {
   "days": "The weekdays on which the window starts. A window past midnight belongs to the day it starts.",
   "after": "How many seconds without a tick before this stage fires. Each stage must come after the previous one.",
   "channel": "The Telegram channel this stage writes to.",
-  "messages": "How many messages this stage sends. More than 1 makes it a wake-up stage.",
-  "every": "Seconds between the messages of this stage. Used only when Messages is more than 1. Every message stops as soon as ticks come back.",
+  "messages": "How many messages this stage sends, 1 to 10. More than 1 makes it a wake-up stage.",
+  "every": "Seconds between the messages of this stage, 1 to 20. Used only when Messages is more than 1. Every message stops as soon as ticks come back.",
   "coverage": "A preview of the week: each bar is a day from 00:00 to 24:00 server time. Coloured parts are watched, hatched parts are not, and red marks windows that overlap.",
 };
 
@@ -520,8 +518,8 @@ function stageRow(stage) {
     number,
     withAria(numberInput('afterSeconds', stage.afterSeconds, 1, 86400), 'After (seconds)'),
     withAria(Object.assign(channelSelect(stage.channelId), { name: 'channelId' }), 'Channel'),
-    withAria(numberInput('repeatCount', stage.repeatCount, 1, 500), 'Messages'),
-    withAria(numberInput('repeatIntervalSeconds', stage.repeatIntervalSeconds, 0, 86400), 'Every (seconds)'),
+    withAria(numberInput('repeatCount', stage.repeatCount, 1, 10), 'Messages'),
+    withAria(numberInput('repeatIntervalSeconds', stage.repeatIntervalSeconds, 0, 20), 'Every (seconds)'),
     iconButton('close', 'Remove stage', () => { row.remove(); drawCoverage(); }));
   row.addEventListener('input', drawCoverage);
   return row;
@@ -653,7 +651,6 @@ function openProfileDialog(profile) {
   editingProfile = profile;
   const config = profile?.config ?? {
     closeLeadSeconds: 0,
-    recoveryNotice: { enabled: true, minStagesFired: 2, channelId: null },
     schedules: [{ name: 'Day', days: DAYS.slice(0, 5), from: '04:00', to: '20:00', stages: [{ afterSeconds: 30, channelId: channels[0].id, repeatCount: 1, repeatIntervalSeconds: 0 }] }],
   };
   document.getElementById('profile-dialog-title').textContent = profile?.id ? `Edit ${profile.name}` : 'New profile';
@@ -666,11 +663,6 @@ function openProfileDialog(profile) {
   symbolBrowse.classList.remove('active');
   profileForm.elements.enabled.checked = profile?.enabled ?? true;
   profileForm.elements.closeLeadSeconds.value = String(config.closeLeadSeconds ?? 0);
-  profileForm.elements.recoveryEnabled.checked = config.recoveryNotice?.enabled ?? true;
-  profileForm.elements.recoveryMinStages.value = String(config.recoveryNotice?.minStagesFired ?? 2);
-  const recoveryChannel = channelSelect(config.recoveryNotice?.channelId, true);
-  recoveryChannel.name = 'recoveryChannelId';
-  profileForm.elements.recoveryChannelId.replaceWith(recoveryChannel);
   schedulesHost.replaceChildren(...config.schedules.map(scheduleCard));
   drawCoverage();
   profileError.textContent = '';
@@ -689,11 +681,6 @@ profileForm.addEventListener('submit', async event => {
     enabled: profileForm.elements.enabled.checked,
     config: {
       closeLeadSeconds: Number(profileForm.elements.closeLeadSeconds.value),
-      recoveryNotice: {
-        enabled: profileForm.elements.recoveryEnabled.checked,
-        minStagesFired: Number(profileForm.elements.recoveryMinStages.value),
-        channelId: profileForm.elements.recoveryChannelId.value || null,
-      },
       schedules,
     },
   };
@@ -851,10 +838,10 @@ document.getElementById('history-form').addEventListener('submit', event => {
 
 // Each limit: its field, unit, allowed range, default and what it does, so the form explains itself.
 const LIMITS = [
-  { key: 'maxRepeatCount', icon: 'mail', title: 'Most messages per stage', unit: 'messages', min: 1, max: 500, fallback: 20,
-    help: 'The largest "Messages" a stage may have. A wake-up stage with 5 messages every 5 seconds needs at least 5.' },
-  { key: 'minRepeatIntervalSeconds', icon: 'swap', title: 'Shortest interval between repeats', unit: 'seconds', min: 1, max: 3600, fallback: 5,
-    help: 'The smallest "Every (seconds)" a stage may use. Telegram allows about 20 messages a minute per chat; 5 seconds keeps a stage under that.' },
+  { key: 'maxRepeatCount', icon: 'mail', title: 'Most messages per stage', unit: 'messages', min: 1, max: 10, fallback: 10,
+    help: 'The largest "Messages" a stage may have, at most 10. A wake-up stage with 5 messages every 5 seconds needs at least 5.' },
+  { key: 'minRepeatIntervalSeconds', icon: 'swap', title: 'Shortest interval between repeats', unit: 'seconds', min: 1, max: 20, fallback: 1,
+    help: 'The smallest "Every (seconds)" a stage may use. The time between the messages of a stage is always between this and 20 seconds.' },
   { key: 'minAfterSeconds', icon: 'alert', title: 'Shortest alarm delay', unit: 'seconds', min: 1, max: 3600, fallback: 5,
     help: 'The smallest "After (seconds)" a stage may use. The engine checks once a second, so a delay under 5 seconds adds noise without precision.' },
   { key: 'openGraceSeconds', icon: 'bars', title: 'Grace after the market opens', unit: 'seconds', min: 0, max: 3600, fallback: 120,

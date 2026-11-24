@@ -15,6 +15,7 @@ public sealed class TickMonitorBackgroundService(
     private static readonly TimeSpan RetentionInterval = TimeSpan.FromHours(24);
     private static readonly TimeSpan StallThreshold = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan StaleSubscriptionThreshold = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan ConfigurationRefreshInterval = TimeSpan.FromSeconds(30);
 
     private readonly TickMonitorEngine _engine = new();
     private readonly object _engineGate = new();
@@ -25,6 +26,7 @@ public sealed class TickMonitorBackgroundService(
     private IReadOnlyList<TickMonitorProfile> _profiles = [];
     private Dictionary<Guid, TickMonitorChannel> _channels = [];
     private int _loadedVersion = -1;
+    private DateTimeOffset _loadedAt = DateTimeOffset.MinValue;
     private NpgsqlConnection? _lockConnection;
     private bool _active;
     private DateTimeOffset _lastLockAttempt = DateTimeOffset.MinValue;
@@ -201,13 +203,15 @@ public sealed class TickMonitorBackgroundService(
     private async Task ReloadConfigurationAsync(CancellationToken cancellationToken)
     {
         var version = store.Version;
-        if (version == _loadedVersion)
+        var utcNow = timeProvider.GetUtcNow();
+        if (version == _loadedVersion && utcNow - _loadedAt < ConfigurationRefreshInterval)
             return;
 
         _settings = await store.GetSettingsAsync(cancellationToken);
         _profiles = await store.ListProfilesAsync(cancellationToken);
         _channels = (await store.ListChannelsAsync(cancellationToken)).ToDictionary(channel => channel.Id);
         _loadedVersion = version;
+        _loadedAt = utcNow;
 
         if (_subscribedConnection is not null)
             SyncSelectedSymbols();

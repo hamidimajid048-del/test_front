@@ -125,7 +125,7 @@ public sealed class TickMonitorEngine
         var tick = lastTick(symbol);
         if (GapIsOpen(state) && tick is not null && tick.TimeMs > state.GapStart)
         {
-            Recover(symbol, state, profile, channels, status, tick, result);
+            Recover(symbol, state, channels, status, tick, result);
             state.Reset(TickMonitorSymbolStateEnum.Watching, null);
         }
 
@@ -205,23 +205,18 @@ public sealed class TickMonitorEngine
     private void Recover(
         string symbol,
         TickMonitorSymbolState state,
-        TickMonitorProfile profile,
         IReadOnlyDictionary<Guid, TickMonitorChannel> channels,
         Mt5MarketStatusModel status,
         TickMonitorTickModel tick,
         TickMonitorStepResult result)
     {
-        var notice = profile.Config.RecoveryNotice;
-        if (notice.Enabled && state.FiredStages.Count >= notice.MinStagesFired)
-        {
-            var channelId = notice.ChannelId ?? state.FiredStages.OrderBy(stage => stage.Index).First().ChannelId;
-            if (channels.TryGetValue(channelId, out var channel) && channel.Enabled)
-                result.Sends.Add(new TickMonitorSend(
-                    channel.TelegramChatId,
-                    TickMonitorMessageBuilder.Recovered(symbol, state.GapStart - _serverOffsetMs, tick.TimeMs - _serverOffsetMs, state.PriceBeforeGap, tick.Price, status.Point),
-                    symbol,
-                    state.EventId));
-        }
+        if (state.FiredStages.Count > 0
+            && channels.TryGetValue(state.FiredStages.MinBy(stage => stage.Index).ChannelId, out var channel) && channel.Enabled)
+            result.Sends.Add(new TickMonitorSend(
+                channel.TelegramChatId,
+                TickMonitorMessageBuilder.Recovered(symbol, state.GapStart - _serverOffsetMs, tick.TimeMs - _serverOffsetMs, state.PriceBeforeGap, tick.Price, status.Point),
+                symbol,
+                state.EventId));
 
         result.Events.Add(Change(symbol, state, tick.TimeMs, "Tick", tick.Price));
     }
