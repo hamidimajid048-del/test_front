@@ -54,18 +54,43 @@ public static class Mt5TradeEndpoints
             if (await writer.CloseAsync(request.Login, request.Position, request.Price) is not { } answer)
                 return Mt5Extensions.Error(StatusCodes.Status404NotFound, PositionNotOpenMessage);
 
-            var succeeded = answer.Code is MTRetCode.MT_RET_OK or MTRetCode.MT_RET_REQUEST_DONE;
-            await changeLog.RecordAsync(request.Login, action, succeeded,
-                succeeded
-                    ? $"position {request.Position}, {requested}, deal {answer.Deal} at {answer.Price.ToString(CultureInfo.InvariantCulture)}"
-                    : $"position {request.Position}, {requested}, MetaTrader returned {answer.Code}", context);
+            if (answer.Code is not (MTRetCode.MT_RET_OK or MTRetCode.MT_RET_REQUEST_DONE))
+            {
+                await changeLog.RecordAsync(request.Login, action, false, $"position {request.Position}, {requested}, MetaTrader returned {answer.Code}", context);
+                return answer.Code == MTRetCode.MT_RET_REQUEST_TIMEOUT
+                    ? Mt5Extensions.Error(StatusCodes.Status504GatewayTimeout, "MetaTrader did not answer in time; check whether the position was closed.")
+                    : Mt5Extensions.Error(StatusCodes.Status400BadRequest, $"MetaTrader did not close the position ({answer.Code}).");
+            }
 
-            if (succeeded)
+            var executed = $"position {request.Position}, {requested}, deal {answer.Deal} at {answer.Price.ToString(CultureInfo.InvariantCulture)}";
+            if (request.Price is not { } chosenPrice)
+            {
+                await changeLog.RecordAsync(request.Login, action, true, executed, context);
                 return Results.Ok(new { deal = answer.Deal, price = answer.Price });
+            }
 
-            return answer.Code == MTRetCode.MT_RET_REQUEST_TIMEOUT
-                ? Mt5Extensions.Error(StatusCodes.Status504GatewayTimeout, "MetaTrader did not answer in time; check whether the position was closed.")
-                : Mt5Extensions.Error(StatusCodes.Status400BadRequest, $"MetaTrader did not close the position ({answer.Code}).");
+            var chosenText = chosenPrice.ToString(CultureInfo.InvariantCulture);
+            string correctionError;
+            try
+            {
+                var correction = writer.SetDealPrice(request.Login, answer.Deal, chosenPrice);
+                if (correction is null or MTRetCode.MT_RET_OK)
+                {
+                    await changeLog.RecordAsync(request.Login, action, true,
+                        correction is null ? executed : $"{executed}, deal price set to {chosenText}", context);
+                    return Results.Ok(new { deal = answer.Deal, price = correction is null ? answer.Price : chosenPrice });
+                }
+
+                correctionError = correction.ToString()!;
+            }
+            catch (Mt5UnavailableException exception)
+            {
+                correctionError = exception.Message;
+            }
+
+            await changeLog.RecordAsync(request.Login, action, false, $"{executed}, deal price not set to {chosenText}: {correctionError}", context);
+            return Mt5Extensions.Error(StatusCodes.Status409Conflict,
+                $"The position was closed at {answer.Price.ToString(CultureInfo.InvariantCulture)}, but its deal could not be set to {chosenText} ({correctionError}).");
         }
         catch (Mt5UnavailableException exception)
         {

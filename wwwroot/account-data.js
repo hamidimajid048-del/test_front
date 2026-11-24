@@ -750,6 +750,12 @@ async function openCloseDialog(row) {
       toast(`Position ${quote.position} closed`, 'success', `Deal ${result.deal} at ${price(result.price)}`);
       await reloadAccount(login);
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        dialog.close();
+        toast('The position was closed at another price', 'error', error.message);
+        await reloadAccount(login);
+        return;
+      }
       toast('The position was not closed', 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
       confirm.disabled = false;
       cancel.disabled = false;

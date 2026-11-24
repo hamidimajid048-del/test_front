@@ -1131,7 +1131,7 @@ async function panelRequest(method, path, body) {
     throw new ApiError('');
   }
   const result = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) throw new ApiError(result?.error ?? `${UNAVAILABLE_MESSAGE} (HTTP ${response.status})`);
+  if (!response.ok) throw Object.assign(new ApiError(result?.error ?? `${UNAVAILABLE_MESSAGE} (HTTP ${response.status})`), { status: response.status });
   return result;
 }
 

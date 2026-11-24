@@ -85,6 +85,34 @@ public sealed class Mt5TradeWriter(Mt5ConnectionService mt5)
         }
     }
 
+    public MTRetCode? SetDealPrice(ulong login, ulong dealTicket, double price) => mt5.RunManager(manager =>
+    {
+        using var deal = manager.DealCreate();
+        var read = manager.DealRequest(dealTicket, deal);
+        if (read != MTRetCode.MT_RET_OK)
+            return read;
+
+        var digits = (int)deal.Digits();
+        var target = Math.Round(price, digits);
+        if (Math.Round(deal.Price(), digits) == target)
+            return (MTRetCode?)null;
+
+        var positionType = deal.Action() == (uint)CIMTDeal.EnDealAction.DEAL_SELL ? CIMTOrder.EnOrderType.OP_BUY : CIMTOrder.EnOrderType.OP_SELL;
+        var calculated = manager.TradeProfitExt(
+            UserGroup(manager, login), deal.Symbol(), positionType, deal.VolumeExt(), deal.PricePosition(), target, out var profit, out var rate);
+        if (calculated != MTRetCode.MT_RET_OK)
+            return calculated;
+
+        deal.Price(target);
+        deal.Profit(Math.Round(profit, (int)deal.DigitsCurrency()));
+        deal.ProfitRaw(rate == 0 ? profit : profit / rate);
+        deal.RateProfit(rate);
+        var updated = manager.DealUpdate(deal);
+        return updated != MTRetCode.MT_RET_OK
+            ? updated
+            : manager.UserBalanceCheck(login, true, out _, out _, out _, out _);
+    });
+
     public MTRetCode? CancelOrder(ulong login, ulong orderId) => mt5.RunManager(manager =>
     {
         using var order = manager.OrderCreate();
