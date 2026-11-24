@@ -62,7 +62,6 @@ const MENU_ITEMS = [
   { group: 'compare', href: '/compare-emails.html', icon: 'mailCompare', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
   { group: 'operations', href: '/bulk-balance.html', icon: 'wallet', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
   { group: 'accounts-admin', href: '/users.html', icon: 'users', title: 'Users & roles', permission: 'users.view', description: 'The panel accounts with their state, access and sessions, and the roles (named sets of permissions) with the accounts that use each.' },
-  { group: 'accounts-admin', href: '/access-matrix.html', icon: 'grid', title: 'Access matrix', permission: 'users.view', description: 'Who may do what: every permission against every account, with the roles that grant it.' },
   { group: 'security', href: '/sessions.html', icon: 'monitor', title: 'Sessions', permission: 'users.view', description: 'The open panel sessions: account, address, client, when they started and were last seen; end a session from here.' },
   { group: 'security', href: '/activity.html', icon: 'activity', title: 'Sign-in activity', permission: 'audit.view', description: 'Per account: sign-ins, failures, distinct addresses and changes in the chosen period, with the recent sign-in attempts.' },
   { group: 'security', href: '/audit.html', icon: 'history', title: 'Audit log', permission: 'audit.view', description: 'Every recorded event with filters by account, event kind and time, and an export.' },
@@ -548,20 +547,38 @@ function showHelpTip(button, text) {
   helpOwner = button;
 }
 
-function addColumnHelp(th, column) {
-  if (!column.help) return;
+function wireHelpMark(mark, text) {
+  const show = event => {
+    event?.preventDefault();
+    showHelpTip(mark, text);
+  };
+  mark.addEventListener('mouseenter', () => show());
+  mark.addEventListener('focus', () => show());
+  mark.addEventListener('click', show);
+  mark.addEventListener('mouseleave', hideHelpTip);
+  mark.addEventListener('blur', hideHelpTip);
+}
+
+function helpMark(text, title) {
   const mark = document.createElement('button');
   mark.type = 'button';
   mark.className = 'col-help';
   mark.textContent = '?';
-  mark.setAttribute('aria-label', `About ${column.title}`);
-  const show = () => showHelpTip(mark, column.help);
-  mark.addEventListener('mouseenter', show);
-  mark.addEventListener('focus', show);
-  mark.addEventListener('click', show);
-  mark.addEventListener('mouseleave', hideHelpTip);
-  mark.addEventListener('blur', hideHelpTip);
-  th.append(mark);
+  mark.setAttribute('aria-label', `About ${title}`);
+  wireHelpMark(mark, text);
+  return mark;
+}
+
+// Wires the "?" buttons written in a page's HTML: <button type="button" class="col-help" data-help="...">?</button>.
+function applyHelpMarks(root = document) {
+  for (const mark of root.querySelectorAll('.col-help[data-help]')) {
+    wireHelpMark(mark, mark.dataset.help);
+    mark.removeAttribute('data-help');
+  }
+}
+
+function addColumnHelp(th, column) {
+  if (column.help) th.append(helpMark(column.help, column.title));
 }
 
 // A small coloured label. kind: 'ok' | 'warn' | 'danger' | 'main' | 'compared' | 'muted'.
@@ -649,7 +666,7 @@ const BRAND_ICON =
 function createServiceStatus() {
   const box = document.createElement('div');
   box.className = 'service-status';
-  const pill = (iconName, title, request, isOnline) => {
+  const pill = (iconName, title, request, isOnline, [onText, offText] = ['Online', 'Offline']) => {
     const element = document.createElement('span');
     element.className = `service-pill ${iconName}`;
     element.title = title;
@@ -672,12 +689,15 @@ function createServiceStatus() {
           return;
         }
         element.classList.add(online ? 'ok' : 'down');
-        state.textContent = online ? 'Online' : 'Offline';
+        state.textContent = online ? onText : offText;
       });
     return element;
   };
+  const first = currentDashboard().key === 'symbols'
+    ? pill('activity', 'Tick monitoring', () => fetch('/panel-api/tick-monitor/status', { cache: 'no-store' }), body => Boolean(body.active), ['Active', 'Inactive'])
+    : pill('server', 'Backend Service', () => fetch('/service-status', { cache: 'no-store' }), body => Boolean(body.available));
   box.append(
-    pill('server', 'Backend Service', () => fetch('/service-status', { cache: 'no-store' }), body => Boolean(body.available)),
+    first,
     pill('candles', 'MetaTrader Service', () => fetch('/panel-api/mt5/status', { cache: 'no-store' }), body => Boolean(body.manager?.connected)));
   return box;
 }

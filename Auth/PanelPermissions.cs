@@ -72,7 +72,7 @@ public static class PanelPermissions
         new(TickMonitorChannels, SymbolsDashboard, TickMonitorGroup, "Manage alert channels", "Add, change, test and remove the Telegram channels alarms go to.", TickMonitorView),
         new(TickMonitorSettings, SymbolsDashboard, TickMonitorGroup, "Tick monitoring settings", "Turn tick monitoring on or off, set the bot token and the limits.", TickMonitorView),
         new(AccountChangePassword, EveryDashboard, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),
-        new(UsersView, AdminDashboard, PanelAccountsGroup, "See accounts", "Opens the Administration dashboard: the panel accounts, roles, access matrix and sessions."),
+        new(UsersView, AdminDashboard, PanelAccountsGroup, "See accounts", "Opens the Administration dashboard: the panel accounts, roles and sessions."),
         new(UsersCreate, AdminDashboard, PanelAccountsGroup, "Add accounts", "Create panel accounts.", UsersView),
         new(UsersEditPermissions, AdminDashboard, PanelAccountsGroup, "Edit access", "Change what other accounts may do.", UsersView),
         new(UsersResetCredentials, AdminDashboard, PanelAccountsGroup, "Reset passwords and 2FA", "Set a new password or authenticator key for another account.", UsersView),

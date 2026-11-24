@@ -11,8 +11,6 @@
     "Users & roles": "کاربران و نقش‌ها",
     "Users & roles — Violation Panel": "کاربران و نقش‌ها — پنل تخلفات",
     "The panel accounts with their state, access and sessions, and the roles (named sets of permissions) with the accounts that use each.": "حساب‌های پنل با وضعیت، دسترسی و نشست‌هایشان، و نقش‌ها (مجموعه‌های نام‌دار مجوز) با حساب‌هایی که هر یک را دارند.",
-    "Access matrix": "ماتریس دسترسی",
-    "Access matrix — Violation Panel": "ماتریس دسترسی — پنل تخلفات",
     "Who may do what: every permission against every account, with the roles that grant it.": "کی چه کاری می‌تواند بکند: هر مجوز در برابر هر حساب، با نقش‌هایی که آن را می‌دهند.",
     "Sessions": "نشست‌ها",
     "Sessions — Violation Panel": "نشست‌ها — پنل تخلفات",
@@ -1290,7 +1288,7 @@
     "Delete orders": "حذف سفارش‌ها",
     "Delete an active order of a trading account.": "حذف سفارش فعال یک حساب معاملاتی.",
     "Opens the Symbols dashboard: live state of the monitored symbols, their alarm profiles and the gap history.": "داشبورد نمادها را باز می‌کند: وضعیت زنده‌ی نمادهای مانیتورشده، پروفایل‌های هشدار و تاریخچه‌ی قطعی‌ها.",
-    "Opens the Administration dashboard: the panel accounts, roles, access matrix and sessions.": "داشبورد مدیریت را باز می‌کند: حساب‌های پنل، نقش‌ها، ماتریس دسترسی و نشست‌ها.",
+    "Opens the Administration dashboard: the panel accounts, roles and sessions.": "داشبورد مدیریت را باز می‌کند: حساب‌های پنل، نقش‌ها و نشست‌ها.",
     "Read sign-in activity and the audit log of account changes.": "مشاهده‌ی فعالیت ورود و گزارش ممیزی تغییرات حساب‌ها.",
     "Live state of the monitored symbols, their alarm profiles and the gap history.": "وضعیت زنده‌ی نمادهای مانیتورشده، پروفایل‌های هشدار و تاریخچه‌ی قطعی‌ها.",
     "Every dashboard": "همه‌ی داشبوردها",
@@ -1299,7 +1297,10 @@
     "Show permissions": "نمایش مجوزها",
     "Dashboard": "داشبورد",
     "Reports": "گزارش‌ها",
-    "A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it. The Accounts column lists the accounts whose access is exactly this role; super admins hold every permission and are counted under Full access. Use Show permissions to see what a role allows on each dashboard.": "نقش مجموعه‌ای نام‌گذاری‌شده از مجوزهاست. انتخاب آن هنگام افزودن یا ویرایش حساب، مجوزهای حساب را پر می‌کند؛ تغییر بعدی نقش، حساب‌هایی را که قبلاً از آن استفاده کرده‌اند تغییر نمی‌دهد. ستون «حساب‌ها» حساب‌هایی را نشان می‌دهد که دسترسی‌شان دقیقاً همین نقش است؛ سوپرادمین‌ها همه‌ی مجوزها را دارند و زیر «Full access» شمرده می‌شوند. با «نمایش مجوزها» ببینید هر نقش در هر داشبورد چه اجازه‌ای می‌دهد."
+    "A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it. The Accounts column lists the accounts whose access is exactly this role; super admins hold every permission and are counted under Full access. Use Show permissions to see what a role allows on each dashboard.": "نقش مجموعه‌ای نام‌گذاری‌شده از مجوزهاست. انتخاب آن هنگام افزودن یا ویرایش حساب، مجوزهای حساب را پر می‌کند؛ تغییر بعدی نقش، حساب‌هایی را که قبلاً از آن استفاده کرده‌اند تغییر نمی‌دهد. ستون «حساب‌ها» حساب‌هایی را نشان می‌دهد که دسترسی‌شان دقیقاً همین نقش است؛ سوپرادمین‌ها همه‌ی مجوزها را دارند و زیر «Full access» شمرده می‌شوند. با «نمایش مجوزها» ببینید هر نقش در هر داشبورد چه اجازه‌ای می‌دهد.",
+    "Inactive": "غیرفعال",
+    "No \"ticks resumed\" message": "بدون پیام «ticks resumed»",
+    "When ticks come back after a gap, one closing message (symbol, gap start and end, duration, price gap) is sent, but only if the gap lasted long enough to fire at least this many alarm stages, so a short one-stage gap does not get a second message.": "وقتی بعد از یک قطعی تیک‌ها برمی‌گردند، یک پیام پایانی (نماد، شروع و پایان قطعی، مدت و پرش قیمت) فرستاده می‌شود؛ ولی فقط اگر قطعی آن‌قدر طول کشیده باشد که دست‌کم این تعداد مرحله‌ی هشدار اجرا شده باشد، تا یک قطعی کوتاه تک‌مرحله‌ای پیام دوم نگیرد."
   },
   "templates": {
     "Saved token: {0}": "توکن ذخیره‌شده: {0}",
@@ -1465,7 +1466,8 @@
     "{0} dashboard": "داشبورد {0}",
     "Permissions of {0}": "مجوزهای {0}",
     "{0}: {1}/{2}": "{0}: {1}/{2}",
-    "{0} — {1}": "{0} — {1}"
+    "{0} — {1}": "{0} — {1}",
+    "\"Ticks resumed\" message if {0}+ stages fired": "پیام «ticks resumed» اگر {0} مرحله یا بیشتر اجرا شده باشد"
   },
   "blocks": {
     "<strong>Check file</strong> changes nothing: it shows every line with the account found on MetaTrader and its balance, and marks lines that cannot be sent. Only the lines marked Ready are sent, after you confirm.": "<strong>بررسی فایل</strong> هیچ تغییری ایجاد نمی‌کند: هر خط را همراه با حساب یافت‌شده در MetaTrader و موجودی آن نمایش می‌دهد و خطوطی را که قابل ارسال نیستند علامت می‌زند. فقط خطوط «آماده» و پس از تأیید شما ارسال می‌شوند.",

@@ -200,13 +200,13 @@ function renderProfiles() {
       }
       return list;
     }),
-    column('config', 'Options', value => {
+    { ...column('config', 'Options', value => {
       const parts = [];
-      parts.push(value.recoveryNotice.enabled ? `Resumed notice after ${value.recoveryNotice.minStagesFired} stage(s)` : 'No resumed notice');
+      parts.push(value.recoveryNotice.enabled ? `"Ticks resumed" message if ${value.recoveryNotice.minStagesFired}+ stages fired` : 'No "ticks resumed" message');
       if (value.closeLeadSeconds > 0) parts.push(`Quiet ${value.closeLeadSeconds}s before close`);
       return parts.join(' · ');
-    }),
-    column('updatedAt', 'Updated', (value, row) => `${formatUtcSeconds(value)} UTC${row.updatedBy ? ` · ${row.updatedBy}` : ''}`),
+    }), help: 'When ticks come back after a gap, one closing message (symbol, gap start and end, duration, price gap) is sent, but only if the gap lasted long enough to fire at least this many alarm stages, so a short one-stage gap does not get a second message.' },
+    { ...column('updatedAt', 'Updated', (value, row) => `${formatUtcSeconds(value)} UTC${row.updatedBy ? ` · ${row.updatedBy}` : ''}`), hiddenByDefault: true },
     {
       key: 'id', title: 'Actions', sortable: false, filterable: false,
       format: (value, row) => {
@@ -632,7 +632,7 @@ function limitField(limit) {
   field.className = 'tm-field tm-limit';
   const label = document.createElement('label');
   label.htmlFor = `settings-${limit.key}`;
-  label.textContent = limit.title;
+  label.append(limit.title, ' ', helpMark(limit.help, limit.title));
   const row = document.createElement('div');
   row.className = 'tm-inline';
   const input = document.createElement('input');
@@ -647,16 +647,11 @@ function limitField(limit) {
   unit.textContent = limit.unit;
   const reset = actionButton(`Use default (${limit.fallback})`, () => { input.value = String(limit.fallback); input.dispatchEvent(new Event('input', { bubbles: true })); });
   row.append(input, unit, reset);
-  const range = document.createElement('p');
-  range.className = 'tm-field-note';
-  range.textContent = `Allowed: ${limit.min} to ${limit.max} ${limit.unit}.`;
-  const help = document.createElement('p');
-  help.className = 'tm-field-help';
-  help.textContent = limit.help;
+  input.title = `Allowed: ${limit.min} to ${limit.max} ${limit.unit}.`;
   const error = document.createElement('p');
   error.className = 'field-error';
   error.dataset.errorFor = limit.key;
-  field.append(label, row, range, help, error);
+  field.append(label, row, error);
   return field;
 }
 
@@ -844,6 +839,7 @@ document.getElementById('tabs').addEventListener('click', event => {
   if (tab) showTab(tab);
 });
 
+applyHelpMarks();
 renderMenu();
 currentAccount().then(async account => {
   me = account;

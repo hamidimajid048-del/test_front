@@ -133,7 +133,7 @@ transactions tab). The counts are sortable, filterable and exported like the oth
 
 The panel has three **dashboards**, each with its own home page and menu: **Violation** (`/`, the default), **Symbols**
 (`symbols.html`, everything about the MetaTrader symbols and their ticks) and **Administration** (`admin.html`, the panel's
-own accounts: Users & roles, Access matrix, Sessions, Sign-in activity, Audit log). The brand at the top of the sidebar
+own accounts: Users & roles, Sessions, Sign-in activity, Audit log). The brand at the top of the sidebar
 names the current dashboard and opens the switcher; a dashboard whose pages the account may not open is not listed, and
 with a single dashboard the brand is a plain link to its home (`DASHBOARDS` and the `dashboard` of each group in `api.js`).
 The first Symbols tool, the **Tick monitoring** page (`tick-monitor.html`, permission `tick-monitor.view`), sends Telegram

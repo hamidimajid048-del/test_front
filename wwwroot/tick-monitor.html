@@ -77,8 +77,7 @@
           <div class="control">
             <span class="control-icon" data-icon="activity"></span>
             <div class="control-text">
-              <strong>Tick monitoring</strong>
-              <span>When on, the engine watches every enabled profile and sends the Telegram alarms. It needs a saved bot token; without one it stays off.</span>
+              <strong>Tick monitoring <button type="button" class="col-help" data-help="When on, the engine watches every enabled profile and sends the Telegram alarms. It needs a saved bot token; without one it stays off.">?</button></strong>
             </div>
             <div class="control-state" id="settings-enabled-state"></div>
             <button type="button" class="switch unknown" id="settings-enabled" role="switch" aria-checked="false" aria-label="Tick monitoring"><span></span></button>
@@ -89,37 +88,33 @@
         <div class="ad-card tm-card">
           <h2 class="ad-card-title" data-icon="message">Telegram bot</h2>
           <div class="tm-field">
-            <label for="settings-token">Bot token</label>
+            <label for="settings-token">Bot token <button type="button" class="col-help" data-help="Create the bot with @BotFather in Telegram and paste the token it gives (it looks like 123456789:AAH…). The token is kept in the panel database and is never shown again; only its last characters are. Leave the field empty to keep the saved token.">?</button></label>
             <div class="tm-inline">
               <input id="settings-token" name="telegramBotToken" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a new token to replace the saved one">
               <button type="button" id="settings-token-show">Show</button>
             </div>
             <p class="tm-field-note" id="settings-token-state"></p>
-            <p class="tm-field-help">Create the bot with @BotFather in Telegram and paste the token it gives (it looks like <code>123456789:AAH…</code>). The token is kept in the panel database and is never shown again; only its last characters are. Leave the field empty to keep the saved token.</p>
             <label class="check tm-danger-check"><input name="clearTelegramBotToken" type="checkbox"> Remove the saved token when saving (monitoring stops until a new token is saved)</label>
           </div>
           <div class="tm-field">
-            <label for="settings-test-channel">Test the saved token</label>
+            <label for="settings-test-channel">Test the saved token <button type="button" class="col-help" data-help="Sends &quot;Tick monitor test message&quot; to the chosen channel with the saved token. If you pasted a new token, save first. The bot must be a member of the chat and allowed to post.">?</button></label>
             <div class="tm-inline">
               <select id="settings-test-channel"></select>
               <button type="button" id="settings-test" data-icon="message">Send test message</button>
             </div>
-            <p class="tm-field-help">Sends "Tick monitor test message" to the chosen channel with the saved token. If you pasted a new token, save first. The bot must be a member of the chat and allowed to post.</p>
           </div>
         </div>
 
         <div class="ad-card tm-card">
           <h2 class="ad-card-title" data-icon="server">Operations channel</h2>
           <div class="tm-field">
-            <label for="settings-ops-channel">Channel for service notices</label>
+            <label for="settings-ops-channel">Channel for service notices <button type="button" class="col-help" data-help="Receives only the service notices: MetaTrader connection lost or restored, monitoring started or stopped, and a stalled engine. Without a channel they are written to the log only. Symbol alarms never go here; they go to the channels chosen in each profile&#39;s stages. Channels are managed on the Channels tab.">?</button></label>
             <select name="opsChannelId" id="settings-ops-channel"></select>
-            <p class="tm-field-help">Receives only the service notices: MetaTrader connection lost or restored, monitoring started or stopped, and a stalled engine. Without a channel they are written to the log only. Symbol alarms never go here; they go to the channels chosen in each profile's stages. Channels are managed on the Channels tab.</p>
           </div>
         </div>
 
         <div class="ad-card tm-card">
-          <h2 class="ad-card-title" data-icon="scale">Limits and timing</h2>
-          <p class="tm-field-help">The three limits are checked when a profile is saved; lowering a limit does not change existing profiles until they are edited. The grace period and the history retention apply at once.</p>
+          <h2 class="ad-card-title" data-icon="scale">Limits and timing <button type="button" class="col-help" data-help="The three limits are checked when a profile is saved; lowering a limit does not change existing profiles until they are edited. The grace period and the history retention apply at once.">?</button></h2>
           <div class="tm-limits" id="settings-limits"></div>
         </div>
 
