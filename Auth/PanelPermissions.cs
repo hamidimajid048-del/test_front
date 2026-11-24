@@ -11,6 +11,8 @@ public static class PanelPermissions
     public const string AccountPasswords = "account-data.passwords";
     public const string AccountBalance = "account-data.balance";
     public const string AccountBalanceBulk = "account-data.balance-bulk";
+    public const string ClosePosition = "account-data.close-position";
+    public const string DeleteOrder = "account-data.delete-order";
     public const string LoginsView = "logins.view";
     public const string EmailLoginsView = "email-logins.view";
     public const string SimilarityView = "similarity.view";
@@ -51,6 +53,8 @@ public static class PanelPermissions
         new(SwitchStopOut, OperationsGroup, "Enable / disable stop-out plugin", "Turn the stop-out plugin on or off for an account.", AccountDataView),
         new(AccountPasswords, OperationsGroup, "Check / change trading passwords", "Check, generate and set the main and investor password of a trading account.", AccountDataView),
         new(AccountBalance, OperationsGroup, "Deposit / withdraw", "Add money to or take money from a trading account balance, with a required comment.", AccountDataView),
+        new(ClosePosition, OperationsGroup, "Close positions", "Close an open position at the market price or a chosen price, also when the market is closed.", AccountDataView),
+        new(DeleteOrder, OperationsGroup, "Delete orders", "Delete an active order of a trading account.", AccountDataView),
         new(AccountBalanceBulk, OperationsGroup, "Bulk deposit / withdraw", "Deposit to or withdraw from many accounts at once from a CSV file, with a downloadable result."),
         new(AccountChangePassword, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),
         new(UsersView, AdministrationGroup, "See accounts", "Open the Users page and list the panel accounts."),

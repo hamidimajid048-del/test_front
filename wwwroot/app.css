@@ -1391,6 +1391,13 @@ dialog.panel-dialog.confirm-dialog { width: min(400px, calc(100vw - 32px)); }
 form.filters .login-lookup-field input { flex: 1; min-width: 0; }
 form.filters .login-lookup-field select { flex: none; width: auto; }
 dialog.panel-dialog.confirm-dialog h3 { margin-bottom: var(--space-8); font-size: var(--font-size-lg); }
+dialog.panel-dialog.close-position-dialog { width: min(520px, calc(100vw - 32px)); }
+dialog.panel-dialog.close-position-dialog h3 { margin-bottom: var(--space-12); font-size: var(--font-size-lg); }
+dialog.panel-dialog .dialog-warning { display: flex; align-items: flex-start; gap: var(--space-8); padding: var(--space-10) var(--space-14); color: var(--warning); background: var(--warning-soft); border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent); border-radius: var(--radius-md); font-weight: 600; }
+dialog.panel-dialog .dialog-warning .icon { flex: none; }
+.close-modes { margin-bottom: var(--space-14); }
+.close-preview { min-height: 30px; }
+dialog.panel-dialog .dialog-confirm-note { margin-bottom: var(--space-8); color: var(--text); font-weight: 600; }
 .switch.on:hover:not(:disabled), .switch.on { background: linear-gradient(90deg, color-mix(in srgb, var(--success) 75%, #ffffff), var(--success)); border-color: transparent; box-shadow: 0 0 12px color-mix(in srgb, var(--success) 45%, transparent); }
 .switch.off:hover:not(:disabled), .switch.off { background: var(--danger); border-color: transparent; }
 .switch.unknown:hover:not(:disabled), .switch.unknown { background: var(--text-faint); border-color: transparent; }

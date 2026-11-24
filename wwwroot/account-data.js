@@ -22,7 +22,12 @@ const CHANGE_ACTIONS = {
   password_main_check: 'Main password checked',
   password_investor_change: 'Investor password changed',
   password_investor_check: 'Investor password checked',
+  position_close: 'Position closed',
+  order_delete: 'Order deleted',
 };
+
+const CLOSE_POSITION_PERMISSION = 'account-data.close-position';
+const DELETE_ORDER_PERMISSION = 'account-data.delete-order';
 
 // The state of the account and trading comes from MetaTrader, the stop-out plugin's from the status service (when it
 // cannot be read, the last change made from the panel). `last` is that change: { enabled, username, occurredAt }.
@@ -68,7 +73,19 @@ const positionColumns = [
   openColumn(utcColumn('openedAt', 'Opened')),
   sourceColumn('reason', 'Opened by'),
   commentColumn('comment', 'Comment'),
+  tradeActionsColumn('position', CLOSE_POSITION_PERMISSION, row => menuAction('Close position', () => openCloseDialog(row))),
 ];
+
+// The "⋯" cell of an open position or active order, shown to the accounts that may use its action.
+function tradeActionsColumn(key, permission, item) {
+  return {
+    key,
+    title: 'Actions',
+    sortable: false,
+    filterable: false,
+    format: (id, row) => can(me, permission) && !isArchived() ? rowMenu(`Actions for ${id}`, [item(row)]) : '',
+  };
+}
 
 const orderColumns = [
   column('order', 'Order'),
@@ -174,7 +191,7 @@ const grids = {
   openOrders: createLocalGrid({
     containerId: 'open-orders',
     pagerId: 'open-orders-pager',
-    columns: orderColumns,
+    columns: [...orderColumns, tradeActionsColumn('order', DELETE_ORDER_PERMISSION, row => menuAction('Delete order', () => deleteOrder(row)))],
     sort: { item: 'Placed (UTC)', direction: 'Desc' },
   }),
 };
@@ -544,6 +561,194 @@ function passwordRow(type, title) {
 function renderPasswords() {
   document.getElementById('password-rows').replaceChildren(...PASSWORD_TYPES.map(([type, title]) => passwordRow(type, title)));
   document.getElementById('passwords').hidden = false;
+}
+
+const PREVIEW_DELAY_MS = 300;
+
+function reloadAccount(login) {
+  return currentLogin === login ? search(login) : Promise.resolve();
+}
+
+// The close dialog of an open position: a warning when the symbol's market is closed (the position is still closed),
+// the market price or a chosen price with the profit it gives, and a last confirmation.
+async function openCloseDialog(row) {
+  const login = currentLogin;
+  const quotePath = closePrice => `mt5/position-close?login=${encodeURIComponent(login)}&position=${encodeURIComponent(row.position)}`
+    + (closePrice === undefined ? '' : `&price=${encodeURIComponent(closePrice)}`);
+  let quote;
+  try {
+    quote = await panelRequest('GET', quotePath());
+  } catch (error) {
+    toast('The position cannot be closed', 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
+    return;
+  }
+
+  const dialog = document.createElement('dialog');
+  dialog.className = 'panel-dialog close-position-dialog';
+  const heading = document.createElement('h3');
+  heading.textContent = `Close position ${quote.position}?`;
+  const details = document.createElement('div');
+  details.className = 'summary';
+  renderSummary(details, [
+    ['Account', login],
+    ['Symbol', quote.symbol],
+    ['Direction', sideLabel(label(quote.direction), quote.direction)],
+    ['Volume', lots(quote.volume)],
+    ['Open price', price(quote.priceOpen)],
+    ['Current price', price(quote.priceCurrent)],
+    ['Current profit', amount(quote.profit)],
+  ]);
+  dialog.append(heading, details);
+
+  if (!quote.isMarketOpen) {
+    const warning = document.createElement('p');
+    warning.className = 'dialog-warning';
+    warning.append(icon('alert'), document.createTextNode(`The market for ${quote.symbol} is closed now. The position will still be closed at the price you choose.`));
+    dialog.append(warning);
+  }
+
+  const modes = document.createElement('div');
+  modes.className = 'toggle close-modes';
+  const modeButton = (mode, text) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.mode = mode;
+    button.textContent = text;
+    modes.append(button);
+    return button;
+  };
+  modeButton('market', 'Market price');
+  modeButton('chosen', 'Chosen price');
+
+  const priceField = document.createElement('label');
+  priceField.textContent = 'Close price';
+  const priceInput = document.createElement('input');
+  priceInput.type = 'text';
+  priceInput.inputMode = 'decimal';
+  priceInput.autocomplete = 'off';
+  priceInput.value = quote.priceCurrent.toFixed(quote.digits);
+  priceField.append(priceInput);
+
+  const preview = document.createElement('div');
+  preview.className = 'summary close-preview';
+  const note = document.createElement('p');
+  note.className = 'dialog-confirm-note';
+  note.textContent = 'Are you sure you want to close this position? This cannot be undone.';
+
+  const buttons = document.createElement('div');
+  buttons.className = 'dialog-buttons';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.textContent = 'Cancel';
+  const confirm = document.createElement('button');
+  confirm.type = 'button';
+  confirm.className = 'confirm danger-solid';
+  confirm.textContent = 'Close position';
+  buttons.append(cancel, confirm);
+  dialog.append(modes, priceField, preview, note, buttons);
+
+  let mode = 'market';
+  let chosenPrice = null;
+  let previewTimer = 0;
+  let previewRequest = 0;
+
+  const showPreview = profitAtPrice => renderSummary(preview, [
+    ['Profit at this price', amount(profitAtPrice)],
+    ['Profit change', amount(Math.round((profitAtPrice - quote.profit) * 100) / 100)],
+  ]);
+
+  async function loadPreview() {
+    const current = ++previewRequest;
+    const text = priceInput.value.trim().replaceAll(',', '');
+    chosenPrice = null;
+    confirm.disabled = true;
+    if (!/^\d+(\.\d+)?$/.test(text) || Number(text) <= 0) {
+      preview.replaceChildren();
+      if (text) renderSummary(preview, [['Close price', 'Enter a price above zero.']]);
+      return;
+    }
+    renderSummary(preview, [['Profit at this price', 'Calculating…']]);
+    try {
+      const answer = await panelRequest('GET', quotePath(text));
+      if (current !== previewRequest) return;
+      chosenPrice = Number(text);
+      showPreview(answer.profitAtPrice);
+      confirm.disabled = false;
+    } catch (error) {
+      if (current !== previewRequest) return;
+      renderSummary(preview, [['Profit at this price', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE]]);
+    }
+  }
+
+  function setMode(next) {
+    mode = next;
+    for (const button of modes.querySelectorAll('button'))
+      button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+    priceField.hidden = mode !== 'chosen';
+    clearTimeout(previewTimer);
+    previewRequest++;
+    if (mode === 'chosen') {
+      loadPreview();
+      priceInput.focus();
+    } else {
+      renderSummary(preview, [['Close at', 'The market price when the request reaches MetaTrader']]);
+      confirm.disabled = false;
+    }
+  }
+
+  modes.addEventListener('click', event => {
+    const next = event.target.closest('button')?.dataset.mode;
+    if (next && next !== mode) setMode(next);
+  });
+  priceInput.addEventListener('input', () => {
+    clearTimeout(previewTimer);
+    confirm.disabled = true;
+    previewTimer = setTimeout(loadPreview, PREVIEW_DELAY_MS);
+  });
+  cancel.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => {
+    clearTimeout(previewTimer);
+    dialog.remove();
+  });
+  confirm.addEventListener('click', async () => {
+    const body = { login: Number(login), position: quote.position, price: mode === 'chosen' ? chosenPrice : null };
+    if (mode === 'chosen' && chosenPrice === null) return;
+    confirm.disabled = true;
+    cancel.disabled = true;
+    try {
+      const result = await panelRequest('POST', 'mt5/position-close', body);
+      dialog.close();
+      toast(`Position ${quote.position} closed`, 'success', `Deal ${result.deal} at ${price(result.price)}`);
+      await reloadAccount(login);
+    } catch (error) {
+      toast('The position was not closed', 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
+      confirm.disabled = false;
+      cancel.disabled = false;
+    }
+  });
+
+  document.body.append(dialog);
+  setMode('market');
+  dialog.showModal();
+  cancel.focus();
+}
+
+async function deleteOrder(row) {
+  const login = currentLogin;
+  if (!await confirmAction({
+    title: `Delete order ${row.order}?`,
+    message: `Account ${login}. The order will be canceled and moved to the order history.`,
+    confirmText: 'Delete order',
+    danger: true,
+  })) return;
+
+  try {
+    await panelRequest('POST', 'mt5/order-delete', { login: Number(login), order: row.order });
+    toast(`Order ${row.order} deleted`, 'success', `Account ${login}`);
+    await reloadAccount(login);
+  } catch (error) {
+    toast('The order was not deleted', 'error', error instanceof ApiError && error.message ? error.message : UNAVAILABLE_MESSAGE);
+  }
 }
 
 const balanceForm = document.getElementById('balance-form');
