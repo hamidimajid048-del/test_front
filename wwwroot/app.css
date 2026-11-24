@@ -1871,3 +1871,15 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .brand-menu { position: fixed; z-index: 45; top: var(--brand-menu-top, 56px); inset-inline-start: var(--brand-menu-start, var(--space-14)); min-width: 220px; }
 .brand-menu-title { padding: var(--space-4) var(--space-10) var(--space-6); color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
 .brand-menu .nav-item.active { color: var(--primary-text); background: var(--side-item-active); }
+
+/* Roles: accounts that hold exactly a role, and the grouped permission list */
+.role-members { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+.role-member { padding: 1px var(--space-8); border: 1px solid var(--edge-soft); border-radius: var(--radius-pill); font-size: var(--font-size-sm); }
+.role-member.locked { color: var(--warning); border-color: var(--warning-soft); }
+.role-member.disabled { color: var(--text-muted); text-decoration: line-through; }
+.role-permissions { display: flex; flex-direction: column; gap: var(--space-4); max-width: 520px; }
+
+/* Access matrix cells */
+.matrix-cell { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); font-weight: 700; }
+.matrix-cell.granted { color: var(--success); background: var(--success-soft); }
+.matrix-cell.denied { color: var(--text-faint); }

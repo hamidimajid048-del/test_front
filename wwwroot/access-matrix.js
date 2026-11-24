@@ -51,7 +51,6 @@ function render() {
       sortable: false,
       filterable: false,
       format: (_, permission) => tick(user.permissions.includes(permission.key)),
-      exportValue: permission => (user.permissions.includes(permission.key) ? 'yes' : ''),
     })),
     { key: 'key', title: 'Roles granting it', sortable: false, filterable: false,
       format: (_, permission) => catalog.presets.filter(preset => preset.permissions.includes(permission.key)).map(preset => preset.title).join(', ') || '—' },
