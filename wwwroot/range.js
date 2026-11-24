@@ -35,10 +35,6 @@ function validateRange(values) {
 // Wires the preset select to the day inputs. The day inputs are editable only for a custom range; otherwise they are
 // read-only (not disabled), so a preset's days are still shown and submitted with the form.
 function initRangeControls(form) {
-  // A day field whose calendar icon stands in front of it opens the picker on a click anywhere in it.
-  for (const input of form.querySelectorAll('.date-field input'))
-    input.addEventListener('click', () => { if (!input.disabled && !input.readOnly) input.showPicker?.(); });
-
   function setRange(fromValue, toValue) {
     form.elements.fromUtc.value = fromValue;
     form.elements.toUtc.value = toValue;

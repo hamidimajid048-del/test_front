@@ -12,10 +12,10 @@
 <body>
   <nav class="menu" id="menu"></nav>
   <main>
-    <p class="message" id="message"></p>
     <form class="filters" id="audit-form" autocomplete="off">
-      <label>Account <input name="username" maxlength="64" placeholder="All accounts"></label>
-      <label>Event kind
+      <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
+      <label class="icon-field">Account <input name="username" maxlength="64" placeholder="All accounts"><span class="field-icon" data-icon="user"></span></label>
+      <label class="icon-field">Event kind
         <select name="eventPrefix">
           <option value="">All events</option>
           <option value="sign_in">Sign-ins</option>
@@ -29,20 +29,26 @@
           <option value="session">Sessions</option>
           <option value="tick_monitor">Tick monitoring</option>
         </select>
+        <span class="field-icon" data-icon="tag"></span>
       </label>
-      <label>From (UTC) <input name="from" type="datetime-local" step="1"></label>
-      <label>To (UTC) <input name="to" type="datetime-local" step="1"></label>
-      <label>Entries
+      <label class="date-field">From (UTC) <input name="from" type="datetime-local" step="1"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="date-field">To (UTC) <input name="to" type="datetime-local" step="1"><span class="field-icon" data-icon="calendar"></span></label>
+      <label class="icon-field">Entries
         <select name="limit">
           <option>200</option>
           <option selected>500</option>
           <option>2000</option>
         </select>
+        <span class="field-icon" data-icon="list"></span>
       </label>
-      <button type="submit" data-icon="search">Show</button>
+      <button type="submit" data-icon="search">Search</button>
     </form>
+    <p class="message" id="message"></p>
     <div class="summary" id="audit-summary"></div>
-    <div id="audit"></div>
+    <section>
+      <h3 class="ad-card-title" data-icon="history">Entries</h3>
+      <div id="audit"></div>
+    </section>
     <ul class="help">
       <li>Every sign-in attempt, credential change, account change, role change and tick-monitoring change is recorded with who did it, from which address and client. Entries are never edited or deleted.</li>
       <li>The newest entries come first; the number of entries is capped by the Entries box. Narrow the time or the kind to find older ones.</li>

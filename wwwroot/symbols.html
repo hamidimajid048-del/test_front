@@ -15,7 +15,6 @@
     <header class="page-header">
       <h1 class="page-title">Symbols dashboard</h1>
     </header>
-    <p class="hint">Everything about the MetaTrader symbols and their price ticks: monitoring now, tick analysis and more later.</p>
     <div class="cards" id="cards"></div>
   </main>
   <script src="/errors.js"></script>
@@ -24,6 +23,7 @@
   <script src="/platform-icons.js"></script>
   <script src="/table-views.js"></script>
   <script>
+    document.querySelector('.page-header').prepend(icon('candles', 'page-icon'));
     renderCards(document.getElementById('cards'), 'symbols');
     renderMenu();
   </script>

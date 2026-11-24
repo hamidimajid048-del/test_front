@@ -1353,7 +1353,10 @@
     "The alarm setups: which symbols, the time windows in server time and the escalation stages of each window.": "ستاپ‌های هشدار: کدام نمادها، پنجره‌های زمانی به وقت سرور و مراحل تشدید هر پنجره.",
     "The Telegram channels alarms go to, with a test message for each.": "کانال‌های تلگرامی که هشدارها به آن‌ها می‌رود، با پیام آزمایشی برای هر کدام.",
     "Every recorded gap: symbol, start and end, duration, stages fired and messages sent.": "همه‌ی قطعی‌های ثبت‌شده: نماد، شروع و پایان، مدت، مراحل اجراشده و پیام‌های ارسال‌شده.",
-    "Turn monitoring on or off, the Telegram bot token, the operations channel and the limits.": "روشن و خاموش کردن مانیتورینگ، توکن ربات تلگرام، کانال عملیات و محدودیت‌ها."
+    "Turn monitoring on or off, the Telegram bot token, the operations channel and the limits.": "روشن و خاموش کردن مانیتورینگ، توکن ربات تلگرام، کانال عملیات و محدودیت‌ها.",
+    "Monitored symbols": "نمادهای تحت بررسی",
+    "Gaps": "قطعی‌ها",
+    "New account": "حساب جدید"
   },
   "templates": {
     "Saved token: {0}": "توکن ذخیره‌شده: {0}",

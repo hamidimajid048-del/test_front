@@ -12,21 +12,26 @@
 <body>
   <nav class="menu" id="menu"></nav>
   <main>
-    <p class="message" id="message"></p>
     <form class="filters" id="sessions-form" autocomplete="off">
-      <label>Account <input name="username" maxlength="64" placeholder="All accounts"></label>
+      <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
+      <label class="icon-field">Account <input name="username" maxlength="64" placeholder="All accounts"><span class="field-icon" data-icon="user"></span></label>
       <label class="check"><input name="all" type="checkbox"> Include ended and expired sessions</label>
-      <label>Entries
+      <label class="icon-field">Entries
         <select name="limit">
           <option>200</option>
           <option selected>500</option>
           <option>2000</option>
         </select>
+        <span class="field-icon" data-icon="list"></span>
       </label>
-      <button type="submit" data-icon="search">Show</button>
+      <button type="submit" data-icon="search">Search</button>
     </form>
+    <p class="message" id="message"></p>
     <div class="summary" id="sessions-summary"></div>
-    <div id="sessions"></div>
+    <section>
+      <h3 class="ad-card-title" data-icon="monitor">Sessions</h3>
+      <div id="sessions"></div>
+    </section>
     <ul class="help">
       <li>A session is one signed-in browser. It ends when the account signs out, after 7 days without use, 7 days after sign-in, or when it is ended here or by an account change. Your own current session is marked; end it from the Account page.</li>
       <li>Several open sessions from different addresses at the same time can mean a shared password. Ending a session signs that browser out at its next request.</li>

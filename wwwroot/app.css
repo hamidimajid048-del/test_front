@@ -643,6 +643,7 @@ section {
   box-shadow: inset 0 1px 0 var(--nav-highlight), 0 10px 30px var(--panel-shadow);
 }
 section form.filters { padding: 0; border: 0; box-shadow: none; background: none; }
+form.filters .filters-wide { grid-column: 1 / -1; }
 
 .section-head { display: flex; gap: var(--space-8); align-items: center; margin-bottom: var(--space-12); }
 .section-head .summary { margin: 0; margin-inline-end: auto; }
@@ -1866,7 +1867,9 @@ dialog.panel-dialog .tm-stage input, dialog.panel-dialog .tm-stage select { widt
 .tm-coverage-bar span.overlap { background: var(--danger); }
 
 /* Tick monitoring settings */
-.tm-settings { display: flex; flex-direction: column; gap: var(--space-16); max-width: 960px; }
+.tm-plain { padding: 0; background: none; border: 0; box-shadow: none; }
+.tm-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: var(--space-16); align-items: start; }
+.tm-settings > .tm-save-bar { grid-column: 1 / -1; }
 .tm-card .control { margin-top: var(--space-4); }
 .tm-field { display: flex; flex-direction: column; gap: var(--space-6); margin-top: var(--space-14); }
 .tm-field > label { font-weight: 600; }

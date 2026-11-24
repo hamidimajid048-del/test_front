@@ -15,7 +15,6 @@
     <header class="page-header">
       <h1 class="page-title">Administration</h1>
     </header>
-    <p class="hint">The panel's own accounts, roles, sessions and audit trail. Nothing here touches the trading data.</p>
     <div class="cards" id="cards"></div>
   </main>
   <script src="/errors.js"></script>
@@ -24,6 +23,7 @@
   <script src="/platform-icons.js"></script>
   <script src="/table-views.js"></script>
   <script>
+    document.querySelector('.page-header').prepend(icon('shieldUser', 'page-icon'));
     renderCards(document.getElementById('cards'), 'admin');
     renderMenu();
   </script>

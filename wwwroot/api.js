@@ -160,6 +160,13 @@ function ensureIconGradient() {
 }
 
 // Static markup names its icons: <button data-icon="grid">Overview</button> gets the icon in front of its text.
+// A date field whose calendar icon stands in front of it (the browser's own is hidden) opens the picker on a click
+// anywhere in it, on every page.
+document.addEventListener('click', event => {
+  const input = event.target.closest?.('.date-field input');
+  if (input && !input.disabled && !input.readOnly) input.showPicker?.();
+});
+
 function applyIcons(root = document) {
   for (const element of root.querySelectorAll('[data-icon]')) {
     element.prepend(icon(element.dataset.icon));

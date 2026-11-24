@@ -14,9 +14,9 @@
   <main>
     <p class="message" id="message"></p>
 
-
     <section data-panel="status">
       <div class="summary" id="status-summary"></div>
+      <h3 class="ad-card-title" data-icon="activity">Monitored symbols</h3>
       <div id="status-table"></div>
       <ul class="help">
         <li><strong>Watching</strong>: the market is open and ticks arrive. <strong>Gap open</strong>: no tick since the time shown; the stages of the active window fire as the gap grows. <strong>Closed</strong>: the symbol's quote session is closed, the server has a holiday, or trading is disabled; nothing is sent. <strong>Uncovered</strong>: no time window covers this moment. <strong>Snoozed</strong>: silenced from this page for a while.</li>
@@ -26,41 +26,48 @@
 
     <section data-panel="profiles" hidden>
       <div class="section-head">
-        <h2 class="ad-card-title" data-icon="target">Profiles</h2>
+        <h3 class="ad-card-title" data-icon="target">Profiles</h3>
         <button type="button" id="profile-add" data-icon="plusBox" data-permission="tick-monitor.edit">New profile</button>
       </div>
-      <p class="hint">A profile is one or more symbols with the same time windows; each symbol is watched on its own. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.</p>
       <div id="profiles"></div>
+      <ul class="help">
+        <li>A profile is one or more symbols with the same time windows; each symbol is watched on its own. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.</li>
+      </ul>
     </section>
 
     <section data-panel="channels" hidden>
       <div class="section-head">
-        <h2 class="ad-card-title" data-icon="message">Channels</h2>
+        <h3 class="ad-card-title" data-icon="message">Channels</h3>
         <button type="button" id="channel-add" data-icon="plusBox" data-permission="tick-monitor.channels">New channel</button>
       </div>
-      <p class="hint">A channel is a Telegram chat the bot posts to. Telegram cannot force a loud notification: set the sound of the wake-up channel on your phone and keep it out of silent mode.</p>
       <div id="channels"></div>
+      <ul class="help">
+        <li>A channel is a Telegram chat the bot posts to. Telegram cannot force a loud notification: set the sound of the wake-up channel on your phone and keep it out of silent mode.</li>
+      </ul>
     </section>
 
     <section data-panel="history" hidden>
       <form class="filters" id="history-form" autocomplete="off">
-        <label>Symbol <input name="symbol" maxlength="32" placeholder="All symbols"></label>
-        <label>From (UTC) <input name="from" type="datetime-local" step="1"></label>
-        <label>To (UTC) <input name="to" type="datetime-local" step="1"></label>
-        <label>Entries
+        <h2 class="filters-title" data-icon="filter">Search &amp; Filters</h2>
+        <label class="icon-field">Symbol <input name="symbol" maxlength="32" placeholder="All symbols"><span class="field-icon" data-icon="candles"></span></label>
+        <label class="date-field">From (UTC) <input name="from" type="datetime-local" step="1"><span class="field-icon" data-icon="calendar"></span></label>
+        <label class="date-field">To (UTC) <input name="to" type="datetime-local" step="1"><span class="field-icon" data-icon="calendar"></span></label>
+        <label class="icon-field">Entries
           <select name="limit">
             <option>100</option>
             <option selected>200</option>
             <option>500</option>
             <option>1000</option>
           </select>
+          <span class="field-icon" data-icon="list"></span>
         </label>
-        <button type="submit" data-icon="search">Show</button>
+        <button type="submit" data-icon="search">Search</button>
       </form>
+      <h3 class="ad-card-title" data-icon="history">Gaps</h3>
       <div id="history"></div>
     </section>
 
-    <section data-panel="settings" hidden>
+    <section data-panel="settings" class="tm-plain" hidden>
       <form class="tm-settings" id="settings-form" autocomplete="off" novalidate>
         <div class="ad-card tm-card">
           <div class="ad-card-head">

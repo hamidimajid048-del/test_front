@@ -38,24 +38,25 @@
     </div>
 
     <section data-panel="accounts">
+      <h3 class="ad-card-title" data-icon="users">Accounts</h3>
       <div id="users"></div>
     </section>
 
     <section data-panel="create" hidden>
-      <form class="create-account" id="create-form" autocomplete="off">
-        <div class="filters">
-          <label>Username <input name="username" maxlength="64" required autocomplete="off"></label>
-          <label>Password <input name="password" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
-          <label>Repeat password <input name="confirm" type="password" minlength="6" maxlength="256" required autocomplete="new-password"></label>
-          <label>Role
-            <select name="role" id="create-role">
-              <option value="admin">Admin (access chosen below)</option>
-              <option value="superadmin">Super admin (every permission)</option>
-            </select>
-          </label>
-        </div>
-        <div class="access-host" id="create-access"></div>
-        <div class="actions">
+      <form class="filters" id="create-form" autocomplete="off">
+        <h2 class="filters-title" data-icon="shieldUser">New account</h2>
+        <label class="icon-field">Username <input name="username" maxlength="64" required autocomplete="off"><span class="field-icon" data-icon="user"></span></label>
+        <label class="icon-field">Password <input name="password" type="password" minlength="6" maxlength="256" required autocomplete="new-password"><span class="field-icon" data-icon="lock"></span></label>
+        <label class="icon-field">Repeat password <input name="confirm" type="password" minlength="6" maxlength="256" required autocomplete="new-password"><span class="field-icon" data-icon="lock"></span></label>
+        <label class="icon-field">Role
+          <select name="role" id="create-role">
+            <option value="admin">Admin (access chosen below)</option>
+            <option value="superadmin">Super admin (every permission)</option>
+          </select>
+          <span class="field-icon" data-icon="shield"></span>
+        </label>
+        <div class="access-host filters-wide" id="create-access"></div>
+        <div class="actions filters-wide">
           <button type="submit" data-icon="check">Add account</button>
         </div>
       </form>
@@ -63,11 +64,13 @@
 
     <section data-panel="roles" hidden>
       <div class="section-head">
-        <h2 class="ad-card-title" data-icon="shield">Roles</h2>
+        <h3 class="ad-card-title" data-icon="shield">Roles</h3>
         <button type="button" id="role-add" data-icon="plusBox" hidden>New role</button>
       </div>
-      <p class="hint">A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it. The Accounts column lists the accounts whose access is exactly this role; super admins hold every permission and are counted under Full access. Use Show permissions to see what a role allows on each dashboard.</p>
       <div id="roles"></div>
+      <ul class="help">
+        <li>A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it. The Accounts column lists the accounts whose access is exactly this role; super admins hold every permission and are counted under Full access. Use Show permissions to see what a role allows on each dashboard.</li>
+      </ul>
     </section>
   </main>
 
