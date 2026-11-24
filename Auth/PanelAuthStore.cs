@@ -328,18 +328,28 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
     }
 
     public async Task<IReadOnlyList<PanelAuditEntry>> ListAuditAsync(string? username, int limit,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        await ListAuditAsync(username, null, null, null, limit, cancellationToken);
+
+    public async Task<IReadOnlyList<PanelAuditEntry>> ListAuditAsync(string? username, string? eventPrefix, DateTime? from, DateTime? to,
+        int limit, CancellationToken cancellationToken = default)
     {
         await using var command = dataSource.CreateCommand(
             """
             SELECT id, occurred_at, event, username, ip_address, user_agent, detail
             FROM violation_panel.audit_log
-            WHERE $1::text IS NULL OR lower(username) = lower($1)
+            WHERE ($1::text IS NULL OR lower(username) = lower($1))
+              AND ($3::text IS NULL OR event LIKE $3 || '%')
+              AND ($4::timestamptz IS NULL OR occurred_at >= $4)
+              AND ($5::timestamptz IS NULL OR occurred_at < $5)
             ORDER BY id DESC
             LIMIT $2
             """);
         command.Parameters.AddWithValue(NpgsqlTypes.NpgsqlDbType.Text, (object?)username ?? DBNull.Value);
         command.Parameters.AddWithValue(limit);
+        command.Parameters.AddWithValue(NpgsqlTypes.NpgsqlDbType.Text, (object?)eventPrefix ?? DBNull.Value);
+        command.Parameters.AddWithValue(NpgsqlTypes.NpgsqlDbType.TimestampTz, (object?)from ?? DBNull.Value);
+        command.Parameters.AddWithValue(NpgsqlTypes.NpgsqlDbType.TimestampTz, (object?)to ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var entries = new List<PanelAuditEntry>();
         while (await reader.ReadAsync(cancellationToken))
@@ -464,6 +474,82 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
         return await reader.ReadAsync(cancellationToken)
             ? new PanelSessionAccess(reader.GetString(0), reader.GetFieldValue<string[]>(1))
             : null;
+    }
+
+    public async Task<IReadOnlyList<PanelSessionEntry>> ListSessionsAsync(bool activeOnly, byte[]? currentTokenHash, int limit,
+        CancellationToken cancellationToken = default)
+    {
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT encode(s.token_hash, 'hex'), s.user_id, u.username, s.created_at, s.last_seen_at, s.expires_at, s.revoked_at,
+                   s.ip_address, s.user_agent, s.token_hash = $2
+            FROM violation_panel.sessions s
+            JOIN violation_panel.users u ON u.id = s.user_id
+            WHERE NOT $1 OR (s.revoked_at IS NULL AND s.expires_at > now())
+            ORDER BY s.last_seen_at DESC
+            LIMIT $3
+            """);
+        command.Parameters.AddWithValue(activeOnly);
+        command.Parameters.AddWithValue(NpgsqlTypes.NpgsqlDbType.Bytea, (object?)currentTokenHash ?? DBNull.Value);
+        command.Parameters.AddWithValue(limit);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var sessions = new List<PanelSessionEntry>();
+        while (await reader.ReadAsync(cancellationToken))
+            sessions.Add(new PanelSessionEntry(
+                reader.GetString(0),
+                reader.GetGuid(1),
+                reader.GetString(2),
+                reader.GetDateTime(3),
+                reader.GetDateTime(4),
+                reader.GetDateTime(5),
+                reader.IsDBNull(6) ? null : reader.GetDateTime(6),
+                reader.IsDBNull(7) ? null : reader.GetString(7),
+                reader.IsDBNull(8) ? null : reader.GetString(8),
+                !reader.IsDBNull(9) && reader.GetBoolean(9)));
+        return sessions;
+    }
+
+    public async Task<IReadOnlyList<PanelUserActivity>> UserActivityAsync(int days, CancellationToken cancellationToken = default)
+    {
+        await using var command = dataSource.CreateCommand(
+            """
+            WITH recent AS (
+                SELECT user_id, event, occurred_at, ip_address
+                FROM violation_panel.audit_log
+                WHERE occurred_at >= now() - make_interval(days => $1) AND user_id IS NOT NULL)
+            SELECT u.id, u.username, u.role,
+                   CASE WHEN u.is_disabled THEN 'disabled' WHEN coalesce(u.locked_until > now(), false) THEN 'locked' ELSE 'active' END,
+                   u.totp_secret IS NOT NULL,
+                   (SELECT count(*)::int FROM recent r WHERE r.user_id = u.id AND r.event = 'sign_in_succeeded'),
+                   (SELECT count(*)::int FROM recent r WHERE r.user_id = u.id AND r.event = 'sign_in_failed'),
+                   (SELECT count(DISTINCT r.ip_address)::int FROM recent r WHERE r.user_id = u.id AND r.event = 'sign_in_succeeded' AND r.ip_address IS NOT NULL),
+                   (SELECT count(*)::int FROM violation_panel.sessions s WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > now()),
+                   u.last_sign_in_at,
+                   (SELECT r.ip_address FROM recent r WHERE r.user_id = u.id AND r.event = 'sign_in_succeeded' ORDER BY r.occurred_at DESC LIMIT 1),
+                   (SELECT max(r.occurred_at) FROM recent r WHERE r.user_id = u.id AND r.event = 'sign_in_failed'),
+                   (SELECT count(*)::int FROM recent r WHERE r.user_id = u.id AND r.event NOT IN ('sign_in_succeeded', 'sign_in_failed', 'password_accepted'))
+            FROM violation_panel.users u
+            ORDER BY lower(u.username)
+            """);
+        command.Parameters.AddWithValue(days);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var rows = new List<PanelUserActivity>();
+        while (await reader.ReadAsync(cancellationToken))
+            rows.Add(new PanelUserActivity(
+                reader.GetGuid(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetBoolean(4),
+                reader.GetInt32(5),
+                reader.GetInt32(6),
+                reader.GetInt32(7),
+                reader.GetInt32(8),
+                reader.IsDBNull(9) ? null : reader.GetDateTime(9),
+                reader.IsDBNull(10) ? null : reader.GetString(10),
+                reader.IsDBNull(11) ? null : reader.GetDateTime(11),
+                reader.GetInt32(12)));
+        return rows;
     }
 
     public Task RevokeSessionAsync(byte[] tokenHash, CancellationToken cancellationToken = default) =>

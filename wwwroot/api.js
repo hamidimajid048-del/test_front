@@ -18,6 +18,7 @@ const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
 const DASHBOARDS = [
   { key: 'violation', title: 'Violation', icon: 'chart', href: '/', heading: 'Violation reports' },
   { key: 'symbols', title: 'Symbols', icon: 'candles', href: '/symbols.html', heading: 'Symbols dashboard' },
+  { key: 'admin', title: 'Administration', icon: 'shieldUser', href: '/admin.html', heading: 'Administration' },
 ];
 
 // The menu groups, in the order shown; each page of MENU_ITEMS names its group and each group names its dashboard.
@@ -27,6 +28,8 @@ const MENU_GROUPS = [
   { key: 'compare', dashboard: 'violation', title: 'Comparison', icon: 'link' },
   { key: 'operations', dashboard: 'violation', title: 'Operations', icon: 'settings' },
   { key: 'ticks', dashboard: 'symbols', title: 'Ticks', icon: 'activity' },
+  { key: 'accounts-admin', dashboard: 'admin', title: 'Panel accounts', icon: 'users' },
+  { key: 'security', dashboard: 'admin', title: 'Security & activity', icon: 'shield' },
 ];
 
 // The dashboard of the current page: its home page, or the dashboard of the group its menu entry belongs to.
@@ -58,6 +61,11 @@ const MENU_ITEMS = [
   { group: 'compare', href: '/compare-logins.html', icon: 'users', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
   { group: 'compare', href: '/compare-emails.html', icon: 'mailCompare', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
   { group: 'operations', href: '/bulk-balance.html', icon: 'wallet', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
+  { group: 'accounts-admin', href: '/users.html', icon: 'users', title: 'Users & roles', permission: 'users.view', description: 'The panel accounts with their state, access and sessions, and the roles (named sets of permissions) with the accounts that use each.' },
+  { group: 'accounts-admin', href: '/access-matrix.html', icon: 'grid', title: 'Access matrix', permission: 'users.view', description: 'Who may do what: every permission against every account, with the roles that grant it.' },
+  { group: 'security', href: '/sessions.html', icon: 'monitor', title: 'Sessions', permission: 'users.view', description: 'The open panel sessions: account, address, client, when they started and were last seen; end a session from here.' },
+  { group: 'security', href: '/activity.html', icon: 'activity', title: 'Sign-in activity', permission: 'audit.view', description: 'Per account: sign-ins, failures, distinct addresses and changes in the chosen period, with the recent sign-in attempts.' },
+  { group: 'security', href: '/audit.html', icon: 'history', title: 'Audit log', permission: 'audit.view', description: 'Every recorded event with filters by account, event kind and time, and an export.' },
   { group: 'ticks', href: '/tick-monitor.html', icon: 'activity', title: 'Tick monitoring', permission: 'tick-monitor.view', description: 'Telegram alarms when a symbol stops ticking: per-symbol time windows in server time, escalation stages, Telegram channels, and the history of every gap. Nothing is sent while the market is closed.' },
 ];
 
@@ -199,8 +207,6 @@ function renderCards(container, dashboardKey = DASHBOARDS[0].key) {
     }
   });
 }
-
-const USERS_PAGE = { href: '/users.html', icon: 'users', title: 'Users', permission: 'users.view' };
 
 const TOAST_ICONS = {
   success: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>',
@@ -756,10 +762,23 @@ function renderMenu() {
     }
     return link;
   }));
+  // The menu is fixed and placed from the button: below it when the sidebar is expanded, beside it when collapsed, so
+  // the sidebar's scroll box and its narrow collapsed width never hide it.
+  const placeBrandMenu = () => {
+    const rect = brandButton.getBoundingClientRect();
+    const collapsed = isSidebarCollapsed();
+    const start = document.dir === 'rtl'
+      ? window.innerWidth - (collapsed ? rect.left - 8 : rect.right)
+      : collapsed ? rect.right + 8 : rect.left;
+    brandMenu.style.setProperty('--brand-menu-start', `${Math.max(8, start)}px`);
+    brandMenu.style.setProperty('--brand-menu-top', `${collapsed ? Math.max(8, rect.top) : rect.bottom + 4}px`);
+  };
   const setBrandOpen = open => {
+    if (open) placeBrandMenu();
     brand.classList.toggle('open', open);
     brandButton.setAttribute('aria-expanded', String(open));
   };
+  window.addEventListener('resize', () => { if (brand.classList.contains('open')) placeBrandMenu(); });
   let brandTarget = activeDashboard.href;
   brandButton.addEventListener('click', () => {
     if (brand.classList.contains('single')) {
@@ -956,7 +975,7 @@ function renderMenu() {
   // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu
   // entry; a page that writes its own header (with a subtitle) gets the icon only. The header sits in the top bar.
   const main = document.querySelector('main');
-  const pageIcon = [...MENU_ITEMS, USERS_PAGE, ...DASHBOARDS].find(item => item.href === location.pathname)?.icon
+  const pageIcon = [...MENU_ITEMS, ...DASHBOARDS].find(item => item.href === location.pathname)?.icon
     ?? (location.pathname === '/account.html' ? 'user' : 'layers');
   let header = main?.querySelector('.page-header');
   if (main && !header && !main.querySelector('h1')) {
@@ -986,18 +1005,6 @@ function renderMenu() {
     // With one dashboard the brand is a plain link to its home; the switcher appears only when there is a choice.
     brand.classList.toggle('single', openable.length <= 1);
     brandTarget = (openable.find(entry => entry.key === activeDashboard.key) ?? openable[0] ?? activeDashboard).href;
-    if (can(me, USERS_PAGE.permission)) {
-      const users = document.createElement('a');
-      users.className = 'side-link';
-      users.href = USERS_PAGE.href;
-      users.title = USERS_PAGE.title;
-      users.append(icon(USERS_PAGE.icon), sidebarLabel(USERS_PAGE.title));
-      if (location.pathname === USERS_PAGE.href) {
-        users.classList.add('active');
-        users.setAttribute('aria-current', 'page');
-      }
-      pages.append(users);
-    }
     applyPermissions(me);
     guardPage(me);
     if (!me.twoFactor && location.pathname !== '/account.html') {
@@ -1040,7 +1047,7 @@ function guardPage(me) {
   const dashboard = DASHBOARDS.find(entry => entry.href === location.pathname);
   const needed = dashboard
     ? dashboardPermissions(dashboard)
-    : [[...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.permission].filter(Boolean);
+    : [MENU_ITEMS.find(item => item.href === location.pathname)?.permission].filter(Boolean);
   if (needed.length === 0 || needed.some(permission => can(me, permission))) return;
   // A dashboard home the account may not open sends it to a dashboard it may, so nobody lands on an empty page.
   const other = dashboard ? DASHBOARDS.find(entry => entry.key !== dashboard.key && canOpenDashboard(me, entry)) : null;

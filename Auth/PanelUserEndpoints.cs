@@ -15,7 +15,8 @@ public static class PanelUserEndpoints
     public const string RequestHeader = "X-Panel-Request";
 
     private const string CurrentUserItem = "panel-current-user";
-    private const int MaxAuditEntries = 500;
+    private const int MaxAuditEntries = 2000;
+    private const int MaxActivityDays = 365;
     private const string TwoFactorSetupPurpose = "panel-two-factor-setup";
     private static readonly TimeSpan TwoFactorSetupLifetime = TimeSpan.FromMinutes(10);
 
@@ -84,12 +85,25 @@ public static class PanelUserEndpoints
                 ChangeUserAsync(id, context, store, "user_deleted", allowSelf: false, (user, token) => store.DeleteUserAsync(user.Id, token)))
             .RequirePermission(PanelPermissions.UsersDelete);
 
-        api.MapGet("/audit", async (string? username, int? limit, PanelAuthStore store, HttpContext context) =>
+        api.MapGet("/audit", async (string? username, string? eventPrefix, DateTime? from, DateTime? to, int? limit, PanelAuthStore store, HttpContext context) =>
                 Results.Ok(await store.ListAuditAsync(
                     string.IsNullOrWhiteSpace(username) ? null : username.Trim(),
+                    string.IsNullOrWhiteSpace(eventPrefix) ? null : eventPrefix.Trim(),
+                    from is { } fromValue ? DateTime.SpecifyKind(fromValue, DateTimeKind.Utc) : null,
+                    to is { } toValue ? DateTime.SpecifyKind(toValue, DateTimeKind.Utc) : null,
                     Math.Clamp(limit ?? 200, 1, MaxAuditEntries),
                     context.RequestAborted)))
             .RequirePermission(PanelPermissions.AuditView);
+
+        api.MapGet("/users/activity", async (int? days, PanelAuthStore store, HttpContext context) =>
+                Results.Ok(await store.UserActivityAsync(Math.Clamp(days ?? 30, 1, MaxActivityDays), context.RequestAborted)))
+            .RequirePermission(PanelPermissions.AuditView);
+
+        api.MapGet("/sessions", async (bool? all, int? limit, PanelAuthStore store, HttpContext context) =>
+                Results.Ok(await store.ListSessionsAsync(
+                    all != true, context.User.GetSessionTokenHash(), Math.Clamp(limit ?? 500, 1, MaxAuditEntries), context.RequestAborted)))
+            .RequirePermission(PanelPermissions.UsersView);
+        api.MapDelete("/sessions/{id}", EndSessionAsync).RequirePermission(PanelPermissions.UsersManageState);
     }
 
     // Reads the signed-in account from the database on every request, so a role change, a disabled account or a
@@ -393,11 +407,28 @@ public static class PanelUserEndpoints
         return new { key = Totp.FormatSecret(secret), uri, qrCode = $"data:image/png;base64,{Convert.ToBase64String(png)}" };
     }
 
+    private static async Task<IResult> EndSessionAsync(string id, HttpContext context, PanelAuthStore store)
+    {
+        if (id.Length != 64 || !id.All(Uri.IsHexDigit))
+            return Error(StatusCodes.Status400BadRequest, "The session id is not valid.");
+        var session = (await store.ListSessionsAsync(false, null, MaxAuditEntries, context.RequestAborted))
+            .FirstOrDefault(entry => string.Equals(entry.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (session is null)
+            return Error(StatusCodes.Status404NotFound, "The session no longer exists.");
+        if (session.UserId == CurrentUser(context).Id)
+            return Error(StatusCodes.Status400BadRequest, "End your own sessions from the Account page.");
+
+        await store.RevokeSessionAsync(Convert.FromHexString(id), context.RequestAborted);
+        await AuditAsync(context, store, "session_ended", session.Username, session.UserId, $"from {session.IpAddress ?? "unknown"}");
+        return Results.NoContent();
+    }
+
     private static object ToResponse(PanelUser user, PanelUser self) => new
     {
         id = user.Id,
         username = user.Username,
         role = user.Role,
+        twoFactor = user.TotpSecret is not null,
         state = user.IsDisabled ? "disabled" : user.IsLocked ? "locked" : "active",
         failedAttempts = user.FailedAttempts,
         activeSessions = user.ActiveSessions,
