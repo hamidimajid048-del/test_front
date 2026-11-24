@@ -8,6 +8,7 @@ public sealed class TickMonitorEngine
 
     private readonly Dictionary<string, TickMonitorSymbolState> _states = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _snoozes = new(StringComparer.OrdinalIgnoreCase);
+    private long _serverOffsetMs;
 
     public IReadOnlyDictionary<string, TickMonitorSymbolState> States => _states;
 
@@ -25,6 +26,7 @@ public sealed class TickMonitorEngine
 
     public TickMonitorStepResult Step(
         long now,
+        long serverOffsetMs,
         IReadOnlyList<TickMonitorProfile> profiles,
         IReadOnlyDictionary<Guid, TickMonitorChannel> channels,
         TickMonitorSettings settings,
@@ -32,6 +34,7 @@ public sealed class TickMonitorEngine
         Func<string, Mt5MarketStatusModel> market,
         Func<string, TickMonitorTickModel?> lastTick)
     {
+        _serverOffsetMs = serverOffsetMs;
         var result = new TickMonitorStepResult();
 
         foreach (var symbol in _states.Keys.Where(symbol => profiles.All(profile => !string.Equals(profile.Symbol, symbol, StringComparison.OrdinalIgnoreCase))).ToList())
@@ -187,7 +190,7 @@ public sealed class TickMonitorEngine
                 continue;
             result.Sends.Add(new TickMonitorSend(
                 channel.TelegramChatId,
-                TickMonitorMessageBuilder.Alarm(symbol, state.GapStart, now, pending.ScheduleName, channel.Name, pending.Sequence, pending.Total, tick?.Price),
+                TickMonitorMessageBuilder.Alarm(symbol, state.GapStart - _serverOffsetMs, now - _serverOffsetMs, tick?.Price),
                 symbol,
                 state.EventId));
         }
@@ -196,7 +199,7 @@ public sealed class TickMonitorEngine
             result.Events.Add(Change(symbol, state, null, null, tick?.Price));
     }
 
-    private static void Recover(
+    private void Recover(
         string symbol,
         TickMonitorSymbolState state,
         TickMonitorProfile profile,
@@ -212,7 +215,7 @@ public sealed class TickMonitorEngine
             if (channels.TryGetValue(channelId, out var channel) && channel.Enabled)
                 result.Sends.Add(new TickMonitorSend(
                     channel.TelegramChatId,
-                    TickMonitorMessageBuilder.Recovered(symbol, state.GapStart, tick.TimeMs, state.PriceBeforeGap, tick.Price, status.Point),
+                    TickMonitorMessageBuilder.Recovered(symbol, state.GapStart - _serverOffsetMs, tick.TimeMs - _serverOffsetMs, state.PriceBeforeGap, tick.Price, status.Point),
                     symbol,
                     state.EventId));
         }

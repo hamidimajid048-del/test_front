@@ -34,6 +34,7 @@ const MENU_ITEMS = [
   { group: 'compare', href: '/compare-logins.html', icon: 'users', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
   { group: 'compare', href: '/compare-emails.html', icon: 'mailCompare', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
   { group: 'operations', href: '/bulk-balance.html', icon: 'wallet', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
+  { group: 'operations', href: '/tick-monitor.html', icon: 'activity', title: 'Tick monitoring', permission: 'tick-monitor.view', description: 'Telegram alarms when a symbol stops ticking: per-symbol time windows in server time, escalation stages, Telegram channels, and the history of every gap. Nothing is sent while the market is closed.' },
 ];
 
 const ICON_PATHS = {

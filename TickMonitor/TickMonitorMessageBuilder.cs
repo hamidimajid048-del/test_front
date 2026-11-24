@@ -2,47 +2,52 @@ namespace Sgb.Trading.Violation.Panel.TickMonitor;
 
 public static class TickMonitorMessageBuilder
 {
-    public static string Alarm(string symbol, long gapStart, long now, string scheduleName, string channelName, int sequence, int total, double? lastPrice)
+    private const double HourSeconds = 3600d;
+
+    public static string Alarm(string symbol, long gapStartUtcMs, long nowUtcMs, double? lastPrice)
     {
-        var text =
-            $"⚠ {symbol} – no ticks for {Span(now - gapStart)}\n" +
-            $"Since: {Time(gapStart)} (server time)\n" +
-            $"Window: {scheduleName} · Stage: {channelName}" + (total > 1 ? $" ({sequence}/{total})" : string.Empty);
-        if (lastPrice is { } price)
-            text += $"\nLast price: {price:0.#####}";
-        return text;
+        var text = FormattableString.Invariant(
+            $"Symbol: {symbol}\nNo ticks since: {Time(gapStartUtcMs)} UTC\nDuration: {Duration(nowUtcMs - gapStartUtcMs)}");
+        return lastPrice is { } price ? text + FormattableString.Invariant($"\nLast price: {price:0.#####}") : text;
     }
 
-    public static string Recovered(string symbol, long gapStart, long gapEnd, double? priceBefore, double? priceAfter, double point)
+    public static string Recovered(string symbol, long gapStartUtcMs, long gapEndUtcMs, double? priceBefore, double? priceAfter, double point)
     {
-        var text =
-            $"✅ {symbol} – ticks resumed after {Span(gapEnd - gapStart)}\n" +
-            $"Gap: {Time(gapStart)} → {Time(gapEnd)} (server time)";
-        if (priceBefore is { } before && priceAfter is { } after && point > 0)
-            text += $"\nPrice gap: {Math.Abs(after - before) / point:0.#} points";
-        return text;
+        var text = FormattableString.Invariant(
+            $"Symbol: {symbol}\nGap without ticks: {Time(gapStartUtcMs)} to {Time(gapEndUtcMs)} UTC\nDuration: {Duration(gapEndUtcMs - gapStartUtcMs)}");
+        return priceBefore is { } before && priceAfter is { } after && point > 0
+            ? text + $"\nPrice gap: {PriceGap(before, after, point)}"
+            : text;
     }
 
-    public static string ConnectionLost() => "⚠ Tick monitoring: MetaTrader connection lost. Symbol alarms are paused.";
+    public static string ConnectionLost() => "Tick monitor: MetaTrader connection lost";
 
-    public static string ConnectionRestored() => "✅ Tick monitoring: MetaTrader connection restored.";
+    public static string ConnectionRestored() => "Tick monitor: MetaTrader connection restored";
 
-    public static string Started() => "▶ Tick monitoring started.";
+    public static string Started() => "Tick monitor started";
 
-    public static string Stopped() => "⏹ Tick monitoring stopped.";
+    public static string Stopped() => "Tick monitor stopped";
 
-    public static string Stalled(TimeSpan since) => $"⚠ Tick monitoring: no evaluation for {Span((long)since.TotalMilliseconds)}; the engine may be stalled.";
+    public static string Stalled(TimeSpan since) => $"Tick monitor: no evaluation for {Duration((long)since.TotalMilliseconds)}";
 
-    public static string Test(string channelName) => $"🔔 Tick monitoring test message for channel \"{channelName}\".";
+    public static string Test() => "Tick monitor test message";
 
-    public static string Span(long milliseconds)
+    private static string Duration(long milliseconds)
     {
         var span = TimeSpan.FromMilliseconds(Math.Max(0, milliseconds));
-        if (span.TotalHours >= 1)
-            return $"{(int)span.TotalHours}h {span.Minutes:00}m {span.Seconds:00}s";
-        return span.TotalMinutes >= 1 ? $"{span.Minutes}m {span.Seconds:00}s" : $"{span.Seconds}s";
+        return span.TotalSeconds < HourSeconds
+            ? FormattableString.Invariant($"{span.TotalSeconds:0.0} seconds")
+            : FormattableString.Invariant($"{(int)span.TotalHours}h {span.Minutes:00}m {span.Seconds:00}s");
     }
 
-    private static string Time(long serverTimeMs) =>
-        DateTimeOffset.FromUnixTimeMilliseconds(serverTimeMs).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+    private static string PriceGap(double before, double after, double point)
+    {
+        var points = Math.Round((after - before) / point, 1);
+        return points == 0
+            ? "0.0 points"
+            : FormattableString.Invariant($"{points:+0.0;-0.0} points ({before:0.#####} to {after:0.#####})");
+    }
+
+    private static string Time(long utcMs) =>
+        DateTimeOffset.FromUnixTimeMilliseconds(utcMs).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 }

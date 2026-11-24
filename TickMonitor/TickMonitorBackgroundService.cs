@@ -57,7 +57,7 @@ public sealed class TickMonitorBackgroundService(
     public Task<bool> SendTestAsync(TickMonitorChannel channel, CancellationToken cancellationToken) =>
         _settings.TelegramBotToken.Length == 0
             ? Task.FromResult(false)
-            : telegram.SendAsync(_settings.TelegramBotToken, channel.TelegramChatId, TickMonitorMessageBuilder.Test(channel.Name), cancellationToken);
+            : telegram.SendAsync(_settings.TelegramBotToken, channel.TelegramChatId, TickMonitorMessageBuilder.Test(), cancellationToken);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -173,7 +173,7 @@ public sealed class TickMonitorBackgroundService(
         var now = connected ? ServerNow() : 0;
         TickMonitorStepResult result;
         lock (_engineGate)
-            result = _engine.Step(now, _profiles, _channels, _settings, connected, symbol => calendar.Status(symbol, now), sink.Last);
+            result = _engine.Step(now, _serverOffsetMs, _profiles, _channels, _settings, connected, symbol => calendar.Status(symbol, now), sink.Last);
 
         foreach (var warning in result.Warnings)
             logger.LogWarning("{Warning}", warning);
