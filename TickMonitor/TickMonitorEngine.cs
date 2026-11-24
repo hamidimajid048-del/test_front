@@ -110,6 +110,8 @@ public sealed class TickMonitorEngine
 
         _snoozes.Remove(symbol);
         state.SnoozedUntil = 0;
+        if (state.State == TickMonitorSymbolStateEnum.Snoozed)
+            state.State = GapIsOpen(state) ? TickMonitorSymbolStateEnum.GapOpen : TickMonitorSymbolStateEnum.Watching;
 
         var day = Math.DivRem(now, DayMs, out var timeOfDay);
         var schedule = profile.Config.ActiveSchedule((DayOfWeek)(int)(((day + 4) % 7 + 7) % 7), (int)(timeOfDay / MinuteMs));
@@ -120,7 +122,7 @@ public sealed class TickMonitorEngine
         }
 
         var tick = lastTick(symbol);
-        if (state.State == TickMonitorSymbolStateEnum.GapOpen && tick is not null && tick.TimeMs > state.GapStart)
+        if (GapIsOpen(state) && tick is not null && tick.TimeMs > state.GapStart)
         {
             Recover(symbol, state, profile, channels, status, tick, result);
             state.Reset(TickMonitorSymbolStateEnum.Watching, null);
@@ -128,14 +130,14 @@ public sealed class TickMonitorEngine
 
         if (now - status.OpenedAt < settings.OpenGraceSeconds * SecondMs)
         {
-            if (state.State != TickMonitorSymbolStateEnum.GapOpen)
+            if (!GapIsOpen(state))
                 state.Reset(TickMonitorSymbolStateEnum.Watching, "Market just opened");
             return;
         }
 
         var baseline = Math.Max(Math.Max(tick?.TimeMs ?? 0, status.OpenedAt), state.TrackingSince);
         var stagesChanged = false;
-        if (state.State != TickMonitorSymbolStateEnum.GapOpen)
+        if (!GapIsOpen(state))
         {
             var gapSoFar = now - baseline;
             var first = schedule.Stages[0];
@@ -226,10 +228,12 @@ public sealed class TickMonitorEngine
     private static void Transition(
         string symbol, TickMonitorSymbolState state, TickMonitorStepResult result, TickMonitorSymbolStateEnum target, string? reason, long now, string endedBy)
     {
-        if (state.State == TickMonitorSymbolStateEnum.GapOpen)
+        if (GapIsOpen(state))
             result.Events.Add(Change(symbol, state, now, endedBy, null));
         state.Reset(target, reason);
     }
+
+    private static bool GapIsOpen(TickMonitorSymbolState state) => state.EventId != Guid.Empty;
 
     private static TickMonitorEventChange Change(string symbol, TickMonitorSymbolState state, long? gapEnd, string? endedBy, double? lastPrice) =>
         new(state.EventId, symbol, state.GapStart, gapEnd, endedBy, state.ScheduleName, state.FiredStages.Count, lastPrice);

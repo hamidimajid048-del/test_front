@@ -129,6 +129,35 @@ similarity details (`transactionCount`, `relatedTransactionCount`), the shared I
 one of the login session that covers the transaction time and, when possible, its IP (the same attribution as the
 transactions tab). The counts are sortable, filterable and exported like the other columns.
 
+## Tick monitoring
+
+The **Tick monitoring** page (`tick-monitor.html`, permission `tick-monitor.view`) sends Telegram alarms when a monitored
+symbol stops ticking. It needs the MetaTrader connection (`Mt5:Enabled`); nothing else is configured in `appsettings`:
+the on/off switch, the Telegram bot token, the operations channel and the limits live in the panel database
+(`violation_panel.tick_monitor_settings`) and are changed on the page's Settings tab (`tick-monitor.settings`). A change
+to any profile, channel or setting is picked up by the engine within a second; no restart is needed.
+
+- **Profiles** (`tick-monitor.edit`): one per symbol, with time windows in **MetaTrader server time** (days of the week,
+  from, to; a window whose end is not after its start crosses midnight). Each window has ordered stages: after N seconds
+  without a tick, send to a channel, M times every K seconds. Windows of a profile must not overlap; a moment outside every
+  window is not monitored. Options: a "ticks resumed" notice after at least N stages fired, and a quiet period before the
+  market closes (off by default). A symbol can be snoozed for 15 to 180 minutes from the Status tab.
+- **Channels** (`tick-monitor.channels`): named Telegram chats; each can be tested from the page. A channel in use cannot be deleted.
+- **Market closed = nothing is sent.** The engine reads the symbol's quote sessions, its trade mode and the server
+  holidays (cached 5 minutes) and cancels every pending message when the market closes. After the market opens, alarms
+  wait for the grace period (default 120 seconds) because the first tick is often late.
+- **Ticks** come from the Manager API tick subscription (`TickSubscribe` + `SelectedAdd`); `TickLast` seeds the last tick
+  after a connection and checks every minute that the subscription is still alive. The engine evaluates every second, so
+  repeats every 5 seconds are exact.
+- **Service notices** go to the operations channel: MetaTrader connection lost or restored, monitoring started or stopped,
+  and a stalled engine. Only one panel instance runs the engine (a PostgreSQL advisory lock); another instance shows "Standby".
+- **History** (`violation_panel.tick_monitor_events`): every gap with its start, end, how it ended, the stages fired and
+  the messages sent or failed; kept for the configured number of days.
+- Alarm texts are English and in UTC. Status, profile and channel changes are written to the audit log.
+
+The design and the behaviour at the edges (window change during a gap, reconnects, snooze) are described in
+[`../docs/tick-monitoring-escalation-plan.md`](../docs/tick-monitoring-escalation-plan.md).
+
 ## Run
 
 ```powershell
