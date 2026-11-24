@@ -3,7 +3,6 @@
 
 const message = document.getElementById('message');
 const createForm = document.getElementById('create-form');
-const auditForm = document.getElementById('audit-form');
 const setup = document.getElementById('two-factor-setup');
 const passwordDialog = document.getElementById('password-dialog');
 const passwordForm = document.getElementById('password-form');
@@ -28,12 +27,11 @@ function showMessage(text, kind = 'success') {
 }
 
 function showTab(tab) {
-  const current = ['audit', 'roles'].includes(tab) ? tab : 'accounts';
+  const current = tab === 'roles' ? tab : 'accounts';
   for (const button of document.querySelectorAll('#tabs button'))
     button.classList.toggle('active', button.dataset.tab === current);
   for (const panel of document.querySelectorAll('[data-panel]'))
     panel.hidden = panel.dataset.panel !== current;
-  if (current === 'audit') loadAudit();
   if (current === 'roles') renderRoles();
 }
 
@@ -245,6 +243,7 @@ const USER_COLUMNS = [
   { key: 'role', title: 'Role', format: value => badge(ROLE_LABELS[value] ?? value, value === 'superadmin' ? 'main' : 'muted') },
   { key: 'permissions', title: 'Access', sortable: false, filterable: false, format: (_, user) => accessBadge(user) },
   { key: 'state', title: 'State', format: value => badge(...(STATE_BADGES[value] ?? [value, 'muted'])) },
+  { key: 'twoFactor', title: '2FA', format: value => badge(value ? 'On' : 'Off', value ? 'ok' : 'warn') },
   { key: 'failedAttempts', title: 'Failed sign-ins' },
   { key: 'activeSessions', title: 'Open sessions' },
   utcColumn('lastSignInAt', 'Last sign-in'),
@@ -252,34 +251,12 @@ const USER_COLUMNS = [
   { key: 'id', title: 'Actions', sortable: false, filterable: false, noExport: true, format: (_, user) => userActions(user) },
 ];
 
+let users = [];
+
 async function loadUsers() {
-  const users = await panelRequest('GET', 'users');
+  users = await panelRequest('GET', 'users');
   renderTable(document.getElementById('users'), USER_COLUMNS, users, undefined, { export: { name: 'panel-accounts' } });
-}
-
-const AUDIT_COLUMNS = [
-  utcColumn('occurredAt', 'Time'),
-  { key: 'event', title: 'Event', format: value => badge(value.replaceAll('_', ' '), auditKind(value)) },
-  { key: 'username', title: 'Account' },
-  { key: 'detail', title: 'Detail' },
-  { key: 'ipAddress', title: 'IP' },
-  { key: 'userAgent', title: 'Client', format: value => value ? value.slice(0, 60) : '' },
-];
-
-function auditKind(event) {
-  if (event.includes('failed') || event.includes('locked') || event.includes('deleted') || event.includes('disabled')) return 'danger';
-  if (event.includes('succeeded')) return 'ok';
-  return 'muted';
-}
-
-async function loadAudit() {
-  const values = new FormData(auditForm);
-  try {
-    const entries = await panelRequest('GET', `audit${toQueryString({ username: values.get('username'), limit: values.get('limit') })}`);
-    renderTable(document.getElementById('audit'), AUDIT_COLUMNS, entries, undefined, { export: { name: 'panel-audit-log' } });
-  } catch (error) {
-    if (error.message) showMessage(error.message, 'error');
-  }
+  if (!document.querySelector('[data-panel="roles"]').hidden) renderRoles();
 }
 
 function openPasswordDialog(user) {
@@ -323,12 +300,57 @@ async function loadCatalog() {
   renderRoles();
 }
 
+// The accounts whose access is exactly this role. Super admins hold every permission, so they count under the role that
+// grants everything.
+function roleMembers(role) {
+  const wanted = [...role.permissions].sort().join();
+  const everything = wanted === [...catalog.permissions.map(permission => permission.key)].sort().join();
+  return users.filter(user => user.role === 'superadmin' ? everything : [...user.permissions].sort().join() === wanted);
+}
+
+function membersCell(role) {
+  const members = roleMembers(role);
+  if (!members.length) return badge('No accounts', 'muted');
+  const cell = document.createElement('div');
+  cell.className = 'role-members';
+  cell.append(badge(`${members.length}`, 'main'));
+  for (const member of members) {
+    const name = document.createElement('span');
+    name.className = `role-member ${member.state}`;
+    name.translate = false;
+    name.textContent = member.username;
+    name.title = member.state === 'active' ? '' : STATE_BADGES[member.state]?.[0] ?? member.state;
+    cell.append(name);
+  }
+  return cell;
+}
+
+function permissionsCell(role) {
+  const cell = document.createElement('div');
+  cell.className = 'role-permissions';
+  cell.append(badge(`${role.permissions.length} of ${catalog.permissions.length}`, role.permissions.length ? 'ok' : 'warn'));
+  const groups = [...new Set(catalog.permissions.map(permission => permission.group))];
+  for (const groupName of groups) {
+    const granted = catalog.permissions.filter(permission => permission.group === groupName && role.permissions.includes(permission.key));
+    if (!granted.length) continue;
+    const line = document.createElement('div');
+    line.className = 'muted';
+    line.textContent = `${groupName}: ${granted.map(permission => permission.title).join(', ')}`;
+    cell.append(line);
+  }
+  return cell;
+}
+
 function renderRoles() {
+  const isSuperAdmin = me.role === 'superadmin';
   const columns = [
     { key: 'title', title: 'Role', format: (value, role) => role.isBuiltIn ? inline(value, badge('Built in', 'muted')) : value },
     { key: 'description', title: 'Description' },
-    { key: 'permissions', title: 'Permissions', sortable: false, filterable: false, format: value => `${value.length} of ${catalog.permissions.length}` },
-    {
+    { key: 'permissions', title: 'Permissions', sortable: false, filterable: false, format: (_, role) => permissionsCell(role) },
+    { key: 'key', title: 'Accounts', sortable: false, filterable: false, format: (_, role) => membersCell(role) },
+  ];
+  if (isSuperAdmin)
+    columns.push({
       key: 'key', title: 'Actions', sortable: false, filterable: false, noExport: true, format: (_, role) => {
         const actions = document.createElement('div');
         actions.className = 'actions';
@@ -338,8 +360,7 @@ function renderRoles() {
             `Delete the role ${role.title}?`, () => panelRequest('DELETE', `roles/${role.key}`), `${role.title} is deleted.`), true));
         return actions;
       },
-    },
-  ];
+    });
   renderTable(document.getElementById('roles'), columns, catalog.presets, undefined, { export: { name: 'panel-roles' } });
 }
 
@@ -444,11 +465,6 @@ document.getElementById('two-factor-copy').addEventListener('click', async () =>
 });
 document.getElementById('two-factor-close').addEventListener('click', hideTwoFactorSetup);
 
-auditForm.addEventListener('submit', event => {
-  event.preventDefault();
-  loadAudit();
-});
-
 document.getElementById('tabs').addEventListener('click', event => {
   const tab = event.target.closest('button')?.dataset.tab;
   if (tab) showTab(tab);
@@ -460,10 +476,10 @@ currentAccount().then(async account => {
   if (!can(me, 'users.view')) return;
   try {
     if (me.role !== 'superadmin') document.querySelector('#create-role option[value="superadmin"]').remove();
-    else document.getElementById('roles-tab').hidden = false;
+    else document.getElementById('role-add').hidden = false;
     await loadCatalog();
-    showTab('accounts');
     await loadUsers();
+    showTab(new URLSearchParams(location.search).get('tab') ?? 'accounts');
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }

@@ -62,25 +62,10 @@
     <section data-panel="roles" hidden>
       <div class="section-head">
         <h2 class="ad-card-title" data-icon="shield">Roles</h2>
-        <button type="button" id="role-add" data-icon="plusBox">New role</button>
+        <button type="button" id="role-add" data-icon="plusBox" hidden>New role</button>
       </div>
-      <p class="hint">A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it.</p>
+      <p class="hint">A role is a named set of permissions. Choosing it when adding or editing an account fills in its permissions; changing a role later does not change accounts that already used it. The Accounts column lists the accounts whose access is exactly this role; super admins hold every permission and are counted under Full access.</p>
       <div id="roles"></div>
-    </section>
-
-    <section data-panel="audit" hidden>
-      <form class="filters" id="audit-form">
-        <label>Username <input name="username" maxlength="64" placeholder="All accounts"></label>
-        <label>Entries
-          <select name="limit">
-            <option>100</option>
-            <option selected>200</option>
-            <option>500</option>
-          </select>
-        </label>
-        <button type="submit" data-icon="search">Show</button>
-      </form>
-      <div id="audit"></div>
     </section>
   </main>
 

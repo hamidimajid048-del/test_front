@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Sign-in activity — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+  <script src="/i18n.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <p class="message" id="message"></p>
+    <form class="filters" id="activity-form" autocomplete="off">
+      <label>Period
+        <select name="days">
+          <option value="1">Last 24 hours</option>
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last year</option>
+        </select>
+      </label>
+      <label>Account <input name="username" maxlength="64" placeholder="All accounts"></label>
+      <button type="submit" data-icon="search">Show</button>
+    </form>
+    <div class="summary" id="activity-summary"></div>
+    <h2 class="ad-card-title" data-icon="users">Per account</h2>
+    <div id="activity"></div>
+    <h2 class="ad-card-title section-gap" data-icon="history">Recent sign-in attempts</h2>
+    <div id="sign-ins"></div>
+    <ul class="help">
+      <li>Counts come from the audit log in the chosen period: successful sign-ins, failed attempts (wrong password or code), distinct addresses the account signed in from, and other recorded changes made by or to the account.</li>
+      <li>Many failures or several addresses in a short time deserve a look at the Sessions page and, if needed, Sign out everywhere on the Users page.</li>
+    </ul>
+  </main>
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/country-flags.js"></script>
+  <script src="/platform-icons.js"></script>
+  <script src="/table-views.js"></script>
+  <script src="/table-export.js"></script>
+  <script src="/activity.js"></script>
+</body>
+</html>
