@@ -173,6 +173,43 @@ public sealed class PanelAuthStore(NpgsqlDataSource dataSource)
             CREATE UNIQUE INDEX IF NOT EXISTS ux_table_views_name ON violation_panel.table_views (user_id, table_key, (lower(name)));
             CREATE UNIQUE INDEX IF NOT EXISTS ux_table_views_default ON violation_panel.table_views (user_id, table_key) WHERE is_default;
 
+            CREATE TABLE IF NOT EXISTS violation_panel.tick_monitor_channels (
+                id uuid PRIMARY KEY,
+                name text NOT NULL,
+                telegram_chat_id bigint NOT NULL,
+                enabled boolean NOT NULL DEFAULT true,
+                created_at timestamptz NOT NULL DEFAULT now(),
+                updated_at timestamptz NOT NULL DEFAULT now());
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_tick_monitor_channels_name ON violation_panel.tick_monitor_channels ((lower(name)));
+
+            CREATE TABLE IF NOT EXISTS violation_panel.tick_monitor_profiles (
+                id uuid PRIMARY KEY,
+                symbol text NOT NULL,
+                enabled boolean NOT NULL DEFAULT true,
+                config jsonb NOT NULL,
+                updated_by text NULL,
+                updated_at timestamptz NOT NULL DEFAULT now());
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_tick_monitor_profiles_symbol ON violation_panel.tick_monitor_profiles ((lower(symbol)));
+
+            CREATE TABLE IF NOT EXISTS violation_panel.tick_monitor_settings (
+                id boolean PRIMARY KEY DEFAULT true CHECK (id),
+                config jsonb NOT NULL,
+                updated_by text NULL,
+                updated_at timestamptz NOT NULL DEFAULT now());
+
+            CREATE TABLE IF NOT EXISTS violation_panel.tick_monitor_events (
+                id uuid PRIMARY KEY,
+                symbol text NOT NULL,
+                gap_start timestamptz NOT NULL,
+                gap_end timestamptz NULL,
+                ended_by text NULL,
+                schedule_name text NULL,
+                stages_fired smallint NOT NULL DEFAULT 0,
+                messages_sent smallint NOT NULL DEFAULT 0,
+                messages_failed smallint NOT NULL DEFAULT 0,
+                last_price double precision NULL);
+            CREATE INDEX IF NOT EXISTS ix_tick_monitor_events_start ON violation_panel.tick_monitor_events (gap_start DESC);
+
             -- Ended sessions are kept for a month for investigations, then removed.
             DELETE FROM violation_panel.sessions WHERE expires_at < now() - interval '30 days';
             """);

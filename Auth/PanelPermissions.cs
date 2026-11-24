@@ -21,6 +21,10 @@ public static class PanelPermissions
     public const string CompareView = "compare.view";
     public const string CompareEmailsView = "compare-emails.view";
     public const string ReportsExport = "reports.export";
+    public const string TickMonitorView = "tick-monitor.view";
+    public const string TickMonitorEdit = "tick-monitor.edit";
+    public const string TickMonitorChannels = "tick-monitor.channels";
+    public const string TickMonitorSettings = "tick-monitor.settings";
     public const string AccountChangePassword = "account.change-password";
     public const string UsersView = "users.view";
     public const string UsersCreate = "users.create";
@@ -56,6 +60,10 @@ public static class PanelPermissions
         new(ClosePosition, OperationsGroup, "Close positions", "Close an open position at the market price or a chosen price, also when the market is closed.", AccountDataView),
         new(DeleteOrder, OperationsGroup, "Delete orders", "Delete an active order of a trading account.", AccountDataView),
         new(AccountBalanceBulk, OperationsGroup, "Bulk deposit / withdraw", "Deposit to or withdraw from many accounts at once from a CSV file, with a downloadable result."),
+        new(TickMonitorView, OperationsGroup, "Tick monitoring", "Live state of the monitored symbols, their alarm profiles and the gap history."),
+        new(TickMonitorEdit, OperationsGroup, "Edit tick monitoring profiles", "Add, change, snooze and remove the symbols and their alarm stages.", TickMonitorView),
+        new(TickMonitorChannels, OperationsGroup, "Manage alert channels", "Add, change, test and remove the Telegram channels alarms go to.", TickMonitorView),
+        new(TickMonitorSettings, OperationsGroup, "Tick monitoring settings", "Turn tick monitoring on or off, set the bot token and the limits.", TickMonitorView),
         new(AccountChangePassword, MyAccountGroup, "Change own password", "Change the password of the signed-in account."),
         new(UsersView, AdministrationGroup, "See accounts", "Open the Users page and list the panel accounts."),
         new(UsersCreate, AdministrationGroup, "Add accounts", "Create panel accounts.", UsersView),

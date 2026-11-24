@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Tick monitoring — Violation Panel</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/theme.js"></script>
+  <script src="/i18n.js"></script>
+</head>
+<body>
+  <nav class="menu" id="menu"></nav>
+  <main>
+    <p class="message" id="message"></p>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="status" data-icon="activity">Status</button>
+      <button type="button" data-tab="profiles" data-icon="target">Profiles</button>
+      <button type="button" data-tab="channels" data-icon="message">Channels</button>
+      <button type="button" data-tab="history" data-icon="history">History</button>
+      <button type="button" data-tab="settings" data-icon="settings" data-permission="tick-monitor.settings">Settings</button>
+    </div>
+
+    <section data-panel="status">
+      <div class="summary" id="status-summary"></div>
+      <div id="status-table"></div>
+      <ul class="help">
+        <li><strong>Watching</strong>: the market is open and ticks arrive. <strong>Gap open</strong>: no tick since the time shown; the stages of the active window fire as the gap grows. <strong>Closed</strong>: the symbol's quote session is closed, the server has a holiday, or trading is disabled; nothing is sent. <strong>Uncovered</strong>: no time window covers this moment. <strong>Snoozed</strong>: silenced from this page for a while.</li>
+        <li>All times are MetaTrader server time, the same clock as the symbol sessions and the holidays.</li>
+      </ul>
+    </section>
+
+    <section data-panel="profiles" hidden>
+      <div class="section-head">
+        <h2 class="ad-card-title" data-icon="target">Profiles</h2>
+        <button type="button" id="profile-add" data-icon="plusBox" data-permission="tick-monitor.edit">New profile</button>
+      </div>
+      <p class="hint">A profile is one symbol with its time windows. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.</p>
+      <div id="profiles"></div>
+    </section>
+
+    <section data-panel="channels" hidden>
+      <div class="section-head">
+        <h2 class="ad-card-title" data-icon="message">Channels</h2>
+        <button type="button" id="channel-add" data-icon="plusBox" data-permission="tick-monitor.channels">New channel</button>
+      </div>
+      <p class="hint">A channel is a Telegram chat the bot posts to. Telegram cannot force a loud notification: set the sound of the wake-up channel on your phone and keep it out of silent mode.</p>
+      <div id="channels"></div>
+    </section>
+
+    <section data-panel="history" hidden>
+      <form class="filters" id="history-form" autocomplete="off">
+        <label>Symbol <input name="symbol" maxlength="32" placeholder="All symbols"></label>
+        <label>From (UTC) <input name="from" type="datetime-local" step="1"></label>
+        <label>To (UTC) <input name="to" type="datetime-local" step="1"></label>
+        <label>Entries
+          <select name="limit">
+            <option>100</option>
+            <option selected>200</option>
+            <option>500</option>
+            <option>1000</option>
+          </select>
+        </label>
+        <button type="submit" data-icon="search">Show</button>
+      </form>
+      <div id="history"></div>
+    </section>
+
+    <section data-panel="settings" hidden>
+      <h2 class="ad-card-title" data-icon="settings">Settings</h2>
+      <form class="filters" id="settings-form" autocomplete="off">
+        <label class="check"><input name="enabled" type="checkbox"> Tick monitoring is on</label>
+        <label>Telegram bot token <input name="telegramBotToken" type="password" autocomplete="off" placeholder="Not set"></label>
+        <label class="check"><input name="clearTelegramBotToken" type="checkbox"> Remove the saved token</label>
+        <label>Operations channel <select name="opsChannelId" id="settings-ops-channel"></select></label>
+        <label>Max repeats of a stage <input name="maxRepeatCount" type="number" min="1" max="500" required></label>
+        <label>Min repeat interval (seconds) <input name="minRepeatIntervalSeconds" type="number" min="1" max="3600" required></label>
+        <label>Min alarm delay (seconds) <input name="minAfterSeconds" type="number" min="1" max="3600" required></label>
+        <label>Grace after market open (seconds) <input name="openGraceSeconds" type="number" min="0" max="3600" required></label>
+        <label>Keep history (days) <input name="eventsRetentionDays" type="number" min="1" max="3650" required></label>
+        <button type="submit" data-icon="check">Save settings</button>
+      </form>
+      <ul class="help">
+        <li>The bot token is kept in the panel database and never shown again; the field shows only its last characters. Leave it empty to keep the saved token.</li>
+        <li>The operations channel receives the service notices: MetaTrader connection lost or restored, monitoring started or stopped, and a stalled engine.</li>
+        <li>The limits apply when a profile is saved; lowering a limit does not change existing profiles until they are edited.</li>
+      </ul>
+    </section>
+  </main>
+
+  <dialog class="panel-dialog tm-dialog" id="profile-dialog">
+    <form method="dialog" id="profile-form" autocomplete="off">
+      <h3 id="profile-dialog-title">Profile</h3>
+      <div class="tm-row">
+        <label>Symbol <input name="symbol" list="symbol-list" maxlength="32" required autocomplete="off"></label>
+        <datalist id="symbol-list"></datalist>
+        <label class="check"><input name="enabled" type="checkbox" checked> Enabled</label>
+        <label>Quiet before close (seconds) <input name="closeLeadSeconds" type="number" min="0" max="3600" value="0" required></label>
+      </div>
+      <div class="tm-row">
+        <label class="check"><input name="recoveryEnabled" type="checkbox" checked> Send "ticks resumed"</label>
+        <label>…only after this many stages <input name="recoveryMinStages" type="number" min="1" max="10" value="2" required></label>
+        <label>…to channel <select name="recoveryChannelId"></select></label>
+      </div>
+      <div class="section-head">
+        <h3>Time windows</h3>
+        <button type="button" id="schedule-add" data-icon="plusBox">Add window</button>
+      </div>
+      <div id="schedules"></div>
+      <div class="tm-coverage" id="coverage"></div>
+      <p class="message error" id="profile-dialog-error"></p>
+      <div class="dialog-buttons">
+        <button type="button" id="profile-cancel">Cancel</button>
+        <button type="submit">Save profile</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="panel-dialog" id="channel-dialog">
+    <form method="dialog" id="channel-form" autocomplete="off">
+      <h3 id="channel-dialog-title">Channel</h3>
+      <label>Name <input name="name" maxlength="40" required autocomplete="off"></label>
+      <label>Telegram chat id <input name="telegramChatId" type="number" step="1" required placeholder="-1001234567890"></label>
+      <label class="check"><input name="enabled" type="checkbox" checked> Enabled</label>
+      <p class="message error" id="channel-dialog-error"></p>
+      <div class="dialog-buttons">
+        <button type="button" id="channel-cancel">Cancel</button>
+        <button type="submit">Save channel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/errors.js"></script>
+  <script src="/api.js"></script>
+  <script src="/country-flags.js"></script>
+  <script src="/platform-icons.js"></script>
+  <script src="/table-views.js"></script>
+  <script src="/table-export.js"></script>
+  <script src="/mt5-format.js"></script>
+  <script src="/tick-monitor.js"></script>
+</body>
+</html>
