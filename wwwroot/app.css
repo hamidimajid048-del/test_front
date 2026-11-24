@@ -1857,3 +1857,17 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .tm-limit .field-error:empty { display: none; }
 .tm-save-bar { position: sticky; bottom: 0; display: flex; gap: var(--space-8); align-items: center; justify-content: flex-end; padding: var(--space-10) var(--space-14); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
 .tm-save-bar .muted { margin-inline-end: auto; font-weight: 600; }
+
+/* Dashboard switcher on the brand */
+.brand-switch { position: relative; }
+.brand-button { display: flex; align-items: center; gap: var(--space-12); width: 100%; min-height: 40px; padding: 0 var(--space-8); color: var(--text); font: inherit; font-weight: 700; text-align: start; background: transparent; border: 1px solid transparent; border-radius: var(--radius-md); box-shadow: none; }
+.brand-button:hover:not(:disabled), .brand-switch.open .brand-button { color: var(--text); background: var(--nav-hover); border-color: transparent; box-shadow: none; }
+.brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; line-height: 1.15; }
+.brand-text strong { font-size: var(--font-size-lg); letter-spacing: .01em; }
+.brand-text small { color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 500; }
+.brand-switch:not(.single) .brand-text strong::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-inline-start: var(--space-8); margin-bottom: 3px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); opacity: .7; }
+.brand-switch.open:not(.single) .brand-text strong::after { margin-bottom: -2px; transform: rotate(-135deg); }
+.brand-menu { top: calc(100% + 4px); min-width: 220px; }
+.brand-menu-title { padding: var(--space-4) var(--space-10) var(--space-6); color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.brand-menu .nav-item.active { color: var(--primary-text); background: var(--side-item-active); }
+body.sidebar-collapsed .brand-menu { inset-inline-start: calc(100% + 4px); top: 0; }

@@ -13,15 +13,37 @@ const SESSION_EXPIRED_PAGE = '/login.html?error=expired';
 
 const FORBIDDEN_MESSAGE = 'You do not have permission to do this.';
 
-// The menu groups, in the order shown; each page of MENU_ITEMS names its group.
-const MENU_GROUPS = [
-  { key: 'accounts', title: 'Accounts & trades', icon: 'layers' },
-  { key: 'logins', title: 'Logins, IP & CID', icon: 'users' },
-  { key: 'compare', title: 'Comparison', icon: 'link' },
-  { key: 'operations', title: 'Operations', icon: 'settings' },
-  // A group with an href is a dashboard of its own: its button opens that page and its cards are not on the home page.
-  { key: 'ticks', title: 'Ticks', icon: 'activity', href: '/ticks.html' },
+// The dashboards: each has its own home page and its own menu groups. The first one is the default; the switcher on
+// the brand lists the ones the account may open.
+const DASHBOARDS = [
+  { key: 'violation', title: 'Violation', icon: 'chart', href: '/', heading: 'Violation reports' },
+  { key: 'symbols', title: 'Symbols', icon: 'candles', href: '/symbols.html', heading: 'Symbols dashboard' },
 ];
+
+// The menu groups, in the order shown; each page of MENU_ITEMS names its group and each group names its dashboard.
+const MENU_GROUPS = [
+  { key: 'accounts', dashboard: 'violation', title: 'Accounts & trades', icon: 'layers' },
+  { key: 'logins', dashboard: 'violation', title: 'Logins, IP & CID', icon: 'users' },
+  { key: 'compare', dashboard: 'violation', title: 'Comparison', icon: 'link' },
+  { key: 'operations', dashboard: 'violation', title: 'Operations', icon: 'settings' },
+  { key: 'ticks', dashboard: 'symbols', title: 'Ticks', icon: 'activity' },
+];
+
+// The dashboard of the current page: its home page, or the dashboard of the group its menu entry belongs to.
+function currentDashboard() {
+  const home = DASHBOARDS.find(dashboard => dashboard.href === location.pathname);
+  if (home) return home;
+  const item = MENU_ITEMS.find(entry => entry.href === location.pathname);
+  const group = item ? MENU_GROUPS.find(entry => entry.key === item.group) : null;
+  return DASHBOARDS.find(dashboard => dashboard.key === group?.dashboard) ?? DASHBOARDS[0];
+}
+
+function dashboardPermissions(dashboard) {
+  const groups = new Set(MENU_GROUPS.filter(group => group.dashboard === dashboard.key).map(group => group.key));
+  return MENU_ITEMS.filter(item => groups.has(item.group)).map(item => item.permission);
+}
+
+const canOpenDashboard = (me, dashboard) => dashboardPermissions(dashboard).some(permission => can(me, permission));
 
 // Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
 const MENU_ITEMS = [
@@ -137,10 +159,9 @@ function icon(name, className = 'icon') {
 
 // The home page cards come from MENU_ITEMS, grouped like the menu, so a page added to the menu appears there too.
 // A group whose pages the account may not open is hidden.
-function renderCards(container, groupKey = null) {
+function renderCards(container, dashboardKey = DASHBOARDS[0].key) {
   container.className = 'card-groups';
-  const shownGroups = MENU_GROUPS.filter(group => (groupKey ? group.key === groupKey : !group.href));
-  const sections = shownGroups.map(group => {
+  const sections = MENU_GROUPS.filter(group => group.dashboard === dashboardKey).map(group => {
     const section = document.createElement('section');
     section.className = 'card-group';
     section.hidden = true;
@@ -695,14 +716,62 @@ function renderMenu() {
   document.body.classList.add('has-sidebar');
   document.body.classList.toggle('sidebar-collapsed', readStorage(SIDEBAR_HIDDEN_KEY) === '1');
 
-  const brand = document.createElement('a');
-  brand.className = 'brand';
-  brand.href = '/';
+  // The brand names the current dashboard and opens the switcher: the other dashboards the account may open.
+  const activeDashboard = currentDashboard();
+  const brand = document.createElement('div');
+  brand.className = 'brand nav-group brand-switch single';
+  const brandButton = document.createElement('button');
+  brandButton.type = 'button';
+  brandButton.className = 'brand-button';
+  brandButton.title = 'Switch dashboard';
+  brandButton.setAttribute('aria-haspopup', 'true');
+  brandButton.setAttribute('aria-expanded', 'false');
   const mark = document.createElement('span');
   mark.className = 'brand-mark';
   ensureIconGradient();
   mark.innerHTML = BRAND_ICON;
-  brand.append(mark, sidebarLabel('Violation Panel'));
+  const brandText = document.createElement('span');
+  brandText.className = 'side-label brand-text';
+  const brandName = document.createElement('strong');
+  brandName.textContent = activeDashboard.title;
+  const brandProduct = document.createElement('small');
+  brandProduct.textContent = 'Violation Panel';
+  brandText.append(brandName, brandProduct);
+  brandButton.append(mark, brandText);
+  const brandMenu = document.createElement('div');
+  brandMenu.className = 'nav-group-menu brand-menu';
+  const brandMenuTitle = document.createElement('span');
+  brandMenuTitle.className = 'brand-menu-title';
+  brandMenuTitle.textContent = 'Dashboards';
+  brandMenu.append(brandMenuTitle, ...DASHBOARDS.map(entry => {
+    const link = document.createElement('a');
+    link.className = 'nav-item';
+    link.href = entry.href;
+    link.dataset.dashboard = entry.key;
+    link.hidden = true;
+    link.append(icon(entry.icon), entry.title);
+    if (entry.key === activeDashboard.key) {
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'page');
+    }
+    return link;
+  }));
+  const setBrandOpen = open => {
+    brand.classList.toggle('open', open);
+    brandButton.setAttribute('aria-expanded', String(open));
+  };
+  let brandTarget = activeDashboard.href;
+  brandButton.addEventListener('click', () => {
+    if (brand.classList.contains('single')) {
+      location.href = brandTarget;
+      return;
+    }
+    setBrandOpen(!brand.classList.contains('open'));
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!brand.contains(event.target)) setBrandOpen(false);
+  });
+  brand.append(brandButton, brandMenu);
 
   const sidebar = document.createElement('aside');
   sidebar.className = 'sidebar';
@@ -713,13 +782,14 @@ function renderMenu() {
   });
 
   const closed = closedSidebarGroups();
-  const groups = MENU_GROUPS.map(group => {
+  const dashboard = currentDashboard();
+  const groups = MENU_GROUPS.filter(group => group.dashboard === dashboard.key).map(group => {
     const items = MENU_ITEMS.filter(item => item.group === group.key);
-    const current = items.some(item => item.href === location.pathname) || group.href === location.pathname;
+    const current = items.some(item => item.href === location.pathname);
     const element = document.createElement('div');
     element.className = 'side-group';
     element.hidden = true;
-    element.classList.toggle('open', current || Boolean(group.href) || !closed.has(group.key));
+    element.classList.toggle('open', current || !closed.has(group.key));
     element.classList.toggle('active', current);
     const button = document.createElement('button');
     button.type = 'button';
@@ -744,20 +814,7 @@ function renderMenu() {
       }
       return link;
     });
-    if (group.href) {
-      const dashboard = document.createElement('a');
-      dashboard.className = 'side-item';
-      dashboard.href = group.href;
-      dashboard.textContent = `${group.title} dashboard`;
-      if (location.pathname === group.href) {
-        dashboard.classList.add('active');
-        dashboard.setAttribute('aria-current', 'page');
-      }
-      list.append(flyoutTitle, dashboard, ...links);
-      element.dataset.group = group.key;
-    } else {
-      list.append(flyoutTitle, ...links);
-    }
+    list.append(flyoutTitle, ...links);
     const placeFlyout = () => {
       if (!isSidebarCollapsed()) return;
       const rect = button.getBoundingClientRect();
@@ -771,10 +828,6 @@ function renderMenu() {
     element.addEventListener('pointerenter', placeFlyout);
     element.addEventListener('focusin', placeFlyout);
     button.addEventListener('click', () => {
-      if (group.href && !isSidebarCollapsed()) {
-        location.href = group.href;
-        return;
-      }
       if (isSidebarCollapsed()) {
         const show = !element.classList.contains('flyout');
         closeFlyouts();
@@ -903,7 +956,7 @@ function renderMenu() {
   // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu
   // entry; a page that writes its own header (with a subtitle) gets the icon only. The header sits in the top bar.
   const main = document.querySelector('main');
-  const pageIcon = [...MENU_ITEMS, USERS_PAGE, ...MENU_GROUPS.filter(group => group.href)].find(item => item.href === location.pathname)?.icon
+  const pageIcon = [...MENU_ITEMS, USERS_PAGE, ...DASHBOARDS].find(item => item.href === location.pathname)?.icon
     ?? (location.pathname === '/account.html' ? 'user' : 'layers');
   let header = main?.querySelector('.page-header');
   if (main && !header && !main.querySelector('h1')) {
@@ -926,9 +979,13 @@ function renderMenu() {
     for (const { element, items, links } of groups) {
       items.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
       element.hidden = links.every(link => link.hidden);
-      const dashboard = element.querySelector(`.side-item[href="${MENU_GROUPS.find(group => group.key === element.dataset.group)?.href}"]`);
-      if (dashboard) dashboard.hidden = element.hidden;
     }
+    const openable = DASHBOARDS.filter(entry => canOpenDashboard(me, entry));
+    for (const link of brandMenu.querySelectorAll('.nav-item[data-dashboard]'))
+      link.hidden = !openable.some(entry => entry.key === link.dataset.dashboard);
+    // With one dashboard the brand is a plain link to its home; the switcher appears only when there is a choice.
+    brand.classList.toggle('single', openable.length <= 1);
+    brandTarget = (openable.find(entry => entry.key === activeDashboard.key) ?? openable[0] ?? activeDashboard).href;
     if (can(me, USERS_PAGE.permission)) {
       const users = document.createElement('a');
       users.className = 'side-link';
@@ -980,11 +1037,17 @@ function hideUnlessAllowed(element, permission) {
 }
 
 function guardPage(me) {
-  const dashboard = MENU_GROUPS.find(group => group.href === location.pathname);
+  const dashboard = DASHBOARDS.find(entry => entry.href === location.pathname);
   const needed = dashboard
-    ? MENU_ITEMS.filter(item => item.group === dashboard.key).map(item => item.permission)
+    ? dashboardPermissions(dashboard)
     : [[...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.permission].filter(Boolean);
   if (needed.length === 0 || needed.some(permission => can(me, permission))) return;
+  // A dashboard home the account may not open sends it to a dashboard it may, so nobody lands on an empty page.
+  const other = dashboard ? DASHBOARDS.find(entry => entry.key !== dashboard.key && canOpenDashboard(me, entry)) : null;
+  if (other) {
+    location.replace(other.href);
+    return;
+  }
   const notice = document.createElement('p');
   notice.className = 'message error';
   notice.textContent = 'Your account does not have access to this page.';

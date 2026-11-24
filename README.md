@@ -131,9 +131,12 @@ transactions tab). The counts are sortable, filterable and exported like the oth
 
 ## Tick monitoring
 
-The **Ticks** entry of the menu opens the **Ticks dashboard** (`ticks.html`), the home of the tick tools; it is hidden
-from accounts that may open none of them. Its first tool, the **Tick monitoring** page (`tick-monitor.html`, permission
-`tick-monitor.view`), sends Telegram alarms when a monitored symbol stops ticking. It needs the MetaTrader connection (`Mt5:Enabled`); nothing else is configured in `appsettings`:
+The panel has two **dashboards**, each with its own home page and menu: **Violation** (`/`, the default) and **Symbols**
+(`symbols.html`, everything about the MetaTrader symbols and their ticks). The brand at the top of the sidebar names the
+current dashboard and opens the switcher; a dashboard whose pages the account may not open is not listed, and with a single
+dashboard the brand is a plain link to its home (`DASHBOARDS` and the `dashboard` of each group in `api.js`). The first
+Symbols tool, the **Tick monitoring** page (`tick-monitor.html`, permission `tick-monitor.view`), sends Telegram alarms
+when a monitored symbol stops ticking. It needs the MetaTrader connection (`Mt5:Enabled`); nothing else is configured in `appsettings`:
 the on/off switch, the Telegram bot token, the operations channel and the limits live in the panel database
 (`violation_panel.tick_monitor_settings`) and are changed on the page's Settings tab (`tick-monitor.settings`). A change
 to any profile, channel or setting is picked up by the engine within a second; no restart is needed.
