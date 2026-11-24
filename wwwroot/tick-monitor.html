@@ -13,9 +13,16 @@
   <nav class="menu" id="menu"></nav>
   <main>
     <p class="message" id="message"></p>
+    <div class="summary" id="status-summary" hidden></div>
+
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="status" data-icon="activity">Status</button>
+      <button type="button" data-tab="profiles" data-icon="target">Profiles</button>
+      <button type="button" data-tab="settings" data-icon="settings" data-permission="tick-monitor.settings">Settings</button>
+      <button type="button" data-tab="channels" data-icon="message">Channels</button>
+    </div>
 
     <section data-panel="status">
-      <div class="summary" id="status-summary"></div>
       <h3 class="ad-card-title" data-icon="activity">Monitored symbols</h3>
       <div id="status-table"></div>
       <ul class="help">

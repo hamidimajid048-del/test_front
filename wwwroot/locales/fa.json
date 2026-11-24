@@ -1356,7 +1356,12 @@
     "Turn monitoring on or off, the Telegram bot token, the operations channel and the limits.": "روشن و خاموش کردن مانیتورینگ، توکن ربات تلگرام، کانال عملیات و محدودیت‌ها.",
     "Monitored symbols": "نمادهای تحت بررسی",
     "Gaps": "قطعی‌ها",
-    "New account": "حساب جدید"
+    "New account": "حساب جدید",
+    "Channels & settings": "کانال‌ها و تنظیمات",
+    "Monitoring — Violation Panel": "مانیتورینگ — پنل تخلفات",
+    "Channels & settings — Violation Panel": "کانال‌ها و تنظیمات — پنل تخلفات",
+    "The live state of every monitored symbol (market open or closed, last tick, open gap, stages sent; snooze from here) and the alarm profiles: which symbols, the time windows in server time and the escalation stages.": "وضعیت لحظه‌ای همه‌ی نمادهای تحت بررسی (باز یا بسته بودن بازار، آخرین تیک، قطعی جاری، مراحل ارسال‌شده؛ ساکت کردن موقت از همین‌جا) و پروفایل‌های هشدار: کدام نمادها، پنجره‌های زمانی به وقت سرور و مراحل تشدید.",
+    "The Telegram channels alarms go to, with a test message for each; monitoring on or off, the bot token, the operations channel and the limits.": "کانال‌های تلگرامی که هشدارها به آن‌ها می‌رود، با پیام آزمایشی برای هر کدام؛ روشن و خاموش کردن مانیتورینگ، توکن ربات، کانال عملیات و محدودیت‌ها."
   },
   "templates": {
     "Saved token: {0}": "توکن ذخیره‌شده: {0}",

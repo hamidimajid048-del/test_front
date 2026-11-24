@@ -52,21 +52,45 @@ function actionButton(text, onClick, { danger = false, iconName = null, permissi
 }
 
 // Each part of the page has its own menu entry (/tick-monitor.html?view=profiles); the page shows only that part.
-const VIEWS = ['status', 'profiles', 'channels', 'history', 'settings'];
+// Three menu entries, each a view of this page; related parts of a view are tabs. The monitoring view keeps the live
+// summary above its tabs. Older links (?view=profiles, ?tab=channels) open the view that now holds that part.
+const VIEWS = { monitor: ['status', 'profiles'], history: ['history'], settings: ['settings', 'channels'] };
+const VIEW_OF_TAB = { status: 'monitor', profiles: 'monitor', history: 'history', settings: 'settings', channels: 'settings' };
 
 function currentView() {
   const query = new URLSearchParams(location.search);
-  const view = query.get('view') ?? query.get('tab');
-  return VIEWS.includes(view) ? view : 'status';
+  const named = query.get('view');
+  if (VIEWS[named]) return named;
+  return VIEW_OF_TAB[named ?? query.get('tab')] ?? 'monitor';
+}
+
+function firstTab(view) {
+  const query = new URLSearchParams(location.search);
+  const wanted = [query.get('tab'), query.get('view')].find(tab => VIEWS[view].includes(tab) && (tab !== 'settings' || can(me, 'tick-monitor.settings')));
+  return wanted ?? VIEWS[view].find(tab => tab !== 'settings' || can(me, 'tick-monitor.settings'));
 }
 
 function showTab(tab) {
-  const current = VIEWS.includes(tab) ? tab : 'status';
+  const view = currentView();
+  const current = VIEWS[view].includes(tab) ? tab : firstTab(view);
+  for (const button of document.querySelectorAll('#tabs button')) {
+    button.hidden = !VIEWS[view].includes(button.dataset.tab) || (button.dataset.permission && !can(me, button.dataset.permission));
+    button.classList.toggle('active', button.dataset.tab === current);
+  }
+  document.getElementById('tabs').hidden = VIEWS[view].length < 2;
   for (const panel of document.querySelectorAll('[data-panel]'))
     panel.hidden = panel.dataset.panel !== current;
+  const query = new URLSearchParams(location.search);
+  query.delete('view');
+  query.delete('tab');
+  if (view !== 'monitor') query.set('view', view);
+  if (current !== firstTab(view)) query.set('tab', current);
+  const search = query.toString();
+  history.replaceState(null, '', location.pathname + (search ? `?${search}` : ''));
   clearInterval(statusTimer);
   statusTimer = null;
-  if (current === 'status') {
+  document.getElementById('status-summary').hidden = view !== 'monitor';
+  if (view === 'monitor') {
     loadStatus();
     statusTimer = setInterval(loadStatus, STATUS_REFRESH_MS);
   }
@@ -182,6 +206,19 @@ function describeSchedule(schedule) {
   return `${schedule.name}: ${days} ${schedule.from}–${schedule.to}`;
 }
 
+// One entry of a row's "⋯" menu; rowMenu closes the menu when an entry is chosen.
+function menuItem(text, iconName, onClick, danger = false) {
+  const link = document.createElement('a');
+  link.href = '#';
+  link.append(icon(iconName), text);
+  if (danger) link.dataset.danger = '';
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    onClick();
+  });
+  return link;
+}
+
 const SYMBOLS_SHOWN = 8;
 
 function symbolsCell(symbols) {
@@ -208,7 +245,7 @@ function renderProfiles() {
     column('name', 'Profile'),
     { ...column('symbols', 'Symbols', value => symbolsCell(value)), sortValue: row => row.symbols.length, filterValue: row => row.symbols.join(' ') },
     column('enabled', 'Enabled', value => badge(value ? 'Enabled' : 'Disabled', value ? 'ok' : 'muted')),
-    column('config', 'Time windows (server time)', value => {
+    { ...column('config', 'Time windows (server time)', value => {
       const list = document.createElement('ul');
       list.className = 'tm-list';
       for (const schedule of value.schedules) {
@@ -223,26 +260,22 @@ function renderProfiles() {
         list.append(item);
       }
       return list;
-    }),
+    }), hiddenByDefault: true },
     { ...column('config', 'Options', value => {
       const parts = [];
       parts.push(value.recoveryNotice.enabled ? `"Ticks resumed" message if ${value.recoveryNotice.minStagesFired}+ stages fired` : 'No "ticks resumed" message');
       if (value.closeLeadSeconds > 0) parts.push(`Quiet ${value.closeLeadSeconds}s before close`);
       return parts.join(' · ');
-    }), help: 'When ticks come back after a gap, one closing message (symbol, gap start and end, duration, price gap) is sent, but only if the gap lasted long enough to fire at least this many alarm stages, so a short one-stage gap does not get a second message.' },
+    }), help: 'When ticks come back after a gap, one closing message (symbol, gap start and end, duration, price gap) is sent, but only if the gap lasted long enough to fire at least this many alarm stages, so a short one-stage gap does not get a second message.', hiddenByDefault: true },
     { ...column('updatedAt', 'Updated', (value, row) => `${formatUtcSeconds(value)} UTC${row.updatedBy ? ` · ${row.updatedBy}` : ''}`), hiddenByDefault: true },
     {
-      key: 'id', title: 'Actions', sortable: false, filterable: false,
-      format: (value, row) => {
-        const actions = document.createElement('span');
-        actions.className = 'actions';
-        actions.append(
-          actionButton('Edit', () => openProfileDialog(row), { iconName: 'pencil', permission: 'tick-monitor.edit' }),
-          actionButton('Duplicate', () => openProfileDialog({ ...row, id: null, name: `${row.name} copy`, symbols: [] }), { iconName: 'copy', permission: 'tick-monitor.edit' }),
-          actionButton(row.enabled ? 'Disable' : 'Enable', () => toggleProfile(row), { permission: 'tick-monitor.edit' }),
-          actionButton('Delete', () => deleteProfile(row), { danger: true, iconName: 'close', permission: 'tick-monitor.edit' }));
-        return actions;
-      },
+      key: 'id', title: 'Actions', sortable: false, filterable: false, noExport: true,
+      format: (value, row) => can(me, 'tick-monitor.edit') ? rowMenu(`Actions for ${row.name}`, [
+        menuItem('Edit', 'pencil', () => openProfileDialog(row)),
+        menuItem('Duplicate', 'copy', () => openProfileDialog({ ...row, id: null, name: `${row.name} copy`, symbols: [] })),
+        menuItem(row.enabled ? 'Disable' : 'Enable', row.enabled ? 'minusBox' : 'check', () => toggleProfile(row)),
+        menuItem('Delete', 'close', () => deleteProfile(row), true),
+      ]) : '',
     },
   ];
   renderTable(host, columns, profiles, null, { viewKey: 'tick-monitor-profiles' });
@@ -1102,8 +1135,13 @@ settingsForm.addEventListener('submit', async event => {
 
 // ---- boot ----
 
-const viewEntry = MENU_ITEMS.find(item => item.href === (currentView() === 'status' ? location.pathname : `${location.pathname}?view=${currentView()}`));
+const viewEntry = MENU_ITEMS.find(item => item.href === (currentView() === 'monitor' ? location.pathname : `${location.pathname}?view=${currentView()}`));
 if (viewEntry) document.title = `${viewEntry.title} \u2014 Violation Panel`;
+document.getElementById('tabs').addEventListener('click', event => {
+  const tab = event.target.closest('button')?.dataset.tab;
+  if (tab) showTab(tab);
+});
+
 applyHelpMarks();
 renderMenu();
 currentAccount().then(async account => {
@@ -1111,7 +1149,7 @@ currentAccount().then(async account => {
   if (!can(me, 'tick-monitor.view')) return;
   try {
     await loadProfiles();
-    showTab(currentView());
+    showTab(firstTab(currentView()));
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }

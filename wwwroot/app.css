@@ -821,6 +821,9 @@ form.filters label.check input { width: auto; height: auto; }
 .row-menu-list { position: fixed; z-index: 60; display: flex; flex-direction: column; min-width: 190px; overflow-y: auto; padding: var(--space-4); background: var(--menu-surface) padding-box, var(--edge) border-box; border: 1px solid transparent; border-radius: var(--radius-lg); box-shadow: 0 12px 32px var(--menu-shadow), 0 0 18px var(--glow-faint); }
 .row-menu-item { display: block; padding: var(--space-8) var(--space-12); color: var(--text); text-align: start; font-size: var(--font-size-sm); white-space: nowrap; text-decoration: none; border-radius: var(--radius-sm); }
 .row-menu-item:hover, .row-menu-item:focus-visible { color: var(--primary); background: var(--primary-soft); text-decoration: none; outline: none; }
+.row-menu-item:has(.icon) { display: flex; align-items: center; gap: var(--space-8); }
+.row-menu-item[data-danger] { color: var(--danger); }
+.row-menu-item[data-danger]:hover, .row-menu-item[data-danger]:focus-visible { color: var(--danger); background: var(--danger-soft); }
 .action-link:hover { color: var(--primary); background: var(--primary-soft); border-color: transparent; text-decoration: none; }
 td.empty { padding: var(--space-32); text-align: center; color: var(--text-faint); }
 
