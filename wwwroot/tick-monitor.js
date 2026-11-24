@@ -609,42 +609,229 @@ document.getElementById('history-form').addEventListener('submit', event => {
 
 // ---- settings ----
 
+// Each limit: its field, unit, allowed range, default and what it does, so the form explains itself.
+const LIMITS = [
+  { key: 'maxRepeatCount', title: 'Most messages per stage', unit: 'messages', min: 1, max: 500, fallback: 20,
+    help: 'The largest "Messages" a stage may have. A wake-up stage with 5 messages every 5 seconds needs at least 5.' },
+  { key: 'minRepeatIntervalSeconds', title: 'Shortest interval between repeats', unit: 'seconds', min: 1, max: 3600, fallback: 5,
+    help: 'The smallest "Every (seconds)" a stage may use. Telegram allows about 20 messages a minute per chat; 5 seconds keeps a stage under that.' },
+  { key: 'minAfterSeconds', title: 'Shortest alarm delay', unit: 'seconds', min: 1, max: 3600, fallback: 5,
+    help: 'The smallest "After (seconds)" a stage may use. The engine checks once a second, so a delay under 5 seconds adds noise without precision.' },
+  { key: 'openGraceSeconds', title: 'Grace after the market opens', unit: 'seconds', min: 0, max: 3600, fallback: 120,
+    help: 'No alarm during this time after a symbol\'s quote session opens, because the first tick after the open is often late. The gap still counts from the open.' },
+  { key: 'eventsRetentionDays', title: 'Keep the gap history for', unit: 'days', min: 1, max: 3650, fallback: 90,
+    help: 'Older gaps are deleted from the History tab once a day.' },
+];
+
+const settingsForm = document.getElementById('settings-form');
+const enabledSwitch = document.getElementById('settings-enabled');
+let enabledDraft = false;
+
+function limitField(limit) {
+  const field = document.createElement('div');
+  field.className = 'tm-field tm-limit';
+  const label = document.createElement('label');
+  label.htmlFor = `settings-${limit.key}`;
+  label.textContent = limit.title;
+  const row = document.createElement('div');
+  row.className = 'tm-inline';
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.id = `settings-${limit.key}`;
+  input.name = limit.key;
+  input.min = String(limit.min);
+  input.max = String(limit.max);
+  input.step = '1';
+  const unit = document.createElement('span');
+  unit.className = 'tm-unit';
+  unit.textContent = limit.unit;
+  const reset = actionButton(`Use default (${limit.fallback})`, () => { input.value = String(limit.fallback); input.dispatchEvent(new Event('input', { bubbles: true })); });
+  row.append(input, unit, reset);
+  const range = document.createElement('p');
+  range.className = 'tm-field-note';
+  range.textContent = `Allowed: ${limit.min} to ${limit.max} ${limit.unit}.`;
+  const help = document.createElement('p');
+  help.className = 'tm-field-help';
+  help.textContent = limit.help;
+  const error = document.createElement('p');
+  error.className = 'field-error';
+  error.dataset.errorFor = limit.key;
+  field.append(label, row, range, help, error);
+  return field;
+}
+
+function limitError(limit, value) {
+  if (value === '' || !Number.isInteger(Number(value))) return 'Enter a whole number.';
+  const number = Number(value);
+  if (number < limit.min || number > limit.max) return `Must be between ${limit.min} and ${limit.max}.`;
+  return '';
+}
+
+function showLimitErrors() {
+  let valid = true;
+  for (const limit of LIMITS) {
+    const message = limitError(limit, settingsForm.elements[limit.key].value);
+    settingsForm.querySelector(`[data-error-for="${limit.key}"]`).textContent = message;
+    settingsForm.elements[limit.key].classList.toggle('invalid', Boolean(message));
+    if (message) valid = false;
+  }
+  return valid;
+}
+
+function settingsDraft() {
+  return {
+    enabled: enabledDraft,
+    telegramBotToken: settingsForm.elements.telegramBotToken.value.trim() || null,
+    clearTelegramBotToken: settingsForm.elements.clearTelegramBotToken.checked,
+    opsChannelId: settingsForm.elements.opsChannelId.value || null,
+    ...Object.fromEntries(LIMITS.map(limit => [limit.key, Number(settingsForm.elements[limit.key].value)])),
+  };
+}
+
+function settingsChanged() {
+  if (!settings) return false;
+  const draft = settingsDraft();
+  return draft.enabled !== settings.enabled || draft.telegramBotToken !== null || draft.clearTelegramBotToken ||
+    (draft.opsChannelId ?? null) !== (settings.opsChannelId ?? null) ||
+    LIMITS.some(limit => draft[limit.key] !== settings[limit.key]);
+}
+
+function paintEnabled() {
+  const tokenSet = settings?.telegramBotTokenSet && !settingsForm.elements.clearTelegramBotToken.checked;
+  const willHaveToken = tokenSet || settingsForm.elements.telegramBotToken.value.trim().length > 0;
+  enabledSwitch.className = `switch ${enabledDraft ? 'on' : 'off'}`;
+  enabledSwitch.setAttribute('aria-checked', String(enabledDraft));
+  const state = document.getElementById('settings-enabled-state');
+  state.replaceChildren();
+  const strong = document.createElement('strong');
+  strong.textContent = enabledDraft ? 'On' : 'Off';
+  state.append(strong);
+  const note = document.getElementById('settings-enabled-note');
+  note.textContent = enabledDraft && !willHaveToken
+    ? 'Monitoring is set to on but no bot token is saved: the engine will not start until a token is saved.'
+    : enabledDraft ? 'Alarms are sent as soon as the settings are saved and a profile has a gap.' : 'No alarm is sent while monitoring is off. Profiles and channels can still be edited.';
+  note.classList.toggle('warn', enabledDraft && !willHaveToken);
+}
+
+function paintTokenState() {
+  const state = document.getElementById('settings-token-state');
+  const entered = settingsForm.elements.telegramBotToken.value.trim();
+  if (settingsForm.elements.clearTelegramBotToken.checked) state.textContent = 'The saved token will be removed when you save.';
+  else if (entered) state.textContent = /^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(entered) ? 'New token entered; it replaces the saved one when you save.' : 'This does not look like a bot token (expected digits, a colon, then at least 30 characters).';
+  else state.textContent = settings?.telegramBotTokenSet ? `Saved token: ${settings.telegramBotTokenHint}` : 'No token is saved.';
+}
+
+function paintDirty() {
+  const dirty = settingsChanged();
+  document.getElementById('settings-dirty').textContent = dirty ? 'Unsaved changes' : '';
+  document.getElementById('settings-discard').disabled = !dirty;
+}
+
+function paintSettings() {
+  paintEnabled();
+  paintTokenState();
+  paintDirty();
+}
+
+async function paintEngine() {
+  try {
+    const status = await panelRequest('GET', 'tick-monitor/status');
+    const host = document.getElementById('settings-engine');
+    const engine = !status.enabled ? ['Engine', 'Off', 'danger'] : status.active ? ['Engine', 'Active', 'ok'] : ['Engine', 'Standby', 'warn'];
+    const items = [engine, ['MetaTrader', status.connected ? 'Connected' : 'Disconnected', status.connected ? 'ok' : 'danger']];
+    if (status.reason) items.push(['Note', status.reason, 'warn']);
+    host.replaceChildren(...items.map(([label, value, kind]) => {
+      const span = document.createElement('span');
+      const strong = document.createElement('strong');
+      strong.textContent = label;
+      span.append(strong, ' ', badge(value, kind));
+      return span;
+    }));
+  } catch {
+    // The engine summary is informative only; the form works without it.
+  }
+}
+
+function fillSettings() {
+  enabledDraft = settings.enabled;
+  settingsForm.elements.telegramBotToken.value = '';
+  settingsForm.elements.telegramBotToken.type = 'password';
+  document.getElementById('settings-token-show').textContent = 'Show';
+  settingsForm.elements.clearTelegramBotToken.checked = false;
+  const channelOptions = () => channels.map(channel => new Option(channel.enabled ? channel.name : `${channel.name} (disabled)`, channel.id));
+  const ops = document.getElementById('settings-ops-channel');
+  ops.replaceChildren(new Option('None (write to the log only)', ''), ...channelOptions());
+  ops.value = settings.opsChannelId ?? '';
+  const test = document.getElementById('settings-test-channel');
+  test.replaceChildren(...channelOptions());
+  if (settings.opsChannelId) test.value = settings.opsChannelId;
+  for (const limit of LIMITS) settingsForm.elements[limit.key].value = String(settings[limit.key]);
+  showLimitErrors();
+  paintSettings();
+}
+
 async function loadSettings() {
   try {
     settings = await panelRequest('GET', 'tick-monitor/settings');
-    const form = document.getElementById('settings-form');
-    form.elements.enabled.checked = settings.enabled;
-    form.elements.telegramBotToken.value = '';
-    form.elements.telegramBotToken.placeholder = settings.telegramBotTokenSet ? `Saved: ${settings.telegramBotTokenHint}` : 'Not set';
-    form.elements.clearTelegramBotToken.checked = false;
-    const ops = document.getElementById('settings-ops-channel');
-    ops.replaceChildren(new Option('None (log only)', ''), ...channels.map(channel => new Option(channel.name, channel.id)));
-    ops.value = settings.opsChannelId ?? '';
-    for (const key of ['maxRepeatCount', 'minRepeatIntervalSeconds', 'minAfterSeconds', 'openGraceSeconds', 'eventsRetentionDays'])
-      form.elements[key].value = String(settings[key]);
-    for (const element of form.elements) element.disabled = !can(me, 'tick-monitor.settings');
+    if (!document.getElementById('settings-limits').children.length)
+      document.getElementById('settings-limits').replaceChildren(...LIMITS.map(limitField));
+    fillSettings();
+    const editable = can(me, 'tick-monitor.settings');
+    for (const element of settingsForm.querySelectorAll('input, select, button'))
+      if (element.id !== 'settings-token-show' && element.id !== 'settings-test-channel' && element.id !== 'settings-test') element.disabled = !editable;
+    paintEngine();
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }
 }
 
-document.getElementById('settings-form').addEventListener('submit', async event => {
+enabledSwitch.addEventListener('click', () => {
+  enabledDraft = !enabledDraft;
+  paintSettings();
+});
+
+settingsForm.addEventListener('input', () => {
+  showLimitErrors();
+  paintSettings();
+});
+
+document.getElementById('settings-token-show').addEventListener('click', event => {
+  const input = settingsForm.elements.telegramBotToken;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  event.target.textContent = input.type === 'password' ? 'Show' : 'Hide';
+});
+
+document.getElementById('settings-discard').addEventListener('click', () => fillSettings());
+
+document.getElementById('settings-test').addEventListener('click', async () => {
+  const channelId = document.getElementById('settings-test-channel').value;
+  if (!channelId) {
+    showMessage('Add a channel on the Channels tab first.', 'error');
+    return;
+  }
+  if (settingsForm.elements.telegramBotToken.value.trim()) {
+    showMessage('Save the new token first; the test uses the saved token.', 'error');
+    return;
+  }
+  const channel = channels.find(entry => entry.id === channelId);
+  await testChannel(channel);
+});
+
+settingsForm.addEventListener('submit', async event => {
   event.preventDefault();
-  const form = event.target;
+  if (!showLimitErrors()) {
+    showMessage('Fix the highlighted limits first.', 'error');
+    return;
+  }
+  const draft = settingsDraft();
+  if (draft.enabled && !settings.enabled && !await confirmAction({ title: 'Turn tick monitoring on?', message: 'Alarms start going to the Telegram channels as soon as a monitored symbol has a gap.', confirmText: 'Turn on' })) return;
+  if (!draft.enabled && settings.enabled && !await confirmAction({ title: 'Turn tick monitoring off?', message: 'No alarm will be sent until it is turned on again.', confirmText: 'Turn off', danger: true })) return;
+  if (draft.clearTelegramBotToken && !await confirmAction({ title: 'Remove the saved bot token?', message: 'Monitoring stops until a new token is saved.', confirmText: 'Remove', danger: true })) return;
   try {
-    settings = await panelRequest('PUT', 'tick-monitor/settings', {
-      enabled: form.elements.enabled.checked,
-      telegramBotToken: form.elements.telegramBotToken.value.trim() || null,
-      clearTelegramBotToken: form.elements.clearTelegramBotToken.checked,
-      opsChannelId: form.elements.opsChannelId.value || null,
-      maxRepeatCount: Number(form.elements.maxRepeatCount.value),
-      minRepeatIntervalSeconds: Number(form.elements.minRepeatIntervalSeconds.value),
-      minAfterSeconds: Number(form.elements.minAfterSeconds.value),
-      openGraceSeconds: Number(form.elements.openGraceSeconds.value),
-      eventsRetentionDays: Number(form.elements.eventsRetentionDays.value),
-    });
+    settings = await panelRequest('PUT', 'tick-monitor/settings', draft);
     showMessage('Settings saved.');
-    await loadSettings();
+    fillSettings();
+    paintEngine();
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }

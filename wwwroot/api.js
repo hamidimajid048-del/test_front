@@ -19,6 +19,8 @@ const MENU_GROUPS = [
   { key: 'logins', title: 'Logins, IP & CID', icon: 'users' },
   { key: 'compare', title: 'Comparison', icon: 'link' },
   { key: 'operations', title: 'Operations', icon: 'settings' },
+  // A group with an href is a dashboard of its own: its button opens that page and its cards are not on the home page.
+  { key: 'ticks', title: 'Ticks', icon: 'activity', href: '/ticks.html' },
 ];
 
 // Each page needs one permission; the server enforces the same rules, so this only decides what is shown.
@@ -34,7 +36,7 @@ const MENU_ITEMS = [
   { group: 'compare', href: '/compare-logins.html', icon: 'users', title: 'Compare with logins', permission: 'compare.view', description: 'One login against one or more logins: evidence rating, which of them is linked to it, shared IPs and CIDs, and every session that used them.' },
   { group: 'compare', href: '/compare-emails.html', icon: 'mailCompare', title: 'Compare emails', permission: 'compare-emails.view', description: 'All logins of one email against the logins of one or more emails: evidence rating, linked login pairs, shared IPs and CIDs, and every session that used them.' },
   { group: 'operations', href: '/bulk-balance.html', icon: 'wallet', title: 'Bulk deposit / withdraw', permission: 'account-data.balance-bulk', description: 'Deposit to or withdraw from many accounts at once from a CSV file (login, amount, comment), with a result for every row to download.' },
-  { group: 'operations', href: '/tick-monitor.html', icon: 'activity', title: 'Tick monitoring', permission: 'tick-monitor.view', description: 'Telegram alarms when a symbol stops ticking: per-symbol time windows in server time, escalation stages, Telegram channels, and the history of every gap. Nothing is sent while the market is closed.' },
+  { group: 'ticks', href: '/tick-monitor.html', icon: 'activity', title: 'Tick monitoring', permission: 'tick-monitor.view', description: 'Telegram alarms when a symbol stops ticking: per-symbol time windows in server time, escalation stages, Telegram channels, and the history of every gap. Nothing is sent while the market is closed.' },
 ];
 
 const ICON_PATHS = {
@@ -135,9 +137,10 @@ function icon(name, className = 'icon') {
 
 // The home page cards come from MENU_ITEMS, grouped like the menu, so a page added to the menu appears there too.
 // A group whose pages the account may not open is hidden.
-function renderCards(container) {
+function renderCards(container, groupKey = null) {
   container.className = 'card-groups';
-  const sections = MENU_GROUPS.map(group => {
+  const shownGroups = MENU_GROUPS.filter(group => (groupKey ? group.key === groupKey : !group.href));
+  const sections = shownGroups.map(group => {
     const section = document.createElement('section');
     section.className = 'card-group';
     section.hidden = true;
@@ -712,11 +715,11 @@ function renderMenu() {
   const closed = closedSidebarGroups();
   const groups = MENU_GROUPS.map(group => {
     const items = MENU_ITEMS.filter(item => item.group === group.key);
-    const current = items.some(item => item.href === location.pathname);
+    const current = items.some(item => item.href === location.pathname) || group.href === location.pathname;
     const element = document.createElement('div');
     element.className = 'side-group';
     element.hidden = true;
-    element.classList.toggle('open', current || !closed.has(group.key));
+    element.classList.toggle('open', current || Boolean(group.href) || !closed.has(group.key));
     element.classList.toggle('active', current);
     const button = document.createElement('button');
     button.type = 'button';
@@ -741,7 +744,20 @@ function renderMenu() {
       }
       return link;
     });
-    list.append(flyoutTitle, ...links);
+    if (group.href) {
+      const dashboard = document.createElement('a');
+      dashboard.className = 'side-item';
+      dashboard.href = group.href;
+      dashboard.textContent = `${group.title} dashboard`;
+      if (location.pathname === group.href) {
+        dashboard.classList.add('active');
+        dashboard.setAttribute('aria-current', 'page');
+      }
+      list.append(flyoutTitle, dashboard, ...links);
+      element.dataset.group = group.key;
+    } else {
+      list.append(flyoutTitle, ...links);
+    }
     const placeFlyout = () => {
       if (!isSidebarCollapsed()) return;
       const rect = button.getBoundingClientRect();
@@ -755,6 +771,10 @@ function renderMenu() {
     element.addEventListener('pointerenter', placeFlyout);
     element.addEventListener('focusin', placeFlyout);
     button.addEventListener('click', () => {
+      if (group.href && !isSidebarCollapsed()) {
+        location.href = group.href;
+        return;
+      }
       if (isSidebarCollapsed()) {
         const show = !element.classList.contains('flyout');
         closeFlyouts();
@@ -883,7 +903,8 @@ function renderMenu() {
   // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu
   // entry; a page that writes its own header (with a subtitle) gets the icon only. The header sits in the top bar.
   const main = document.querySelector('main');
-  const pageIcon = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.icon ?? (location.pathname === '/account.html' ? 'user' : 'layers');
+  const pageIcon = [...MENU_ITEMS, USERS_PAGE, ...MENU_GROUPS.filter(group => group.href)].find(item => item.href === location.pathname)?.icon
+    ?? (location.pathname === '/account.html' ? 'user' : 'layers');
   let header = main?.querySelector('.page-header');
   if (main && !header && !main.querySelector('h1')) {
     const heading = document.createElement('h1');
@@ -905,6 +926,8 @@ function renderMenu() {
     for (const { element, items, links } of groups) {
       items.forEach((item, index) => { links[index].hidden = !can(me, item.permission); });
       element.hidden = links.every(link => link.hidden);
+      const dashboard = element.querySelector(`.side-item[href="${MENU_GROUPS.find(group => group.key === element.dataset.group)?.href}"]`);
+      if (dashboard) dashboard.hidden = element.hidden;
     }
     if (can(me, USERS_PAGE.permission)) {
       const users = document.createElement('a');
@@ -957,8 +980,11 @@ function hideUnlessAllowed(element, permission) {
 }
 
 function guardPage(me) {
-  const needed = [...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.permission;
-  if (!needed || can(me, needed)) return;
+  const dashboard = MENU_GROUPS.find(group => group.href === location.pathname);
+  const needed = dashboard
+    ? MENU_ITEMS.filter(item => item.group === dashboard.key).map(item => item.permission)
+    : [[...MENU_ITEMS, USERS_PAGE].find(item => item.href === location.pathname)?.permission].filter(Boolean);
+  if (needed.length === 0 || needed.some(permission => can(me, permission))) return;
   const notice = document.createElement('p');
   notice.className = 'message error';
   notice.textContent = 'Your account does not have access to this page.';

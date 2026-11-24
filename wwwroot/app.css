@@ -1834,3 +1834,26 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .tm-coverage-bar span.covered.c4 { background: color-mix(in srgb, var(--success) 50%, var(--primary-hover)); }
 .tm-coverage-bar span.covered.c5 { background: color-mix(in srgb, var(--warning) 50%, var(--compared)); }
 .tm-coverage-bar span.overlap { background: var(--danger); }
+
+/* Tick monitoring settings */
+.tm-settings { display: flex; flex-direction: column; gap: var(--space-16); max-width: 960px; }
+.tm-card .control { margin-top: var(--space-4); }
+.tm-field { display: flex; flex-direction: column; gap: var(--space-6); margin-top: var(--space-14); }
+.tm-field > label { font-weight: 600; }
+.tm-field select, .tm-field input[type="number"], .tm-field input[type="password"], .tm-field input[type="text"] { max-width: 420px; }
+.tm-inline { display: flex; flex-wrap: wrap; gap: var(--space-8); align-items: center; }
+.tm-inline input[type="number"] { width: 140px; }
+.tm-inline input[type="password"], .tm-inline input[type="text"] { flex: 1 1 320px; }
+.tm-unit { color: var(--text-muted); font-size: var(--font-size-sm); }
+.tm-field-note { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+.tm-field-note.warn { color: var(--warning); font-weight: 600; }
+.tm-field-note:empty { display: none; }
+.tm-field-help { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); line-height: 1.5; }
+.tm-field-help code { font-size: var(--font-size-xs); }
+.tm-danger-check { color: var(--danger); font-size: var(--font-size-sm); }
+.tm-limits { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: var(--space-12) var(--space-24); }
+.tm-limit { margin-top: var(--space-8); padding: var(--space-12) var(--space-14); background: var(--tile-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-md); }
+.tm-limit input.invalid { border-color: var(--danger); }
+.tm-limit .field-error:empty { display: none; }
+.tm-save-bar { position: sticky; bottom: 0; display: flex; gap: var(--space-8); align-items: center; justify-content: flex-end; padding: var(--space-10) var(--space-14); background: var(--panel-bg) padding-box, var(--edge-soft) border-box; border: 1px solid transparent; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.tm-save-bar .muted { margin-inline-end: auto; font-weight: 600; }
