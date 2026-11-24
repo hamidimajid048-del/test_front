@@ -274,35 +274,70 @@ function numberInput(name, value, min, max) {
   return input;
 }
 
-function labelled(text, control, className = '') {
-  const label = document.createElement('label');
-  if (className) label.className = className;
-  label.append(text, control);
+function labelled(text, control, className = '', help = '') {
+  const label = document.createElement(control.matches('input, select, textarea') ? 'label' : 'div');
+  label.className = `tm-label ${className}`.trim();
+  const title = document.createElement('span');
+  title.append(text);
+  if (help) title.append(' ', helpMark(help, text));
+  label.append(title, control);
   return label;
 }
 
+// What each field of the profile dialog does, shown by its "?".
+const PROFILE_HELP = {
+  "name": "A short name shown in the panel, for example Day or Night. It is not sent to Telegram.",
+  "from": "Start of the window in MetaTrader server time.",
+  "to": "End of the window in server time. An end at or before the start means the window runs past midnight into the next day.",
+  "days": "The weekdays on which the window starts. A window past midnight belongs to the day it starts.",
+  "after": "How many seconds without a tick before this stage fires. Each stage must come after the previous one.",
+  "channel": "The Telegram channel this stage writes to.",
+  "messages": "How many messages this stage sends. More than 1 makes it a wake-up stage.",
+  "every": "Seconds between the messages of this stage. Used only when Messages is more than 1. Every message stops as soon as ticks come back.",
+  "coverage": "A preview of the week: each bar is a day from 00:00 to 24:00 server time. Coloured parts are watched, hatched parts are not, and red marks windows that overlap.",
+};
+
+function iconButton(iconName, title, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'tm-icon-button danger';
+  button.title = title;
+  button.setAttribute('aria-label', title);
+  button.append(icon(iconName));
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+const STAGE_COLUMNS = [['Stage'], ['After (seconds)', 'after'], ['Channel', 'channel'], ['Messages', 'messages'], ['Every (seconds)', 'every'], ['']];
+
+function withAria(control, text) {
+  control.setAttribute('aria-label', text);
+  return control;
+}
+
+// One stage: a row of the window's stage grid; the column titles sit once above the rows.
 function stageRow(stage) {
   const row = document.createElement('div');
   row.className = 'tm-stage';
+  const number = document.createElement('span');
+  number.className = 'tm-stage-number';
   row.append(
-    labelled('After (seconds)', numberInput('afterSeconds', stage.afterSeconds, 1, 86400)),
-    labelled('Channel', Object.assign(channelSelect(stage.channelId), { name: 'channelId' })),
-    labelled('Messages', numberInput('repeatCount', stage.repeatCount, 1, 500)),
-    labelled('Every (seconds)', numberInput('repeatIntervalSeconds', stage.repeatIntervalSeconds, 0, 86400)),
-    actionButton('Remove', () => { row.remove(); drawCoverage(); }, { danger: true, iconName: 'minusBox' }));
+    number,
+    withAria(numberInput('afterSeconds', stage.afterSeconds, 1, 86400), 'After (seconds)'),
+    withAria(Object.assign(channelSelect(stage.channelId), { name: 'channelId' }), 'Channel'),
+    withAria(numberInput('repeatCount', stage.repeatCount, 1, 500), 'Messages'),
+    withAria(numberInput('repeatIntervalSeconds', stage.repeatIntervalSeconds, 0, 86400), 'Every (seconds)'),
+    iconButton('close', 'Remove stage', () => { row.remove(); drawCoverage(); }));
   row.addEventListener('input', drawCoverage);
   return row;
 }
 
 function scheduleCard(schedule) {
-  const card = document.createElement('fieldset');
+  const card = document.createElement('div');
   card.className = 'tm-schedule';
-  const legend = document.createElement('legend');
-  legend.textContent = 'Time window';
-  card.append(legend);
 
   const head = document.createElement('div');
-  head.className = 'tm-row';
+  head.className = 'tm-schedule-head';
   const name = document.createElement('input');
   name.name = 'name';
   name.maxLength = 40;
@@ -318,10 +353,6 @@ function scheduleCard(schedule) {
   to.name = 'to';
   to.required = true;
   to.value = schedule.to;
-  head.append(labelled('Name', name), labelled('From (server time)', from), labelled('To (server time)', to),
-    actionButton('Remove window', () => { card.remove(); drawCoverage(); }, { danger: true, iconName: 'minusBox' }));
-  card.append(head);
-
   const days = document.createElement('div');
   days.className = 'tm-days';
   for (const day of DAYS) {
@@ -335,10 +366,22 @@ function scheduleCard(schedule) {
     chip.append(box, DAY_SHORT[day]);
     days.append(chip);
   }
-  card.append(days);
+  head.append(labelled('Name', name, 'tm-grow', PROFILE_HELP.name), labelled('From', from, '', PROFILE_HELP.from), labelled('To', to, '', PROFILE_HELP.to),
+    labelled('Days', days, '', PROFILE_HELP.days),
+    iconButton('close', 'Remove window', () => { card.remove(); drawCoverage(); }));
+  card.append(head);
 
   const stages = document.createElement('div');
   stages.className = 'tm-stages';
+  const titles = document.createElement('div');
+  titles.className = 'tm-stage tm-stage-titles';
+  for (const [text, help] of STAGE_COLUMNS) {
+    const cell = document.createElement('span');
+    cell.append(text);
+    if (help) cell.append(' ', helpMark(PROFILE_HELP[help], text));
+    titles.append(cell);
+  }
+  stages.append(titles);
   for (const stage of schedule.stages) stages.append(stageRow(stage));
   card.append(stages);
   card.append(actionButton('Add stage', () => { stages.append(stageRow({ afterSeconds: 30, channelId: channels[0]?.id, repeatCount: 1, repeatIntervalSeconds: 0 })); drawCoverage(); }, { iconName: 'plusBox' }));
@@ -352,7 +395,7 @@ function readSchedule(card) {
     days: [...card.querySelectorAll('[name="day"]:checked')].map(box => box.value),
     from: card.querySelector('[name="from"]').value.slice(0, 5),
     to: card.querySelector('[name="to"]').value.slice(0, 5),
-    stages: [...card.querySelectorAll('.tm-stage')].map(row => ({
+    stages: [...card.querySelectorAll('.tm-stage:not(.tm-stage-titles)')].map(row => ({
       afterSeconds: Number(row.querySelector('[name="afterSeconds"]').value),
       channelId: row.querySelector('[name="channelId"]').value,
       repeatCount: Number(row.querySelector('[name="repeatCount"]').value),
@@ -384,7 +427,7 @@ function drawCoverage() {
   if (!schedules.length) return;
   const title = document.createElement('div');
   title.className = 'tm-coverage-title';
-  title.textContent = 'Coverage (server time, 00:00 → 24:00)';
+  title.append('Coverage (server time, 00:00 → 24:00)', ' ', helpMark(PROFILE_HELP.coverage, 'Coverage'));
   coverageHost.append(title);
   DAYS.forEach((day, dayIndex) => {
     const row = document.createElement('div');
@@ -475,6 +518,7 @@ profileForm.addEventListener('submit', async event => {
 });
 
 document.getElementById('profile-cancel').addEventListener('click', () => profileDialog.close());
+document.getElementById('profile-close').addEventListener('click', () => profileDialog.close());
 document.getElementById('profile-add').addEventListener('click', () => openProfileDialog(null));
 document.getElementById('schedule-add').addEventListener('click', () => {
   schedulesHost.append(scheduleCard({ name: `Window ${schedulesHost.children.length + 1}`, days: DAYS.slice(0, 5), from: '00:00', to: '00:00', stages: [{ afterSeconds: 30, channelId: channels[0]?.id, repeatCount: 1, repeatIntervalSeconds: 0 }] }));

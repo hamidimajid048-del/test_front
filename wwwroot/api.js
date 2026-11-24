@@ -537,6 +537,8 @@ function showHelpTip(button, text) {
     document.addEventListener('pointerdown', event => { if (!event.target.closest?.('.col-help')) hideHelpTip(); }, true);
   }
   hideHelpTip();
+  const layer = button.closest('dialog[open]') ?? document.body;
+  if (helpTip.parentElement !== layer) layer.append(helpTip);
   helpTip.textContent = t(text);
   helpTip.hidden = false;
   const box = button.getBoundingClientRect();

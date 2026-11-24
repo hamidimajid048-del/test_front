@@ -1806,21 +1806,51 @@ form.filters.cmp-setup { display: flex; flex-wrap: wrap; align-items: flex-end; 
 .cmp-progress .meter i { transition: width .3s ease; }
 
 /* Tick monitoring page */
-.tm-dialog { width: min(1100px, 96vw); }
+dialog.panel-dialog.tm-dialog { width: min(1120px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; overflow: hidden; }
+.tm-dialog form { display: flex; flex-direction: column; max-height: calc(100vh - 34px); }
+.tm-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-12); padding: var(--space-18, 18px) var(--space-24) var(--space-14); border-bottom: 1px solid var(--edge-soft); }
+dialog.panel-dialog .tm-dialog-head h3 { margin: 0 0 var(--space-4); font-size: var(--font-size-lg); }
+dialog.panel-dialog .tm-dialog-head p { margin: 0; }
+.tm-dialog-body { flex: 1; overflow: auto; padding: var(--space-18, 18px) var(--space-24); display: flex; flex-direction: column; gap: var(--space-14); }
+.tm-dialog-foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-8); padding: var(--space-14) var(--space-24); border-top: 1px solid var(--edge-soft); }
+dialog.panel-dialog .tm-dialog-foot .message { flex: 1; margin: 0; }
+.tm-dialog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: var(--space-14); }
+.tm-panel { padding: var(--space-14) var(--space-16, 16px); border: 1px solid var(--edge-soft); border-radius: var(--radius-lg); background: var(--tile-bg); }
+.tm-panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); margin-bottom: var(--space-12); }
+.tm-panel-title { display: inline-flex; align-items: center; gap: var(--space-8); margin: 0 0 var(--space-12); font-size: var(--font-size-md); }
+.tm-panel-head .tm-panel-title { margin: 0; }
+.tm-fields { display: flex; flex-wrap: wrap; gap: var(--space-12); align-items: end; }
+dialog.panel-dialog .tm-fields label, dialog.panel-dialog .tm-schedule-head label { margin: 0; gap: var(--space-4); }
+.tm-fields label, .tm-schedule-head .tm-label { min-width: 120px; }
+.tm-schedule-head .tm-label { display: flex; flex-direction: column; gap: var(--space-4); color: var(--text-muted); font-size: var(--font-size-sm); font-weight: 500; }
+.tm-fields .tm-grow, .tm-schedule-head .tm-grow { flex: 1 1 180px; }
+dialog.panel-dialog label.tm-check { flex-direction: row; align-items: center; gap: var(--space-8); margin: var(--space-12) 0; color: var(--text); }
+dialog.panel-dialog label.tm-check input { width: auto; }
+.tm-with-unit { display: flex; align-items: center; gap: var(--space-6); }
+dialog.panel-dialog .tm-with-unit input { width: 96px; }
+.tm-icon-button { display: inline-grid; place-items: center; flex: none; width: 34px; height: 34px; padding: 0; }
+.tm-schedules { display: flex; flex-direction: column; gap: var(--space-12); }
+.tm-schedule { padding: var(--space-12) var(--space-14); border: 1px solid var(--edge-soft); border-radius: var(--radius-md); background: var(--surface-2); }
+.tm-schedule-head { display: flex; flex-wrap: wrap; gap: var(--space-12); align-items: end; margin-bottom: var(--space-12); }
+dialog.panel-dialog .tm-schedule-head input[type="time"] { width: 130px; }
 .tm-row { display: flex; flex-wrap: wrap; gap: var(--space-12); align-items: end; margin-bottom: var(--space-12); }
 .tm-row label { display: flex; flex-direction: column; gap: var(--space-4); font-size: var(--font-size-sm); color: var(--text-muted); min-width: 140px; }
 .tm-row label.check { flex-direction: row; align-items: center; gap: var(--space-8); color: var(--text); align-self: center; }
 .tm-row label.check input { width: auto; }
 .tm-schedule { margin: 0 0 var(--space-12); padding: var(--space-12) var(--space-14); border: 1px solid var(--edge-soft); border-radius: var(--radius-md); background: var(--tile-bg); }
 .tm-schedule legend { padding: 0 var(--space-6); color: var(--text-muted); font-size: var(--font-size-sm); font-weight: 600; }
-.tm-days { display: flex; flex-wrap: wrap; gap: var(--space-6); margin-bottom: var(--space-10); }
+.tm-days { display: flex; flex-wrap: wrap; gap: var(--space-6); min-height: 38px; align-items: center; }
+dialog.panel-dialog label.tm-day { flex-direction: row; margin: 0; color: var(--text); }
 .tm-day { display: inline-flex; align-items: center; gap: var(--space-4); padding: 2px var(--space-10); border: 1px solid var(--edge-soft); border-radius: var(--radius-pill); font-size: var(--font-size-sm); cursor: pointer; }
 .tm-day:has(input:checked) { color: var(--primary-text); background: var(--side-item-active); border-color: transparent; }
 .tm-day input { width: auto; height: auto; margin: 0; }
-.tm-stages { display: flex; flex-direction: column; gap: var(--space-8); margin-bottom: var(--space-10); }
-.tm-stage { display: flex; flex-wrap: wrap; gap: var(--space-10); align-items: end; }
-.tm-stage label { display: flex; flex-direction: column; gap: var(--space-4); font-size: var(--font-size-sm); color: var(--text-muted); }
-.tm-stage input, .tm-stage select { width: 150px; }
+.tm-stages { display: flex; flex-direction: column; gap: var(--space-6); margin-bottom: var(--space-10); counter-reset: tm-stage; }
+.tm-stage { display: grid; grid-template-columns: 56px 140px minmax(180px, 1fr) 120px 140px 34px; gap: var(--space-10); align-items: center; }
+.tm-stage-titles { color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 600; }
+.tm-stage:not(.tm-stage-titles) { counter-increment: tm-stage; }
+.tm-stage-number::before { content: counter(tm-stage); display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--primary-text); background: var(--side-item-active); font-size: var(--font-size-sm); font-weight: 700; }
+dialog.panel-dialog .tm-stage input, dialog.panel-dialog .tm-stage select { width: 100%; }
+@media (max-width: 760px) { .tm-stage { grid-template-columns: 40px 1fr 1fr; } .tm-stage-titles { display: none; } }
 .tm-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-6); }
 .tm-coverage { margin: var(--space-12) 0; }
 .tm-coverage-title { color: var(--text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-6); }

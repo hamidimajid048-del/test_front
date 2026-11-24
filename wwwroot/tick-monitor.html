@@ -129,29 +129,54 @@
 
   <dialog class="panel-dialog tm-dialog" id="profile-dialog">
     <form method="dialog" id="profile-form" autocomplete="off">
-      <h3 id="profile-dialog-title">Profile</h3>
-      <div class="tm-row">
-        <label>Symbol <input name="symbol" list="symbol-list" maxlength="32" required autocomplete="off"></label>
-        <datalist id="symbol-list"></datalist>
-        <label class="check"><input name="enabled" type="checkbox" checked> Enabled</label>
-        <label>Quiet before close (seconds) <input name="closeLeadSeconds" type="number" min="0" max="3600" value="0" required></label>
+      <header class="tm-dialog-head">
+        <div>
+          <h3 id="profile-dialog-title">Profile</h3>
+          <p>All times are MetaTrader server time. Nothing is sent while the market is closed.</p>
+        </div>
+        <button type="button" class="tm-icon-button" id="profile-close" aria-label="Close" data-icon="close"></button>
+      </header>
+
+      <div class="tm-dialog-body">
+        <div class="tm-dialog-grid">
+          <section class="tm-panel">
+            <h4 class="tm-panel-title" data-icon="candles">Symbol</h4>
+            <div class="tm-fields">
+              <label class="tm-grow"><span>Symbol <button type="button" class="col-help" data-help="The MetaTrader symbol exactly as on the server, for example XAUUSD.x. One profile per symbol.">?</button></span> <input name="symbol" list="symbol-list" maxlength="32" required autocomplete="off" placeholder="XAUUSD.x"></label>
+              <datalist id="symbol-list"></datalist>
+              <label><span>Quiet before close <button type="button" class="col-help" data-help="No new alarm starts in the last seconds before the quote session closes, because ticks normally thin out there. 0 turns this off.">?</button></span> <span class="tm-with-unit"><input name="closeLeadSeconds" type="number" min="0" max="3600" value="0" required><span class="tm-unit">s</span></span></label>
+            </div>
+            <label class="check tm-check"><input name="enabled" type="checkbox" checked> Monitor this symbol <button type="button" class="col-help" data-help="When off, the profile is kept but the symbol is not watched and nothing is sent.">?</button></label>
+          </section>
+
+          <section class="tm-panel">
+            <h4 class="tm-panel-title" data-icon="check">Ticks resumed message</h4>
+            <label class="check tm-check"><input name="recoveryEnabled" type="checkbox" checked> Send one message when ticks come back <button type="button" class="col-help" data-help="When ticks come back after a gap, one closing message is sent with the gap start and end, its duration and the price gap.">?</button></label>
+            <div class="tm-fields">
+              <label><span>Only after <button type="button" class="col-help" data-help="The closing message is sent only if the gap fired at least this many stages, so a short gap that got one alarm does not get a second message.">?</button></span> <span class="tm-with-unit"><input name="recoveryMinStages" type="number" min="1" max="10" value="2" required><span class="tm-unit">stages</span></span></label>
+              <label class="tm-grow"><span>To channel <button type="button" class="col-help" data-help="Where the closing message goes. “Channel of the first stage” uses the channel of stage 1 of the window that was active.">?</button></span> <select name="recoveryChannelId"></select></label>
+            </div>
+          </section>
+        </div>
+
+        <section class="tm-panel">
+          <div class="tm-panel-head">
+            <h4 class="tm-panel-title" data-icon="calendar">Time windows <button type="button" class="col-help" data-help="Each window is a time range on chosen weekdays with its own alarm stages, for example Day and Night. Windows must not overlap; outside every window the symbol is not watched.">?</button></h4>
+            <button type="button" id="schedule-add" data-icon="plusBox">Add window</button>
+          </div>
+          <div id="schedules" class="tm-schedules"></div>
+        </section>
+
+        <section class="tm-panel">
+          <div class="tm-coverage" id="coverage"></div>
+        </section>
       </div>
-      <div class="tm-row">
-        <label class="check"><input name="recoveryEnabled" type="checkbox" checked> Send "ticks resumed"</label>
-        <label>…only after this many stages <input name="recoveryMinStages" type="number" min="1" max="10" value="2" required></label>
-        <label>…to channel <select name="recoveryChannelId"></select></label>
-      </div>
-      <div class="section-head">
-        <h3>Time windows</h3>
-        <button type="button" id="schedule-add" data-icon="plusBox">Add window</button>
-      </div>
-      <div id="schedules"></div>
-      <div class="tm-coverage" id="coverage"></div>
-      <p class="message error" id="profile-dialog-error"></p>
-      <div class="dialog-buttons">
+
+      <footer class="tm-dialog-foot">
+        <p class="message error" id="profile-dialog-error"></p>
         <button type="button" id="profile-cancel">Cancel</button>
-        <button type="submit">Save profile</button>
-      </div>
+        <button type="submit" data-icon="check">Save profile</button>
+      </footer>
     </form>
   </dialog>
 
