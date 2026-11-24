@@ -1341,7 +1341,19 @@
     "No symbol matches; press Enter to add it as typed.": "نمادی پیدا نشد؛ برای افزودن همان متن Enter بزنید.",
     "Not found on the MetaTrader server": "روی سرور متاتریدر پیدا نشد",
     "Choose at least one symbol.": "دست‌کم یک نماد انتخاب کنید.",
-    "A profile is one or more symbols with the same time windows; each symbol is watched on its own. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.": "هر پروفایل یک یا چند نماد با پنجره‌های زمانی یکسان است و هر نماد جداگانه بررسی می‌شود. هر پنجره (به وقت سرور) مراحلی دارد: بعد از چند ثانیه بدون تیک به کدام کانال خبر داده شود، چند بار و با چه فاصله‌ای. پنجره‌های یک پروفایل نباید هم‌پوشانی داشته باشند؛ لحظه‌ای که بیرون از همه‌ی پنجره‌هاست بررسی نمی‌شود."
+    "A profile is one or more symbols with the same time windows; each symbol is watched on its own. Each window (server time) has stages: after how many seconds without a tick a channel is told, how many times and how far apart. Windows of a profile must not overlap; a moment outside every window is not monitored.": "هر پروفایل یک یا چند نماد با پنجره‌های زمانی یکسان است و هر نماد جداگانه بررسی می‌شود. هر پنجره (به وقت سرور) مراحلی دارد: بعد از چند ثانیه بدون تیک به کدام کانال خبر داده شود، چند بار و با چه فاصله‌ای. پنجره‌های یک پروفایل نباید هم‌پوشانی داشته باشند؛ لحظه‌ای که بیرون از همه‌ی پنجره‌هاست بررسی نمی‌شود.",
+    "Live status": "وضعیت زنده",
+    "Gap history": "تاریخچه‌ی قطعی‌ها",
+    "Live status — Violation Panel": "وضعیت زنده — پنل تخلفات",
+    "Profiles — Violation Panel": "پروفایل‌ها — پنل تخلفات",
+    "Channels — Violation Panel": "کانال‌ها — پنل تخلفات",
+    "Gap history — Violation Panel": "تاریخچه‌ی قطعی‌ها — پنل تخلفات",
+    "Tick monitoring settings — Violation Panel": "تنظیمات مانیتورینگ تیک — پنل تخلفات",
+    "Every monitored symbol right now: market open or closed, last tick, the open gap and the stages already sent; snooze a symbol from here.": "همه‌ی نمادهای تحت بررسی در همین لحظه: باز یا بسته بودن بازار، آخرین تیک، قطعی جاری و مراحل ارسال‌شده؛ از همین‌جا می‌توان نماد را موقتاً ساکت کرد.",
+    "The alarm setups: which symbols, the time windows in server time and the escalation stages of each window.": "ستاپ‌های هشدار: کدام نمادها، پنجره‌های زمانی به وقت سرور و مراحل تشدید هر پنجره.",
+    "The Telegram channels alarms go to, with a test message for each.": "کانال‌های تلگرامی که هشدارها به آن‌ها می‌رود، با پیام آزمایشی برای هر کدام.",
+    "Every recorded gap: symbol, start and end, duration, stages fired and messages sent.": "همه‌ی قطعی‌های ثبت‌شده: نماد، شروع و پایان، مدت، مراحل اجراشده و پیام‌های ارسال‌شده.",
+    "Turn monitoring on or off, the Telegram bot token, the operations channel and the limits.": "روشن و خاموش کردن مانیتورینگ، توکن ربات تلگرام، کانال عملیات و محدودیت‌ها."
   },
   "templates": {
     "Saved token: {0}": "توکن ذخیره‌شده: {0}",

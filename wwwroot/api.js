@@ -27,7 +27,7 @@ const MENU_GROUPS = [
   { key: 'logins', dashboard: 'violation', title: 'Logins, IP & CID', icon: 'users' },
   { key: 'compare', dashboard: 'violation', title: 'Comparison', icon: 'link' },
   { key: 'operations', dashboard: 'violation', title: 'Operations', icon: 'settings' },
-  { key: 'ticks', dashboard: 'symbols', title: 'Ticks', icon: 'activity' },
+  { key: 'ticks', dashboard: 'symbols', title: 'Tick monitoring', icon: 'activity' },
   { key: 'accounts-admin', dashboard: 'admin', title: 'Panel accounts', icon: 'users' },
   { key: 'security', dashboard: 'admin', title: 'Security & activity', icon: 'shield' },
 ];
@@ -36,9 +36,17 @@ const MENU_GROUPS = [
 function currentDashboard() {
   const home = DASHBOARDS.find(dashboard => dashboard.href === location.pathname);
   if (home) return home;
-  const item = MENU_ITEMS.find(entry => entry.href === location.pathname);
+  const item = currentMenuItem();
   const group = item ? MENU_GROUPS.find(entry => entry.key === item.group) : null;
   return DASHBOARDS.find(dashboard => dashboard.key === group?.dashboard) ?? DASHBOARDS[0];
+}
+
+// The menu entry of this page. Entries of one page told apart by a "view" query (/tick-monitor.html?view=profiles)
+// match on it; any other query value, such as a report filter, is ignored.
+function currentMenuItem() {
+  const view = new URLSearchParams(location.search).get('view');
+  return (view && MENU_ITEMS.find(item => item.href === `${location.pathname}?view=${view}`))
+    || MENU_ITEMS.find(item => item.href === location.pathname);
 }
 
 function dashboardPermissions(dashboard) {
@@ -65,7 +73,11 @@ const MENU_ITEMS = [
   { group: 'security', href: '/sessions.html', icon: 'monitor', title: 'Sessions', permission: 'users.view', description: 'The open panel sessions: account, address, client, when they started and were last seen; end a session from here.' },
   { group: 'security', href: '/activity.html', icon: 'activity', title: 'Sign-in activity', permission: 'audit.view', description: 'Per account: sign-ins, failures, distinct addresses and changes in the chosen period, with the recent sign-in attempts.' },
   { group: 'security', href: '/audit.html', icon: 'history', title: 'Audit log', permission: 'audit.view', description: 'Every recorded event with filters by account, event kind and time, and an export.' },
-  { group: 'ticks', href: '/tick-monitor.html', icon: 'activity', title: 'Tick monitoring', permission: 'tick-monitor.view', description: 'Telegram alarms when a symbol stops ticking: per-symbol time windows in server time, escalation stages, Telegram channels, and the history of every gap. Nothing is sent while the market is closed.' },
+  { group: 'ticks', href: '/tick-monitor.html', icon: 'activity', title: 'Live status', permission: 'tick-monitor.view', description: 'Every monitored symbol right now: market open or closed, last tick, the open gap and the stages already sent; snooze a symbol from here.' },
+  { group: 'ticks', href: '/tick-monitor.html?view=profiles', icon: 'target', title: 'Profiles', permission: 'tick-monitor.view', description: 'The alarm setups: which symbols, the time windows in server time and the escalation stages of each window.' },
+  { group: 'ticks', href: '/tick-monitor.html?view=channels', icon: 'message', title: 'Channels', permission: 'tick-monitor.view', description: 'The Telegram channels alarms go to, with a test message for each.' },
+  { group: 'ticks', href: '/tick-monitor.html?view=history', icon: 'history', title: 'Gap history', permission: 'tick-monitor.view', description: 'Every recorded gap: symbol, start and end, duration, stages fired and messages sent.' },
+  { group: 'ticks', href: '/tick-monitor.html?view=settings', icon: 'settings', title: 'Tick monitoring settings', permission: 'tick-monitor.settings', description: 'Turn monitoring on or off, the Telegram bot token, the operations channel and the limits.' },
 ];
 
 const ICON_PATHS = {
@@ -826,7 +838,7 @@ function renderMenu() {
   const dashboard = currentDashboard();
   const groups = MENU_GROUPS.filter(group => group.dashboard === dashboard.key).map(group => {
     const items = MENU_ITEMS.filter(item => item.group === group.key);
-    const current = items.some(item => item.href === location.pathname);
+    const current = items.includes(currentMenuItem());
     const element = document.createElement('div');
     element.className = 'side-group';
     element.hidden = true;
@@ -849,7 +861,7 @@ function renderMenu() {
       link.hidden = true;
       link.title = item.description;
       link.textContent = item.title;
-      if (location.pathname === item.href) {
+      if (item === currentMenuItem()) {
         link.classList.add('active');
         link.setAttribute('aria-current', 'page');
       }
@@ -997,7 +1009,7 @@ function renderMenu() {
   // Every page gets a visible h1 taken from its title ("Account data — Violation Panel"), beside the icon of its menu
   // entry; a page that writes its own header (with a subtitle) gets the icon only. The header sits in the top bar.
   const main = document.querySelector('main');
-  const pageIcon = [...MENU_ITEMS, ...DASHBOARDS].find(item => item.href === location.pathname)?.icon
+  const pageIcon = (currentMenuItem() ?? DASHBOARDS.find(item => item.href === location.pathname))?.icon
     ?? (location.pathname === '/account.html' ? 'user' : 'layers');
   let header = main?.querySelector('.page-header');
   if (main && !header && !main.querySelector('h1')) {
@@ -1069,7 +1081,7 @@ function guardPage(me) {
   const dashboard = DASHBOARDS.find(entry => entry.href === location.pathname);
   const needed = dashboard
     ? dashboardPermissions(dashboard)
-    : [MENU_ITEMS.find(item => item.href === location.pathname)?.permission].filter(Boolean);
+    : [currentMenuItem()?.permission].filter(Boolean);
   if (needed.length === 0 || needed.some(permission => can(me, permission))) return;
   // A dashboard home the account may not open sends it to a dashboard it may, so nobody lands on an empty page.
   const other = dashboard ? DASHBOARDS.find(entry => entry.key !== dashboard.key && canOpenDashboard(me, entry)) : null;

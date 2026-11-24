@@ -14,13 +14,6 @@
   <main>
     <p class="message" id="message"></p>
 
-    <div class="tabs" id="tabs">
-      <button type="button" data-tab="status" data-icon="activity">Status</button>
-      <button type="button" data-tab="profiles" data-icon="target">Profiles</button>
-      <button type="button" data-tab="channels" data-icon="message">Channels</button>
-      <button type="button" data-tab="history" data-icon="history">History</button>
-      <button type="button" data-tab="settings" data-icon="settings" data-permission="tick-monitor.settings">Settings</button>
-    </div>
 
     <section data-panel="status">
       <div class="summary" id="status-summary"></div>
@@ -142,7 +135,7 @@
           <section class="tm-panel">
             <h4 class="tm-panel-title" data-icon="settings">Profile</h4>
             <div class="tm-fields">
-              <label class="tm-grow"><span>Name <button type="button" class="col-help" data-help="A name for this setup, for example Metals or Indices day. Shown in the panel only; Telegram messages name the symbol.">?</button></span> <input name="name" maxlength="60" required autocomplete="off" placeholder="Metals"></label>
+              <label class="tm-grow"><span>Name <button type="button" class="col-help" data-help="A name for this setup, for example Metals or Indices day. Shown in the panel only; Telegram messages name the symbol.">?</button></span> <input name="profileName" maxlength="60" required autocomplete="off" placeholder="Metals"></label>
               <label><span>Quiet before close <button type="button" class="col-help" data-help="No new alarm starts in the last seconds before the quote session closes, because ticks normally thin out there. 0 turns this off.">?</button></span> <span class="tm-with-unit"><input name="closeLeadSeconds" type="number" min="0" max="3600" value="0" required><span class="tm-unit">s</span></span></label>
             </div>
             <label class="check tm-check"><input name="enabled" type="checkbox" checked> Monitor these symbols <button type="button" class="col-help" data-help="When off, the profile is kept but none of its symbols is watched and nothing is sent.">?</button></label>

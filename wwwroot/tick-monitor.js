@@ -51,10 +51,17 @@ function actionButton(text, onClick, { danger = false, iconName = null, permissi
   return button;
 }
 
+// Each part of the page has its own menu entry (/tick-monitor.html?view=profiles); the page shows only that part.
+const VIEWS = ['status', 'profiles', 'channels', 'history', 'settings'];
+
+function currentView() {
+  const query = new URLSearchParams(location.search);
+  const view = query.get('view') ?? query.get('tab');
+  return VIEWS.includes(view) ? view : 'status';
+}
+
 function showTab(tab) {
-  const current = ['profiles', 'channels', 'history', 'settings'].includes(tab) ? tab : 'status';
-  for (const button of document.querySelectorAll('#tabs button'))
-    button.classList.toggle('active', button.dataset.tab === current);
+  const current = VIEWS.includes(tab) ? tab : 'status';
   for (const panel of document.querySelectorAll('[data-panel]'))
     panel.hidden = panel.dataset.panel !== current;
   clearInterval(statusTimer);
@@ -678,7 +685,7 @@ function openProfileDialog(profile) {
     schedules: [{ name: 'Day', days: DAYS.slice(0, 5), from: '04:00', to: '20:00', stages: [{ afterSeconds: 30, channelId: channels[0].id, repeatCount: 1, repeatIntervalSeconds: 0 }] }],
   };
   document.getElementById('profile-dialog-title').textContent = profile?.id ? `Edit ${profile.name}` : 'New profile';
-  profileForm.elements.name.value = profile?.name ?? '';
+  profileForm.elements.profileName.value = profile?.name ?? '';
   chosenSymbols = new Set(profile?.symbols ?? []);
   openFolders = new Set();
   symbolSearch.value = '';
@@ -705,7 +712,7 @@ profileForm.addEventListener('submit', async event => {
   const schedules = [...schedulesHost.querySelectorAll('.tm-schedule')].map(readSchedule);
   const body = {
     id: editingProfile?.id ?? null,
-    name: profileForm.elements.name.value.trim(),
+    name: profileForm.elements.profileName.value.trim(),
     symbols: [...chosenSymbols],
     enabled: profileForm.elements.enabled.checked,
     config: {
@@ -1095,11 +1102,8 @@ settingsForm.addEventListener('submit', async event => {
 
 // ---- boot ----
 
-document.getElementById('tabs').addEventListener('click', event => {
-  const tab = event.target.closest('button')?.dataset.tab;
-  if (tab) showTab(tab);
-});
-
+const viewEntry = MENU_ITEMS.find(item => item.href === (currentView() === 'status' ? location.pathname : `${location.pathname}?view=${currentView()}`));
+if (viewEntry) document.title = `${viewEntry.title} \u2014 Violation Panel`;
 applyHelpMarks();
 renderMenu();
 currentAccount().then(async account => {
@@ -1107,7 +1111,7 @@ currentAccount().then(async account => {
   if (!can(me, 'tick-monitor.view')) return;
   try {
     await loadProfiles();
-    showTab(new URLSearchParams(location.search).get('tab') ?? 'status');
+    showTab(currentView());
   } catch (error) {
     if (error.message) showMessage(error.message, 'error');
   }
