@@ -1209,7 +1209,12 @@
     "Account {0}. The order will be canceled and moved to the order history.": "حساب {0}. سفارش لغو و به تاریخچهٔ سفارش‌ها منتقل می‌شود.",
     "Order {0} deleted": "سفارش {0} حذف شد",
     "MetaTrader did not close the position ({0}).": "MetaTrader پوزیشن را نبست ({0}).",
-    "MetaTrader did not delete the order ({0}).": "MetaTrader سفارش را حذف نکرد ({0})."
+    "MetaTrader did not delete the order ({0}).": "MetaTrader سفارش را حذف نکرد ({0}).",
+    "Close position {0} at {1}?": "پوزیشن {0} با قیمت {1} بسته شود؟",
+    "Account {0} · {1}. The position will be closed at the market price, now {2}, with {3}. The price can still move before MetaTrader closes it.": "حساب {0} · {1}. پوزیشن با قیمت بازار، که الان {2} است، با {3} بسته می‌شود. تا لحظهٔ بسته شدن در MetaTrader قیمت ممکن است تغییر کند.",
+    "Account {0} · {1}. The position will be closed at {2} with {3}.": "حساب {0} · {1}. پوزیشن با قیمت {2} و با {3} بسته می‌شود.",
+    "a profit of {0}": "سود {0}",
+    "a loss of {0}": "ضرر {0}"
   },
   "blocks": {
     "<strong>Check file</strong> changes nothing: it shows every line with the account found on MetaTrader and its balance, and marks lines that cannot be sent. Only the lines marked Ready are sent, after you confirm.": "<strong>بررسی فایل</strong> هیچ تغییری ایجاد نمی‌کند: هر خط را همراه با حساب یافت‌شده در MetaTrader و موجودی آن نمایش می‌دهد و خطوطی را که قابل ارسال نیستند علامت می‌زند. فقط خطوط «آماده» و پس از تأیید شما ارسال می‌شوند.",

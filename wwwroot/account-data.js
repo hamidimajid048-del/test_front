@@ -649,6 +649,7 @@ async function openCloseDialog(row) {
 
   let mode = 'market';
   let chosenPrice = null;
+  let chosenProfit = null;
   let previewTimer = 0;
   let previewRequest = 0;
 
@@ -672,6 +673,7 @@ async function openCloseDialog(row) {
       const answer = await panelRequest('GET', quotePath(text));
       if (current !== previewRequest) return;
       chosenPrice = Number(text);
+      chosenProfit = answer.profitAtPrice;
       showPreview(answer.profitAtPrice);
       confirm.disabled = false;
     } catch (error) {
@@ -710,12 +712,39 @@ async function openCloseDialog(row) {
     clearTimeout(previewTimer);
     dialog.remove();
   });
+  // The last check before the close: the price it is made at and the profit or loss it gives. At the market price both
+  // are read again now, as the dialog may have been open for a while.
+  async function confirmClose() {
+    const market = mode !== 'chosen';
+    let closePrice = chosenPrice;
+    let profit = chosenProfit;
+    if (market) {
+      const fresh = await panelRequest('GET', quotePath());
+      closePrice = fresh.priceCurrent;
+      profit = fresh.profit;
+    }
+    const result = profit < 0 ? `a loss of ${money(-profit)}` : `a profit of ${money(profit)}`;
+    return confirmAction({
+      title: `Close position ${quote.position} at ${price(closePrice)}?`,
+      message: market
+        ? `Account ${login} · ${quote.symbol}. The position will be closed at the market price, now ${price(closePrice)}, with ${result}. The price can still move before MetaTrader closes it.`
+        : `Account ${login} · ${quote.symbol}. The position will be closed at ${price(closePrice)} with ${result}.`,
+      confirmText: 'Close position',
+      danger: true,
+    });
+  }
+
   confirm.addEventListener('click', async () => {
     const body = { login: Number(login), position: quote.position, price: mode === 'chosen' ? chosenPrice : null };
     if (mode === 'chosen' && chosenPrice === null) return;
     confirm.disabled = true;
     cancel.disabled = true;
     try {
+      if (!await confirmClose()) {
+        confirm.disabled = false;
+        cancel.disabled = false;
+        return;
+      }
       const result = await panelRequest('POST', 'mt5/position-close', body);
       dialog.close();
       toast(`Position ${quote.position} closed`, 'success', `Deal ${result.deal} at ${price(result.price)}`);
